@@ -1,7 +1,7 @@
 import "../global.css";
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, View } from 'react-native';
-import Hello from '@/components/Hello';
+import RootNavigator from '@/navigation/RootNavigator';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -25,9 +25,9 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-black">
-      <View className="w-full max-w-md px-4">
-        <Hello />
+    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+      <View className="flex-1">
+        <RootNavigator />
       </View>
       <StatusBar style="auto" />
     </SafeAreaView>
