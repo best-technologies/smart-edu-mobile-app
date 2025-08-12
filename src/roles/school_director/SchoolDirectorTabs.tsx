@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DirectorDashboardScreen from './screens/DirectorDashboardScreen';
 import TeachersScreen from './screens/TeachersScreen';
 import SubjectsScreen from './screens/SubjectsScreen';
+import StudentsScreen from './screens/StudentsScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -39,7 +40,7 @@ export default function SchoolDirectorTabs() {
       <Tab.Screen name="Dashboard" component={DirectorDashboardScreen} />
       <Tab.Screen name="Teachers" component={TeachersScreen} />
       <Tab.Screen name="Subject" options={{ tabBarLabel: 'Subject' }} component={SubjectsScreen} />
-      <Tab.Screen name="Students" children={() => <Screen label="Students" />} />
+      <Tab.Screen name="Students" component={StudentsScreen} />
       <Tab.Screen name="Schedules" children={() => <Screen label="Schedules" />} />
     </Tab.Navigator>
   );
