@@ -1,9 +1,9 @@
 import { ScrollView, Text, View } from 'react-native';
-import TopBar from './components/TopBar';
-import Section from './components/Section';
-import EmptyState from './components/EmptyState';
-import { OverviewCard, SmallOverviewCard } from './components/OverviewCard';
-import FinanceCard from './components/Finance';
+import TopBar from './components/shared/TopBar';
+import Section from './components/shared/Section';
+import EmptyState from './components/shared/EmptyState';
+import { OverviewCard, SmallOverviewCard } from './components/dashboard/OverviewCard';
+import FinanceCard from './components/dashboard/Finance';
 import { directorDashboardData } from '@/mock';
 
 export default function DirectorDashboardScreen() {
