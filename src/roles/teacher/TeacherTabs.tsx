@@ -7,6 +7,7 @@ import StudentsScreen from './screens/StudentsScreen';
 import SchedulesScreen from './screens/SchedulesScreen';
 import SubjectsScreen from './screens/SubjectsScreen';
 import SubjectDetailScreen from './screens/SubjectDetailScreen';
+import VideoDemoScreen from './screens/VideoDemoScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -54,6 +55,7 @@ export default function TeacherTabs() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="TeacherTabs" component={TeacherTabNavigator} />
       <Stack.Screen name="SubjectDetail" component={SubjectDetailScreen} />
+      <Stack.Screen name="VideoDemo" component={VideoDemoScreen} />
     </Stack.Navigator>
   );
 }

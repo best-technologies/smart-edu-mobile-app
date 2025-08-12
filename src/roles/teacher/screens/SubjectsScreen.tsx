@@ -146,14 +146,24 @@ export default function SubjectsScreen() {
                 Manage your subjects and teaching materials
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={handleCreateSubject}
-              activeOpacity={0.7}
-              className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
-            >
-              <Ionicons name="add" size={16} color="white" />
-              <Text className="text-white font-semibold text-sm">Create Subject</Text>
-            </TouchableOpacity>
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => navigation.navigate('VideoDemo' as never)}
+                activeOpacity={0.7}
+                className="bg-blue-600 px-3 py-2 rounded-lg flex-row items-center gap-2"
+              >
+                <Ionicons name="videocam" size={16} color="white" />
+                <Text className="text-white font-semibold text-sm">Video Demo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCreateSubject}
+                activeOpacity={0.7}
+                className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
+              >
+                <Ionicons name="add" size={16} color="white" />
+                <Text className="text-white font-semibold text-sm">Create Subject</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
