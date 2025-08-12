@@ -52,7 +52,7 @@ export default function SchedulesScreen() {
     };
   }, [selectedClass]);
 
-  // Mock data function
+  // Mock data function (moved from TimetableGrid)
   function getTimetableData(classId: string): Record<string, Record<string, any>> {
     const data: Record<string, Record<string, any>> = {};
     
@@ -65,7 +65,7 @@ export default function SchedulesScreen() {
       });
     });
 
-    // Add sample data for different classes
+    // Add some sample data
     if (classId === 'JSS1') {
       data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
       data['Monday']['09:00 - 10:00'] = { subject: 'English Language', teacher: 'Mrs. Smith', color: 'green' };
@@ -77,13 +77,6 @@ export default function SchedulesScreen() {
       data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
       data['Tuesday']['09:00 - 10:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
       data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['11:00 - 12:00'] = { subject: 'Literature', teacher: 'Mrs. Anderson', color: 'green' };
-    } else if (classId === 'SS1') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Advanced Math', teacher: 'Dr. Johnson', color: 'purple' };
-      data['Tuesday']['09:00 - 10:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['13:00 - 14:00'] = { subject: 'Biology', teacher: 'Ms. Davis', color: 'green' };
-      data['Friday']['14:00 - 15:00'] = { subject: 'Economics', teacher: 'Mr. Thompson', color: 'orange' };
     }
 
     return data;
@@ -111,12 +104,7 @@ export default function SchedulesScreen() {
 
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-      <TopBar 
-        name="director"
-        email="director@school.edu"
-        schoolId="sch_1234567890"
-        avatarUri={undefined}
-      />
+      <TopBar />
       
       <ScrollView className="flex-1" contentContainerClassName="pb-20">
         {/* Header Section */}

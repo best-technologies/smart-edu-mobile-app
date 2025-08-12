@@ -29,6 +29,7 @@ export function TimetableGrid({
   onDayChange,
   timetableData = {}
 }: TimetableGridProps) {
+
   const getColorClasses = (color: string) => {
     switch (color) {
       case 'purple': return 'bg-purple-100 border-purple-300 dark:bg-purple-900/40 dark:border-purple-600';
@@ -123,7 +124,7 @@ export function TimetableGrid({
 
               {/* Periods for this day */}
               {timeSlots.map((time) => {
-                const period = timetableData[day]?.[time];
+                const period = timetableData[day][time];
                 return (
                   <View 
                     key={time} 

@@ -10,7 +10,6 @@ interface ScheduleStatsProps {
 }
 
 export function ScheduleStats({ selectedClass, totalPeriods, totalTeachers, totalSubjects }: ScheduleStatsProps) {
-
   return (
     <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
       <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">

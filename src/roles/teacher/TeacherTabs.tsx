@@ -1,6 +1,12 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import TeacherDashboardScreen from './screens/TeacherDashboardScreen';
+import StudentsScreen from './screens/StudentsScreen';
+import SchedulesScreen from './screens/SchedulesScreen';
+import SubjectsScreen from './screens/SubjectsScreen';
+import SubjectDetailScreen from './screens/SubjectDetailScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -11,8 +17,9 @@ function Screen({ label }: { label: string }) {
 }
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function TeacherTabs() {
+function TeacherTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -33,12 +40,21 @@ export default function TeacherTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" children={() => <Screen label="Teacher Dashboard" />} />
-      <Tab.Screen name="Students" children={() => <Screen label="Students" />} />
-      <Tab.Screen name="Schedules" children={() => <Screen label="Schedules" />} />
-      <Tab.Screen name="Subjects" children={() => <Screen label="Subjects" />} />
+      <Tab.Screen name="Dashboard" component={TeacherDashboardScreen} />
+      <Tab.Screen name="Students" component={StudentsScreen} />
+      <Tab.Screen name="Schedules" component={SchedulesScreen} />
+      <Tab.Screen name="Subjects" component={SubjectsScreen} />
       <Tab.Screen name="Grading" children={() => <Screen label="Grading" />} />
     </Tab.Navigator>
+  );
+}
+
+export default function TeacherTabs() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="TeacherTabs" component={TeacherTabNavigator} />
+      <Stack.Screen name="SubjectDetail" component={SubjectDetailScreen} />
+    </Stack.Navigator>
   );
 }
 
