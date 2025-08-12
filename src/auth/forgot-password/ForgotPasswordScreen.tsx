@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,14 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ForgotPasswordScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 
@@ -24,8 +26,9 @@ interface ForgotPasswordScreenProps {
 
 export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScreenProps) {
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  
+  const { forgotPassword, isLoading, error, clearError } = useAuth();
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -54,17 +57,22 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
     ]).start();
   }, []);
 
-  const handleSendEmail = () => {
+  // Clear error when component mounts or when error changes
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+      clearError();
+    }
+  }, [error, clearError]);
+
+  const handleSendEmail = async () => {
     if (!email.trim()) {
-      // Show validation message
+      Alert.alert('Validation Error', 'Please enter your email address');
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate sending email
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await forgotPassword({ email: email.trim() });
       setIsEmailSent(true);
       
       // Show success animation
@@ -85,7 +93,9 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
       setTimeout(() => {
         navigation.goBack();
       }, 2000);
-    }, 1500);
+    } catch (error) {
+      // Error is handled by the context
+    }
   };
 
   const handleButtonPress = () => {

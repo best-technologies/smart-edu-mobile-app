@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestGuard } from '@/hooks/useAuthGuard';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,7 +32,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { login, isLoading, error, clearError } = useAuth();
+  const { isAuthenticated } = useGuestGuard();
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -58,19 +63,26 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     ]).start();
   }, []);
 
-  const handleLogin = () => {
+  // Clear error when component mounts or when error changes
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Login Error', error);
+      clearError();
+    }
+  }, [error, clearError]);
+
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      // Show validation message (you can add a toast or alert here)
+      Alert.alert('Validation Error', 'Please enter both email and password');
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      navigation.navigate('RoleSelect');
-    }, 1500);
+    try {
+      await login({ email: email.trim(), password });
+      // Navigation will be handled by useGuestGuard hook
+    } catch (error) {
+      // Error is handled by the context
+    }
   };
 
   const handleForgotPassword = () => {
@@ -262,14 +274,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     </View>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity className="w-full h-14 bg-white/10 rounded-xl items-center justify-center border border-white/20">
-                    <View className="flex-row items-center">
-                      <Ionicons name="logo-apple" size={20} color="#ffffff" />
-                      <Text className="text-white font-medium text-base ml-3">
-                        Continue with Apple
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
                 </View>
               </View>
 

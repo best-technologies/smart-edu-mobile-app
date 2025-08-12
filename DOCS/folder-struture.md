@@ -2,7 +2,7 @@
 
 ## 📁 Project Overview
 
-Smart Edu Hub is a comprehensive educational management mobile application built with React Native, Expo, and TypeScript. The app serves multiple user roles including School Directors, Teachers, Students, and Developers.
+Smart Edu Hub is a comprehensive educational management mobile application built with React Native, Expo, and TypeScript. The app serves multiple user roles including School Directors, Teachers, Students, and Developers, with a professional authentication system and modular API architecture.
 
 ## 🏗️ Root Directory Structure
 
@@ -35,13 +35,16 @@ smart-edu-mobile-app/
 
 ```
 src/
-├── 📄 App.tsx                # Main application component
+├── 📄 App.tsx                # Main application component with AuthProvider
 ├── 📁 auth/                  # Authentication module
 ├── 📁 components/            # Global shared components
+├── 📁 contexts/              # React Context providers
+├── 📁 hooks/                 # Custom React hooks
 ├── 📁 mock/                  # Mock data and services
 ├── 📁 navigation/            # Navigation configuration
 ├── 📁 roles/                 # Role-specific modules
-└── 📁 screens/               # Global screens
+├── 📁 screens/               # Global screens
+└── 📁 services/              # API services and utilities
 ```
 
 ## 🔐 Authentication Module (`src/auth/`)
@@ -63,6 +66,41 @@ src/auth/
     ├── 📄 ForgotPasswordScreen.tsx # Main forgot password screen
     └── 📁 components/        # Forgot password components
         └── 📄 ForgotPasswordHeader.tsx # Forgot password header
+```
+
+## 🔧 Services Architecture (`src/services/`)
+
+### 🏗️ Modular API Services
+
+```
+src/services/
+├── 📄 index.ts               # Main services exports
+├── 📁 api/                   # API service modules
+│   ├── 📄 index.ts           # Unified API service interface
+│   ├── 📄 authService.ts     # Authentication service
+│   ├── 📄 httpClient.ts      # HTTP client with auth handling
+│   ├── 📄 tokenManager.ts    # Token storage and management
+│   └── 📄 roleServices.ts    # Role-specific services
+├── 📁 config/                # Configuration files
+│   ├── 📄 index.ts           # Config exports
+│   └── 📄 apiConfig.ts       # API configuration & endpoints
+└── 📁 types/                 # TypeScript type definitions
+    ├── 📄 index.ts           # Type exports
+    └── 📄 apiTypes.ts        # All API TypeScript types
+```
+
+### 🔑 Authentication Context (`src/contexts/`)
+
+```
+src/contexts/
+└── 📄 AuthContext.tsx        # Authentication state management
+```
+
+### 🎣 Custom Hooks (`src/hooks/`)
+
+```
+src/hooks/
+└── 📄 useAuthGuard.ts        # Authentication guards and route protection
 ```
 
 ## 🎭 Role-Based Modules (`src/roles/`)
@@ -182,19 +220,76 @@ DOCS/
 2. **Role-Based Separation**: Different user roles are completely separated
 3. **Component Reusability**: Shared components are organized for maximum reuse
 4. **Clear Hierarchy**: Logical folder nesting for easy navigation
+5. **Modular Services**: API services are split into focused, maintainable modules
 
 ### 🔄 Import/Export Patterns
 
 - **Index Files**: Each folder has an `index.ts` for clean imports
 - **Barrel Exports**: Related components are exported together
 - **Type Safety**: TypeScript interfaces are centralized in `types.ts` files
+- **Service Modularity**: Each service has a single responsibility
 
 ### 🎯 Component Structure
 
 - **Screens**: Main page components
 - **Components**: Reusable UI components
-- **Utils**: Helper functions and utilities
+- **Services**: API and business logic services
+- **Contexts**: Global state management
+- **Hooks**: Custom React hooks for shared logic
 - **Types**: TypeScript type definitions
+
+## 🔐 Authentication System
+
+### 🏗️ Architecture Overview
+
+The authentication system is built with a modular, scalable architecture:
+
+```
+Authentication Flow:
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Splash Screen │───▶│  Auth Check     │───▶│  Login Screen   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │  Authenticated  │───▶│ Role Selection  │
+                       └─────────────────┘    └─────────────────┘
+```
+
+### 🔧 Service Architecture
+
+#### **API Service Structure:**
+- **HttpClient**: Handles network requests with authentication
+- **TokenManager**: Manages token storage and refresh
+- **AuthService**: Authentication-specific operations
+- **RoleServices**: Role-specific API endpoints
+- **Config**: Centralized API configuration
+
+#### **Authentication Context:**
+- **Global State**: Manages authentication state across the app
+- **Reducer Pattern**: Predictable state updates
+- **Error Handling**: Comprehensive error management
+- **Persistence**: Automatic token and user data persistence
+
+#### **Route Protection:**
+- **Auth Guards**: Protect routes requiring authentication
+- **Guest Guards**: Protect routes for non-authenticated users
+- **Role Guards**: Role-based access control
+- **Automatic Navigation**: Smart routing based on auth status
+
+### 🔑 Security Features
+
+#### **Token Management:**
+- **Access Tokens**: Short-lived tokens for API requests
+- **Refresh Tokens**: Long-lived tokens for session renewal
+- **Automatic Refresh**: Seamless token renewal
+- **Secure Storage**: AsyncStorage with encryption
+
+#### **Route Protection:**
+- **Protected Routes**: All pages except splash and auth require authentication
+- **Role-Based Access**: Different features for different user types
+- **Session Persistence**: Maintains login state across app restarts
+- **Automatic Logout**: Handles expired sessions gracefully
 
 ## 🚀 Development Guidelines
 
@@ -217,6 +312,13 @@ DOCS/
 - **Expo**: React Native development platform
 - **Babel**: JavaScript transpilation
 
+### 🏗️ Service Architecture
+
+- **Single Responsibility**: Each service has one clear purpose
+- **Dependency Injection**: Services are injected where needed
+- **Error Handling**: Comprehensive error handling at each layer
+- **Type Safety**: Full TypeScript support throughout
+
 ## 📱 App Features by Module
 
 ### 🔐 Authentication
@@ -224,6 +326,8 @@ DOCS/
 - Password reset functionality
 - Social login integration (Google, Apple)
 - Secure authentication flow
+- Session management
+- Role-based access control
 
 ### 👨‍🏫 Teacher Features
 - Dashboard with quick stats
@@ -231,6 +335,7 @@ DOCS/
 - Student management
 - Schedule management
 - Video content creation
+- Grade management
 
 ### 👨‍💼 Director Features
 - Comprehensive dashboard
@@ -238,22 +343,98 @@ DOCS/
 - Student overview
 - Subject overview
 - Schedule overview
+- School analytics
 
 ### 👨‍🎓 Student Features
 - Learning dashboard
 - Subject access
 - Schedule viewing
+- Assignment tracking
+- Grade viewing
 
 ### 👨‍💻 Developer Features
 - Development tools
 - Testing utilities
+- Debug information
+- Performance monitoring
 
 ## 🔄 Navigation Flow
 
 ```
-Splash Screen → Login → Role Selection → Role-Specific Dashboard
+Splash Screen → Auth Check → Login (if not authenticated)
+                ↓
+            Role Selection (if authenticated)
+                ↓
+            Role-Specific Dashboard
                 ↓
             Forgot Password → Email Reset → Back to Login
 ```
 
-This structure provides a scalable, maintainable, and well-organized codebase for the Smart Edu Hub mobile application.
+## 🛠️ API Service Usage
+
+### 🔐 Authentication
+```typescript
+import { ApiService } from '@/services';
+
+// Login
+const response = await ApiService.auth.login({ email, password });
+
+// Check authentication
+const isAuth = await ApiService.isAuthenticated();
+
+// Get user data
+const userData = await ApiService.getUserData();
+```
+
+### 👨‍🏫 Teacher Services
+```typescript
+// Get teacher dashboard
+const dashboard = await ApiService.teacher.getDashboard();
+
+// Get subjects
+const subjects = await ApiService.teacher.getSubjects();
+
+// Get students
+const students = await ApiService.teacher.getStudents();
+```
+
+### 👨‍💼 Director Services
+```typescript
+// Get director dashboard
+const dashboard = await ApiService.director.getDashboard();
+
+// Get teachers list
+const teachers = await ApiService.director.getTeachers();
+
+// Get students overview
+const students = await ApiService.director.getStudents();
+```
+
+### 👨‍🎓 Student Services
+```typescript
+// Get student dashboard
+const dashboard = await ApiService.student.getDashboard();
+
+// Get subjects
+const subjects = await ApiService.student.getSubjects();
+
+// Get schedules
+const schedules = await ApiService.student.getSchedules();
+```
+
+## 🔧 Configuration
+
+### API Configuration
+```typescript
+// API Base URL
+API_CONFIG.BASE_URL = 'https://api.smarteduhub.com/v1'
+
+// Request Timeout
+API_CONFIG.TIMEOUT = 10000 // 10 seconds
+
+// Endpoints
+API_ENDPOINTS.AUTH.LOGIN = '/auth/login'
+API_ENDPOINTS.TEACHER.DASHBOARD = '/teacher/dashboard'
+```
+
+This structure provides a scalable, maintainable, and well-organized codebase for the Smart Edu Hub mobile application with professional authentication, modular services, and comprehensive documentation.

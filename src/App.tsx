@@ -5,18 +5,20 @@ import RootNavigator from '@/navigation/RootNavigator';
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import CustomSplashScreen from './components/SplashScreen';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
   // no-op if already prevented
 });
 
-export default function App() {
+function AppContent() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const { isInitialized, isLoading } = useAuth();
 
   useEffect(() => {
     const showThenHide = async () => {
-      // Simulate some startup work, then hide the splash
+      // Show splash for at least 1.2 seconds
       await new Promise(resolve => setTimeout(resolve, 1200));
       try {
         await SplashScreen.hideAsync();
@@ -31,7 +33,8 @@ export default function App() {
     setIsSplashVisible(false);
   };
 
-  if (isSplashVisible) {
+  // Show custom splash screen until auth is initialized and splash time is complete
+  if (isSplashVisible || !isInitialized || isLoading) {
     return <CustomSplashScreen onFinish={handleSplashFinish} />;
   }
 
@@ -42,5 +45,13 @@ export default function App() {
       </View>
       <StatusBar style="auto" />
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
