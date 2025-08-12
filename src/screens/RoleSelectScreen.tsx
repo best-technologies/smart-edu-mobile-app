@@ -48,7 +48,7 @@ export default function RoleSelectScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Select Your Role</Text>
-      <Text style={styles.subtitle}>Welcome, {user?.name}</Text>
+      <Text style={styles.subtitle}>Welcome, {user?.first_name} {user?.last_name}</Text>
       
       <View style={styles.roleContainer}>
         <TouchableOpacity

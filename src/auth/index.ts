@@ -1,6 +1,7 @@
 // Screens
 export { LoginScreen } from './login';
 export { ForgotPasswordScreen } from './forgot-password';
+export { OTPVerificationScreen } from './otp-verification';
 
 // Components
 export { LoginForm, SocialLoginButtons, LoginHeader } from './login';

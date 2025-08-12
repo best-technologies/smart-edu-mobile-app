@@ -12,7 +12,7 @@ const directorService = new DirectorService();
 const studentService = new StudentService();
 const userService = new UserService();
 
-// Main API Service Class
+// Unified API Service class
 export class ApiService {
   // Authentication
   static auth = authService;
@@ -26,16 +26,27 @@ export class ApiService {
   // Token management
   static tokens = TokenManager;
   
-  // Utility methods
+  // Authentication status check
   static async isAuthenticated(): Promise<boolean> {
     return authService.isAuthenticated();
   }
   
-  static async getUserData(): Promise<any | null> {
+  // Get user data
+  static async getUserData() {
     return authService.getUserData();
+  }
+  
+  // Check if user requires OTP
+  static async requiresOTP(): Promise<boolean> {
+    return authService.requiresOTP();
+  }
+  
+  // Get pending user for OTP verification
+  static async getPendingUser() {
+    return authService.getPendingUser();
   }
 }
 
-// Export individual services for direct access
+// Export individual service instances
 export { authService, teacherService, directorService, studentService, userService };
 export { TokenManager };

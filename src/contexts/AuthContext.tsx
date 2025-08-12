@@ -1,103 +1,112 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { ApiService, LoginCredentials, ForgotPasswordRequest, ResetPasswordRequest } from '@/services';
+import { ApiService } from '@/services';
+import { User } from '@/services/types/apiTypes';
+import { useToast } from './ToastContext';
+import { ErrorHandler } from '@/utils/errorHandler';
 
-// Authentication State Types
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  role: 'director' | 'teacher' | 'student' | 'developer';
-  avatar?: string;
-}
-
-export interface AuthState {
+// Auth State Interface
+interface AuthState {
   isAuthenticated: boolean;
-  user: AuthUser | null;
-  isLoading: boolean;
-  error: string | null;
   isInitialized: boolean;
+  isLoading: boolean;
+  user: User | null;
+  error: string | null;
+  requiresOTP: boolean;
 }
 
-// Authentication Actions
-export type AuthAction =
-  | { type: 'AUTH_START' }
-  | { type: 'AUTH_SUCCESS'; payload: { user: AuthUser } }
-  | { type: 'AUTH_FAILURE'; payload: { error: string } }
-  | { type: 'AUTH_LOGOUT' }
-  | { type: 'AUTH_CLEAR_ERROR' }
-  | { type: 'AUTH_INITIALIZED' };
-
-// Authentication Context Type
-interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;
-  forgotPassword: (request: ForgotPasswordRequest) => Promise<void>;
-  resetPassword: (request: ResetPasswordRequest) => Promise<void>;
-  clearError: () => void;
-  checkAuthStatus: () => Promise<void>;
-}
+// Auth Action Types
+type AuthAction =
+  | { type: 'INITIALIZE'; payload: { isAuthenticated: boolean; user: User | null } }
+  | { type: 'LOGIN_START' }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: User; requiresOTP: boolean } }
+  | { type: 'OTP_VERIFICATION_SUCCESS'; payload: { user: User } }
+  | { type: 'LOGIN_FAILURE'; payload: string }
+  | { type: 'LOGOUT' }
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'SET_LOADING'; payload: boolean };
 
 // Initial State
 const initialState: AuthState = {
   isAuthenticated: false,
-  user: null,
-  isLoading: true,
-  error: null,
   isInitialized: false,
+  isLoading: false,
+  user: null,
+  error: null,
+  requiresOTP: false,
 };
 
 // Auth Reducer
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
-    case 'AUTH_START':
+    case 'INITIALIZE':
+      return {
+        ...state,
+        isAuthenticated: action.payload.isAuthenticated,
+        user: action.payload.user,
+        isInitialized: true,
+      };
+    case 'LOGIN_START':
       return {
         ...state,
         isLoading: true,
         error: null,
       };
-    
-    case 'AUTH_SUCCESS':
+    case 'LOGIN_SUCCESS':
       return {
         ...state,
-        isAuthenticated: true,
+        isLoading: false,
         user: action.payload.user,
-        isLoading: false,
+        isAuthenticated: !action.payload.requiresOTP, // Only authenticated if no OTP required
+        requiresOTP: action.payload.requiresOTP,
         error: null,
       };
-    
-    case 'AUTH_FAILURE':
+    case 'OTP_VERIFICATION_SUCCESS':
+      return {
+        ...state,
+        isLoading: false,
+        user: action.payload.user,
+        isAuthenticated: true,
+        requiresOTP: false,
+        error: null,
+      };
+    case 'LOGIN_FAILURE':
+      return {
+        ...state,
+        isLoading: false,
+        error: action.payload,
+        requiresOTP: false,
+      };
+    case 'LOGOUT':
       return {
         ...state,
         isAuthenticated: false,
         user: null,
-        isLoading: false,
-        error: action.payload.error,
-      };
-    
-    case 'AUTH_LOGOUT':
-      return {
-        ...state,
-        isAuthenticated: false,
-        user: null,
-        isLoading: false,
+        requiresOTP: false,
         error: null,
       };
-    
-    case 'AUTH_CLEAR_ERROR':
+    case 'CLEAR_ERROR':
       return {
         ...state,
         error: null,
       };
-    
-    case 'AUTH_INITIALIZED':
+    case 'SET_LOADING':
       return {
         ...state,
-        isInitialized: true,
+        isLoading: action.payload,
       };
-    
     default:
       return state;
   }
+}
+
+// Auth Context Interface
+interface AuthContextType extends AuthState {
+  login: (credentials: { email: string; password: string }) => Promise<void>;
+  verifyOTP: (request: { email: string; otp: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  clearError: () => void;
+  getPendingUser: () => Promise<User | null>;
 }
 
 // Create Context
@@ -111,152 +120,221 @@ interface AuthProviderProps {
 // Auth Provider Component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
 
-  // Check authentication status on app start
+  // Initialize auth state on app start
   useEffect(() => {
-    checkAuthStatus();
+    initializeAuth();
   }, []);
 
-  // Check if user is authenticated
-  const checkAuthStatus = async () => {
+  const initializeAuth = async () => {
     try {
-      dispatch({ type: 'AUTH_START' });
-      
       const isAuthenticated = await ApiService.isAuthenticated();
+      const user = await ApiService.getUserData();
       
-      if (isAuthenticated) {
-        const userData = await ApiService.getUserData();
-        if (userData) {
-          dispatch({ 
-            type: 'AUTH_SUCCESS', 
-            payload: { user: userData } 
+      dispatch({
+        type: 'INITIALIZE',
+        payload: { isAuthenticated, user },
+      });
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      dispatch({
+        type: 'INITIALIZE',
+        payload: { isAuthenticated: false, user: null },
+      });
+    }
+  };
+
+  const login = async (credentials: { email: string; password: string }) => {
+    try {
+      console.log('🔐 Login attempt for:', credentials.email);
+      dispatch({ type: 'LOGIN_START' });
+
+      const response = await ApiService.auth.signIn(credentials);
+      // console.log('📡 Login response:', response);
+
+      if (response.success && response.data) {
+        // Check if response contains tokens (direct login) or user data (OTP required)
+        if ('access_token' in response.data) {
+          // Direct login successful
+          console.log('✅ Direct login successful');
+          const loginData = response.data as any;
+          
+          // Show success toast with backend message
+          showSuccess(
+            'Login Successful',
+            response.message || 'Welcome back!',
+            3000
+          );
+          
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: { user: loginData.user, requiresOTP: false },
           });
         } else {
-          dispatch({ 
-            type: 'AUTH_FAILURE', 
-            payload: { error: 'User data not found' } 
+          // OTP verification required
+          console.log('📱 OTP verification required');
+          const otpData = response.data as any;
+          
+          // Show info toast for OTP requirement
+          showInfo(
+            'OTP Required',
+            response.message || 'Please check your email for verification code',
+            4000
+          );
+          
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: { user: otpData, requiresOTP: true },
           });
         }
       } else {
-        dispatch({ 
-          type: 'AUTH_FAILURE', 
-          payload: { error: 'Not authenticated' } 
-        });
+        console.log('❌ Login failed:', response.message);
+        throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      dispatch({ 
-        type: 'AUTH_FAILURE', 
-        payload: { error: 'Failed to check authentication status' } 
-      });
-    } finally {
-      dispatch({ type: 'AUTH_INITIALIZED' });
-    }
-  };
-
-  // Login function
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      dispatch({ type: 'AUTH_START' });
+      console.log('💥 Login error:', error);
       
-      const response = await ApiService.auth.login(credentials);
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getAuthError(error, 'login');
       
-      if (response.success && response.data) {
-        dispatch({ 
-          type: 'AUTH_SUCCESS', 
-          payload: { user: response.data.user } 
-        });
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
       } else {
-        dispatch({ 
-          type: 'AUTH_FAILURE', 
-          payload: { error: response.message || 'Login failed' } 
-        });
+        showError(friendlyError.title, friendlyError.message, 5000);
       }
-    } catch (error: any) {
-      dispatch({ 
-        type: 'AUTH_FAILURE', 
-        payload: { error: error.message || 'Login failed' } 
-      });
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: friendlyError.message });
+      throw error;
     }
   };
 
-  // Logout function
+  const verifyOTP = async (request: { email: string; otp: string }) => {
+    try {
+      console.log('🔐 OTP verification attempt for:', request.email);
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      const response = await ApiService.auth.verifyOTP(request);
+      // console.log('📡 OTP verification response:', response);
+
+      if (response.success && response.data) {
+        console.log('✅ OTP verification successful');
+        const loginData = response.data as any;
+        
+        // Show success toast with backend message
+        showSuccess(
+          'Verification Successful',
+          response.message || 'Welcome to Smart Edu Hub!',
+          3000
+        );
+        
+        dispatch({
+          type: 'OTP_VERIFICATION_SUCCESS',
+          payload: { user: loginData.user },
+        });
+        // Navigation will be handled by the component using useGuestGuard
+      } else {
+        console.log('❌ OTP verification failed:', response.message);
+        throw new Error(response.message || 'OTP verification failed');
+      }
+    } catch (error) {
+      console.log('💥 OTP verification error:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getAuthError(error, 'otp');
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
+      } else {
+        showError(friendlyError.title, friendlyError.message, 5000);
+      }
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: friendlyError.message });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
   const logout = async () => {
     try {
       await ApiService.auth.logout();
+      
+      // Show success toast
+      showSuccess(
+        'Logged Out',
+        'You have been successfully logged out',
+        3000
+      );
     } catch (error) {
       console.error('Logout error:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getAuthError(error, 'logout');
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 4000);
+      } else {
+        showError(friendlyError.title, friendlyError.message, 4000);
+      }
     } finally {
-      dispatch({ type: 'AUTH_LOGOUT' });
+      dispatch({ type: 'LOGOUT' });
     }
   };
 
-  // Forgot password function
-  const forgotPassword = async (request: ForgotPasswordRequest) => {
+  const forgotPassword = async (email: string) => {
     try {
-      dispatch({ type: 'AUTH_START' });
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const response = await ApiService.auth.forgotPassword({ email });
       
-      const response = await ApiService.auth.forgotPassword(request);
+      // Show success toast with backend message
+      showSuccess(
+        'Reset Email Sent',
+        response.message || 'Check your email for password reset instructions',
+        4000
+      );
+    } catch (error) {
+      console.log('💥 Forgot password error:', error);
       
-      if (!response.success) {
-        dispatch({ 
-          type: 'AUTH_FAILURE', 
-          payload: { error: response.message || 'Failed to send reset email' } 
-        });
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getAuthError(error, 'forgot-password');
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
       } else {
-        dispatch({ type: 'AUTH_CLEAR_ERROR' });
+        showError(friendlyError.title, friendlyError.message, 5000);
       }
-    } catch (error: any) {
-      dispatch({ 
-        type: 'AUTH_FAILURE', 
-        payload: { error: error.message || 'Failed to send reset email' } 
-      });
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: friendlyError.message });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  // Reset password function
-  const resetPassword = async (request: ResetPasswordRequest) => {
-    try {
-      dispatch({ type: 'AUTH_START' });
-      
-      const response = await ApiService.auth.resetPassword(request);
-      
-      if (!response.success) {
-        dispatch({ 
-          type: 'AUTH_FAILURE', 
-          payload: { error: response.message || 'Failed to reset password' } 
-        });
-      } else {
-        dispatch({ type: 'AUTH_CLEAR_ERROR' });
-      }
-    } catch (error: any) {
-      dispatch({ 
-        type: 'AUTH_FAILURE', 
-        payload: { error: error.message || 'Failed to reset password' } 
-      });
-    }
-  };
-
-  // Clear error function
   const clearError = () => {
-    dispatch({ type: 'AUTH_CLEAR_ERROR' });
+    dispatch({ type: 'CLEAR_ERROR' });
   };
 
-  // Context value
+  const getPendingUser = async (): Promise<User | null> => {
+    return ApiService.auth.getPendingUser();
+  };
+
   const value: AuthContextType = {
     ...state,
     login,
+    verifyOTP,
     logout,
     forgotPassword,
-    resetPassword,
     clearError,
-    checkAuthStatus,
+    getPendingUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Custom hook to use auth context
@@ -267,6 +345,3 @@ export function useAuth(): AuthContextType {
   }
   return context;
 }
-
-// Export types for use in other files
-export type { AuthUser, AuthState };

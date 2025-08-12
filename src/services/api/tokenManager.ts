@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../config/apiConfig';
+import { User } from '../types/apiTypes';
 
 export class TokenManager {
   // Get stored access token
@@ -22,10 +23,12 @@ export class TokenManager {
     }
   }
 
-  // Store tokens
-  static async storeTokens(accessToken: string, refreshToken: string, expiresIn: number): Promise<void> {
+  // Store tokens (updated for new structure)
+  static async storeTokens(accessToken: string, refreshToken: string): Promise<void> {
     try {
-      const expiryTime = Date.now() + expiresIn * 1000;
+      // Calculate expiry time (assuming 7 days for refresh token)
+      const expiryTime = Date.now() + (7 * 24 * 60 * 60 * 1000);
+      
       await AsyncStorage.multiSet([
         [STORAGE_KEYS.ACCESS_TOKEN, accessToken],
         [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
@@ -44,6 +47,7 @@ export class TokenManager {
         STORAGE_KEYS.REFRESH_TOKEN,
         STORAGE_KEYS.USER_DATA,
         STORAGE_KEYS.TOKEN_EXPIRY,
+        STORAGE_KEYS.PENDING_USER,
       ]);
     } catch (error) {
       console.error('Error clearing tokens:', error);
@@ -64,7 +68,7 @@ export class TokenManager {
   }
 
   // Store user data
-  static async storeUserData(userData: any): Promise<void> {
+  static async storeUserData(userData: User): Promise<void> {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
     } catch (error) {
@@ -73,13 +77,42 @@ export class TokenManager {
   }
 
   // Get user data
-  static async getUserData(): Promise<any | null> {
+  static async getUserData(): Promise<User | null> {
     try {
       const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Error getting user data:', error);
       return null;
+    }
+  }
+
+  // Store pending user for OTP verification
+  static async storePendingUser(userData: User): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.PENDING_USER, JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error storing pending user:', error);
+    }
+  }
+
+  // Get pending user for OTP verification
+  static async getPendingUser(): Promise<User | null> {
+    try {
+      const pendingUser = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_USER);
+      return pendingUser ? JSON.parse(pendingUser) : null;
+    } catch (error) {
+      console.error('Error getting pending user:', error);
+      return null;
+    }
+  }
+
+  // Clear pending user after successful OTP verification
+  static async clearPendingUser(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_USER);
+    } catch (error) {
+      console.error('Error clearing pending user:', error);
     }
   }
 }

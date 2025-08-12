@@ -46,6 +46,29 @@ export function useGuestGuard() {
   };
 }
 
+// Hook for OTP verification screen - only redirects after successful OTP verification
+export function useOTPGuard() {
+  const { isAuthenticated, isLoading, isInitialized, requiresOTP } = useAuth();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (isInitialized && !isLoading && isAuthenticated && !requiresOTP) {
+      // Only navigate to role selection if authenticated and OTP is not required
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'RoleSelect' as never }],
+      });
+    }
+  }, [isAuthenticated, isLoading, isInitialized, requiresOTP, navigation]);
+
+  return {
+    isAuthenticated,
+    isLoading,
+    isInitialized,
+    requiresOTP,
+  };
+}
+
 // Hook for role-based access control
 export function useRoleGuard(allowedRoles: string[]) {
   const { user, isAuthenticated, isLoading } = useAuth();

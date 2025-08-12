@@ -1,11 +1,13 @@
 import "../global.css";
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'react-native';
 import { SafeAreaView, View } from 'react-native';
 import RootNavigator from '@/navigation/RootNavigator';
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import CustomSplashScreen from './components/SplashScreen';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { ToastContainer } from '@/components';
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -14,7 +16,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 
 function AppContent() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const { isInitialized, isLoading } = useAuth();
+  const { isInitialized } = useAuth();
 
   useEffect(() => {
     const showThenHide = async () => {
@@ -33,25 +35,31 @@ function AppContent() {
     setIsSplashVisible(false);
   };
 
-  // Show custom splash screen until auth is initialized and splash time is complete
-  if (isSplashVisible || !isInitialized || isLoading) {
+  // Show custom splash screen only during app initialization
+  // Don't show splash screen during login operations (isLoading)
+  if (isSplashVisible || !isInitialized) {
     return <CustomSplashScreen onFinish={handleSplashFinish} />;
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-black">
-      <View className="flex-1">
-        <RootNavigator />
-      </View>
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <View className="flex-1" style={{ backgroundColor: 'transparent' }}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true}
+      />
+      <RootNavigator />
+      <ToastContainer />
+    </View>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ToastProvider>
   );
 }

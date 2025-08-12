@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,6 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Animated,
-  Dimensions,
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,8 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuestGuard } from '@/hooks/useAuthGuard';
-
-const { width, height } = Dimensions.get('window');
+import { CenteredLoader, InlineSpinner } from '@/components';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -29,47 +26,19 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('bernardmayowaa@gmail.com');
+  const [password, setPassword] = useState('iba/sm/4787');
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError, requiresOTP } = useAuth();
   const { isAuthenticated } = useGuestGuard();
-  
-  // Animation refs
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const logoScale = useRef(new Animated.Value(0.8)).current;
-  const buttonScale = useRef(new Animated.Value(1)).current;
 
-  React.useEffect(() => {
-    // Start animations
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoScale, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  // Clear error when component mounts or when error changes
+  // Handle OTP requirement
   useEffect(() => {
-    if (error) {
-      Alert.alert('Login Error', error);
-      clearError();
+    if (requiresOTP) {
+      navigation.navigate('OTPVerification');
     }
-  }, [error, clearError]);
+  }, [requiresOTP, navigation]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -79,9 +48,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       await login({ email: email.trim(), password });
-      // Navigation will be handled by useGuestGuard hook
+      // Navigation will be handled by useGuestGuard if login is successful and no OTP required
     } catch (error) {
-      // Error is handled by the context
+      // Error is handled by the context and displayed via toast
     }
   };
 
@@ -89,26 +58,31 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     navigation.navigate('ForgotPassword');
   };
 
-  const handleButtonPress = () => {
-    Animated.sequence([
-      Animated.timing(buttonScale, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handleGoogleLogin = () => {
+    Alert.alert('Coming Soon', 'Google login will be available soon!');
+  };
 
-    handleLogin();
+  const handleTestLogin = async () => {
+    console.log('🧪 Test login initiated');
+    try {
+      // Test with sample credentials
+      await login({ email: 'test@example.com', password: 'testpassword' });
+    } catch (error) {
+      console.log('🧪 Test login error:', error);
+    }
+  };
+
+  const handleAppleLogin = () => {
+    Alert.alert('Coming Soon', 'Apple login will be available soon!');
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#0f172a' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+    <View className="flex-1">
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true}
+      />
       
       <LinearGradient
         colors={['#0f172a', '#1e3a8a', '#0d9488']}
@@ -124,172 +98,212 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <View className="absolute bottom-32 right-8 w-28 h-28 border border-white/20 rotate-12" />
         </View>
 
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-        >
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+        <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1"
           >
-            <Animated.View 
-              style={{ 
-                flex: 1,
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              }}
-              className="px-8 justify-center"
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              {/* Header Section */}
-              <View className="items-center mb-12">
-                <Animated.View 
-                  style={{ transform: [{ scale: logoScale }] }}
-                  className="mb-6"
-                >
-                  <View className="w-20 h-20 bg-white/10 rounded-2xl items-center justify-center backdrop-blur-sm border border-white/20">
-                    <Ionicons name="school" size={40} color="#14b8a6" />
+              <View className="flex-1 px-8 justify-center">
+                {/* Header */}
+                <View className="items-center mb-12">
+                  <View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20 mb-6">
+                    <Ionicons name="school" size={48} color="#14b8a6" />
                   </View>
-                </Animated.View>
-                
-                <Text className="text-3xl font-bold text-white mb-2 text-center">
-                  Welcome Back
-                </Text>
-                <Text className="text-white/70 text-center text-base">
-                  Sign in to continue to Smart Edu Hub
-                </Text>
-              </View>
-
-              {/* Login Form */}
-              <View className="space-y-6">
-                {/* Email/Phone Input */}
-                <View>
-                  <Text className="text-white/90 text-sm font-medium mb-2 ml-1">
-                    Email or Phone Number
+                  
+                  <Text className="text-3xl font-bold text-white mb-2 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+                    Welcome Back
                   </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={email}
-                      onChangeText={setEmail}
-                      placeholder="Enter your email or phone"
-                      placeholderTextColor="#94a3b8"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      className="w-full h-14 bg-white/10 rounded-xl px-4 text-white text-base border border-white/20 focus:border-cyan-400"
-                      style={{ fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif' }}
-                    />
-                    <View className="absolute right-4 top-4">
-                      <Ionicons name="mail-outline" size={20} color="#94a3b8" />
+                  <Text className="text-white/90 text-center text-base font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Sign in to your Smart Edu Hub account
+                  </Text>
+                </View>
+
+                {/* Login Form */}
+                <View className="space-y-6 mb-8">
+                  {/* Email Input */}
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Email Address
+                    </Text>
+                    <View className="relative">
+                      <TextInput
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="Enter your email"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        className="w-full h-14 bg-white/15 rounded-xl px-4 text-white text-base border border-white/25"
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 4,
+                          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+                        }}
+                      />
+                      <View className="absolute right-4 top-0 bottom-0 justify-center">
+                        <Ionicons name="mail-outline" size={20} color="rgba(255, 255, 255, 0.8)" />
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                {/* Password Input */}
-                <View>
-                  <Text className="text-white/90 text-sm font-medium mb-2 ml-1">
-                    Password
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={password}
-                      onChangeText={setPassword}
-                      placeholder="Enter your password"
-                      placeholderTextColor="#94a3b8"
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      className="w-full h-14 bg-white/10 rounded-xl px-4 pr-12 text-white text-base border border-white/20 focus:border-cyan-400"
-                      style={{ fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif' }}
-                    />
-                    <TouchableOpacity 
-                      onPress={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-4"
-                    >
-                      <Ionicons 
-                        name={showPassword ? "eye-off" : "eye"} 
-                        size={20} 
-                        color="#94a3b8" 
+                  {/* Password Input */}
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Password
+                    </Text>
+                    <View className="relative">
+                      <TextInput
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Enter your password"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        className="w-full h-14 bg-white/15 rounded-xl px-4 pr-12 text-white text-base border border-white/25"
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 4,
+                          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+                        }}
                       />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-0 bottom-0 justify-center"
+                      >
+                        <Ionicons 
+                          name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                          size={20} 
+                          color="rgba(255, 255, 255, 0.8)" 
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
 
-                {/* Forgot Password */}
-                <TouchableOpacity 
-                  onPress={handleForgotPassword}
-                  className="items-end"
-                >
-                  <Text className="text-cyan-400 text-sm font-medium">
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
+                  {/* Forgot Password */}
+                  <TouchableOpacity onPress={handleForgotPassword} className="self-end">
+                    <Text className="text-cyan-300 font-semibold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Login Button */}
-                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                  <TouchableOpacity
-                    onPress={handleButtonPress}
-                    disabled={isLoading}
-                    className={`w-full h-14 rounded-xl items-center justify-center ${
-                      isLoading ? 'bg-white/20' : 'bg-gradient-to-r from-cyan-500 to-teal-500'
-                    }`}
-                    style={{
-                      shadowColor: '#14b8a6',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
-                      elevation: 8,
+                <TouchableOpacity
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  className="w-full h-14 rounded-xl items-center justify-center overflow-hidden"
+                  style={{
+                    shadowColor: '#14b8a6',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 12,
+                    elevation: 12,
+                  }}
+                >
+                  <LinearGradient
+                    colors={isLoading ? ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)'] : ['#14b8a6', '#0d9488', '#0891b2']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
                     }}
                   >
                     {isLoading ? (
-                      <View className="flex-row items-center">
-                        <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        <Text className="text-white font-semibold text-base">
-                          Signing In...
-                        </Text>
-                      </View>
+                      <InlineSpinner 
+                        size="medium"
+                        color="#ffffff"
+                        text="Signing In..."
+                        textColor="#ffffff"
+                      />
                     ) : (
-                      <Text className="text-white font-semibold text-base">
+                      <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                         Sign In
                       </Text>
                     )}
-                  </TouchableOpacity>
-                </Animated.View>
+                  </LinearGradient>
+                </TouchableOpacity>
 
                 {/* Divider */}
-                <View className="flex-row items-center my-6">
-                  <View className="flex-1 h-px bg-white/20" />
-                  <Text className="text-white/50 text-sm mx-4">or</Text>
-                  <View className="flex-1 h-px bg-white/20" />
+                <View className="flex-row items-center my-8">
+                  <View className="flex-1 h-px bg-white/25" />
+                  <Text className="text-white/80 font-medium text-sm mx-4" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    or continue with
+                  </Text>
+                  <View className="flex-1 h-px bg-white/25" />
                 </View>
 
-                {/* Alternative Sign In Options */}
-                <View className="space-y-3">
-                  <TouchableOpacity className="w-full h-14 bg-white/10 rounded-xl items-center justify-center border border-white/20">
+                {/* Social Login Buttons */}
+                <View className="flex-row space-x-4 mb-8">
+                  <TouchableOpacity
+                    onPress={handleGoogleLogin}
+                    className="flex-1 h-14 bg-white/15 rounded-xl items-center justify-center border border-white/25"
+                    style={{
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3,
+                    }}
+                  >
                     <View className="flex-row items-center">
-                      <Ionicons name="logo-google" size={20} color="#ea4335" />
-                      <Text className="text-white font-medium text-base ml-3">
-                        Continue with Google
+                      <Ionicons name="logo-google" size={20} color="#0f172a" />
+                      <Text className="text-white font-semibold ml-2" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        Google
                       </Text>
                     </View>
                   </TouchableOpacity>
-                  
+                </View>
+
+                {/* Footer */}
+                <View className="items-center bg-white/5 rounded-2xl p-6 border border-white/10">
+                  <Text className="text-white/90 text-sm text-center font-medium mb-2" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Don't have an account?
+                  </Text>
+                  <TouchableOpacity 
+                    className="bg-cyan-500/20 px-6 py-3 rounded-xl border border-cyan-400/30"
+                    style={{
+                      shadowColor: '#14b8a6',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 4,
+                    }}
+                  >
+                    <Text className="text-cyan-300 font-bold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Contact your administrator
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-
-              {/* Footer */}
-              <View className="items-center mt-8">
-                <Text className="text-white/50 text-sm text-center">
-                  Don't have an account?{' '}
-                  <Text className="text-cyan-400 font-medium">
-                    Contact your administrator
-                  </Text>
-                </Text>
-              </View>
-            </Animated.View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </LinearGradient>
-    </SafeAreaView>
+
+      {/* Centered Loader for full-screen loading */}
+      <CenteredLoader 
+        visible={isLoading}
+        text="Signing you in..."
+        size="large"
+        spinnerColor="#14b8a6"
+        textColor="#ffffff"
+      />
+    </View>
   );
 }

@@ -16,6 +16,20 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
+// User Types
+export interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  is_email_verified: boolean;
+  role: 'admin' | 'school_director' | 'teacher' | 'student' | 'developer';
+  school_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Authentication Types
 export interface LoginCredentials {
   email: string;
@@ -23,18 +37,27 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'director' | 'teacher' | 'student' | 'developer';
-    avatar?: string;
-  };
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-  };
+  access_token: string;
+  refresh_token: string;
+  user: User;
+}
+
+export interface OTPVerificationResponse {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  is_email_verified: boolean;
+  role: 'admin' | 'school_director' | 'teacher' | 'student' | 'developer';
+  school_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OTPVerificationRequest {
+  email: string;
+  otp: string;
 }
 
 export interface ForgotPasswordRequest {

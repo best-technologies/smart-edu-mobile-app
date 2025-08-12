@@ -34,7 +34,8 @@ export class HttpClient {
       const data: ApiResponse<{ accessToken: string; expiresIn: number }> = await response.json();
       
       if (data.success && data.data) {
-        await TokenManager.storeTokens(data.data.accessToken, refreshToken, data.data.expiresIn);
+        // Store the new tokens
+        await TokenManager.storeTokens(data.data.accessToken, refreshToken);
         return data.data.accessToken;
       }
 
@@ -50,76 +51,72 @@ export class HttpClient {
   async makeRequest<T>(
     endpoint: string,
     method: HttpMethod = 'GET',
-    body?: any,
+    data?: any,
     requiresAuth: boolean = true
   ): Promise<ApiResponse<T>> {
     try {
-      // Check if token is needed and valid
-      let accessToken: string | null = null;
-      if (requiresAuth) {
-        const isExpired = await TokenManager.isTokenExpired();
-        if (isExpired) {
-          accessToken = await this.refreshAccessToken();
-        } else {
-          accessToken = await TokenManager.getAccessToken();
-        }
-
-        if (!accessToken) {
-          throw new ApiError(401, 'Authentication required');
-        }
-      }
-
-      // Prepare headers
+      const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+      console.log(`🌐 ${method} ${url}`);
+      
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+      if (requiresAuth) {
+        const token = await TokenManager.getAccessToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
       }
 
-      // Make request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const requestConfig: RequestInit = {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      });
+      };
 
-      clearTimeout(timeoutId);
+      if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        requestConfig.body = JSON.stringify(data);
+      }
 
-      // Handle response
-      const responseData: ApiResponse<T> = await response.json();
+      // console.log('📤 Request config:', {
+      //   method,
+      //   url,
+      //   headers: Object.keys(headers),
+      //   hasBody: !!requestConfig.body,
+      // });
+
+      const response = await fetch(url, requestConfig);
+      console.log('📥 Response status:', response.status);
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('⚠️ Non-JSON response received');
+        throw new ApiError(response.status, 'Invalid response format', { status: response.status });
+      }
+
+      const responseData = await response.json();
+      // console.log('📥 Response data:', responseData);
 
       if (!response.ok) {
-        // Handle specific error cases
-        if (response.status === 401) {
-          await TokenManager.clearTokens();
-          throw new ApiError(401, 'Session expired. Please login again.');
-        }
-
-        throw new ApiError(
-          response.status,
-          responseData.message || responseData.error || 'An error occurred',
-          responseData
-        );
+        throw new ApiError(response.status, responseData.message || 'Request failed', responseData);
       }
 
       return responseData;
     } catch (error) {
+      console.log('💥 HTTP request error:', error);
+      
+      // Handle specific network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.log('🌐 Network error - backend might not be running');
+        throw new ApiError(0, 'Unable to connect to server. Please check if the backend is running.', error);
+      }
+      
       if (error instanceof ApiError) {
         throw error;
       }
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new ApiError(408, 'Request timeout');
-      }
-
-      console.error('API request error:', error);
-      throw new ApiError(500, 'Network error. Please check your connection.');
+      
+      throw new ApiError(500, 'Network error', error);
     }
   }
 }

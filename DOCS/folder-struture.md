@@ -42,7 +42,7 @@ src/
 ├── 📁 hooks/                 # Custom React hooks
 ├── 📁 mock/                  # Mock data and services
 ├── 📁 navigation/            # Navigation configuration
-├── 📁 roles/                 # Role-specific modules
+├── 📁 roles/                 # Role-based modules
 ├── 📁 screens/               # Global screens
 └── 📁 services/              # API services and utilities
 ```
@@ -61,11 +61,15 @@ src/auth/
 │       ├── 📄 LoginForm.tsx          # Reusable login form
 │       ├── 📄 LoginHeader.tsx        # Login screen header
 │       └── 📄 SocialLoginButtons.tsx # Social login options
-└── 📁 forgot-password/       # Password reset functionality
-    ├── 📄 index.ts           # Forgot password exports
-    ├── 📄 ForgotPasswordScreen.tsx # Main forgot password screen
-    └── 📁 components/        # Forgot password components
-        └── 📄 ForgotPasswordHeader.tsx # Forgot password header
+├── 📁 forgot-password/       # Password reset functionality
+│   ├── 📄 index.ts           # Forgot password exports
+│   ├── 📄 ForgotPasswordScreen.tsx # Main forgot password screen
+│   └── 📁 components/        # Forgot password components
+│       └── 📄 ForgotPasswordHeader.tsx # Forgot password header
+└── 📁 otp-verification/      # OTP verification functionality
+    ├── 📄 index.ts           # OTP verification exports
+    ├── 📄 OTPVerificationScreen.tsx # Main OTP verification screen
+    └── 📁 components/        # OTP verification components
 ```
 
 ## 🔧 Services Architecture (`src/services/`)
@@ -242,7 +246,7 @@ DOCS/
 
 ### 🏗️ Architecture Overview
 
-The authentication system is built with a modular, scalable architecture:
+The authentication system is built with a modular, scalable architecture that includes OTP verification for enhanced security:
 
 ```
 Authentication Flow:
@@ -254,6 +258,16 @@ Authentication Flow:
                        ┌─────────────────┐    ┌─────────────────┐
                        │  Authenticated  │───▶│ Role Selection  │
                        └─────────────────┘    └─────────────────┘
+
+OTP Verification Flow:
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Login Screen  │───▶│  OTP Required   │───▶│ OTP Verification│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │  OTP Verified   │───▶│ Role Selection  │
+                       └─────────────────┘    └─────────────────┘
 ```
 
 ### 🔧 Service Architecture
@@ -261,7 +275,7 @@ Authentication Flow:
 #### **API Service Structure:**
 - **HttpClient**: Handles network requests with authentication
 - **TokenManager**: Manages token storage and refresh
-- **AuthService**: Authentication-specific operations
+- **AuthService**: Authentication-specific operations including OTP
 - **RoleServices**: Role-specific API endpoints
 - **Config**: Centralized API configuration
 
@@ -270,6 +284,7 @@ Authentication Flow:
 - **Reducer Pattern**: Predictable state updates
 - **Error Handling**: Comprehensive error management
 - **Persistence**: Automatic token and user data persistence
+- **OTP Management**: Handles OTP verification flow
 
 #### **Route Protection:**
 - **Auth Guards**: Protect routes requiring authentication
@@ -284,6 +299,13 @@ Authentication Flow:
 - **Refresh Tokens**: Long-lived tokens for session renewal
 - **Automatic Refresh**: Seamless token renewal
 - **Secure Storage**: AsyncStorage with encryption
+
+#### **OTP Verification:**
+- **Role-Based OTP**: Admin, School Director, and Teacher roles require OTP
+- **Email Verification**: OTP sent to user's email address
+- **6-Digit Code**: Secure 6-digit verification code
+- **Auto-Focus**: Seamless input experience with auto-focus
+- **Resend Functionality**: Option to resend OTP if needed
 
 #### **Route Protection:**
 - **Protected Routes**: All pages except splash and auth require authentication
@@ -323,6 +345,7 @@ Authentication Flow:
 
 ### 🔐 Authentication
 - User login with email/phone
+- OTP verification for admin, director, and teacher roles
 - Password reset functionality
 - Social login integration (Google, Apple)
 - Secure authentication flow
@@ -363,6 +386,8 @@ Authentication Flow:
 ```
 Splash Screen → Auth Check → Login (if not authenticated)
                 ↓
+            OTP Verification (if role requires OTP)
+                ↓
             Role Selection (if authenticated)
                 ↓
             Role-Specific Dashboard
@@ -376,8 +401,14 @@ Splash Screen → Auth Check → Login (if not authenticated)
 ```typescript
 import { ApiService } from '@/services';
 
-// Login
-const response = await ApiService.auth.login({ email, password });
+// Login (may require OTP for certain roles)
+const response = await ApiService.auth.signIn({ email, password });
+
+// Check if OTP is required
+const requiresOTP = await ApiService.requiresOTP();
+
+// Verify OTP
+const otpResponse = await ApiService.auth.verifyOTP({ email, otp });
 
 // Check authentication
 const isAuth = await ApiService.isAuthenticated();
@@ -427,14 +458,26 @@ const schedules = await ApiService.student.getSchedules();
 ### API Configuration
 ```typescript
 // API Base URL
-API_CONFIG.BASE_URL = 'https://api.smarteduhub.com/v1'
+API_CONFIG.BASE_URL = 'http://localhost:1000/api/v1'
 
 // Request Timeout
 API_CONFIG.TIMEOUT = 10000 // 10 seconds
 
 // Endpoints
-API_ENDPOINTS.AUTH.LOGIN = '/auth/login'
+API_ENDPOINTS.AUTH.SIGN_IN = '/auth/sign-in'
+API_ENDPOINTS.AUTH.VERIFY_OTP = '/auth/verify-otp'
 API_ENDPOINTS.TEACHER.DASHBOARD = '/teacher/dashboard'
+
+// Roles requiring OTP
+ROLES_REQUIRING_OTP = ['admin', 'school_director', 'teacher']
 ```
 
-This structure provides a scalable, maintainable, and well-organized codebase for the Smart Edu Hub mobile application with professional authentication, modular services, and comprehensive documentation.
+### OTP Configuration
+```typescript
+// OTP verification settings
+OTP_LENGTH = 6 // 6-digit OTP
+OTP_TIMEOUT = 300000 // 5 minutes timeout
+OTP_RESEND_DELAY = 60000 // 1 minute resend delay
+```
+
+This structure provides a scalable, maintainable, and well-organized codebase for the Smart Edu Hub mobile application with professional authentication, OTP verification, modular services, and comprehensive documentation.

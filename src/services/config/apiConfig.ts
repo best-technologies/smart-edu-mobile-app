@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'https://api.smarteduhub.com/v1', // Replace with your actual API URL
+  BASE_URL: 'http://localhost:1000/api/v1',
   TIMEOUT: 10000, // 10 seconds
 } as const;
 
@@ -8,7 +8,8 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: '/auth/login',
+    SIGN_IN: '/auth/sign-in',
+    VERIFY_OTP: '/auth/director-verify-login-otp',
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
     FORGOT_PASSWORD: '/auth/forgot-password',
@@ -48,7 +49,11 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
   TOKEN_EXPIRY: 'token_expiry',
+  PENDING_USER: 'pending_user', // For OTP verification
 } as const;
 
 // HTTP Methods
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
+// Roles that require OTP verification
+export const ROLES_REQUIRING_OTP = ['admin', 'school_director', 'teacher'] as const;

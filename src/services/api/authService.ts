@@ -1,12 +1,15 @@
-import { API_ENDPOINTS } from '../config/apiConfig';
+import { API_ENDPOINTS, ROLES_REQUIRING_OTP } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
 import { TokenManager } from './tokenManager';
 import { 
   ApiResponse, 
   LoginCredentials, 
   LoginResponse, 
+  OTPVerificationRequest,
+  OTPVerificationResponse,
   ForgotPasswordRequest, 
-  ResetPasswordRequest 
+  ResetPasswordRequest,
+  User
 } from '../types/apiTypes';
 
 export class AuthService {
@@ -16,27 +19,69 @@ export class AuthService {
     this.httpClient = new HttpClient();
   }
 
-  // Login user
-  async login(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> {
-    const response = await this.httpClient.makeRequest<LoginResponse>(
-      API_ENDPOINTS.AUTH.LOGIN,
+  // Sign in user
+  async signIn(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse | OTPVerificationResponse>> {
+    console.log('🌐 Making sign-in request to:', API_ENDPOINTS.AUTH.SIGN_IN);
+    console.log('📤 Request payload:', { email: credentials.email, password: '***' });
+    
+    const response = await this.httpClient.makeRequest<LoginResponse | OTPVerificationResponse>(
+      API_ENDPOINTS.AUTH.SIGN_IN,
       'POST',
       credentials,
       false
     );
 
+    // console.log('📥 Sign-in response:', response);
+
     if (response.success && response.data) {
-      await TokenManager.storeTokens(
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken,
-        response.data.tokens.expiresIn
-      );
-      
-      // Store user data
-      await TokenManager.storeUserData(response.data.user);
+      // Check if response contains tokens (direct login) or user data (OTP required)
+      if ('access_token' in response.data) {
+        // Direct login successful - store tokens and user data
+        console.log('✅ Direct login - storing tokens');
+        const loginData = response.data as LoginResponse;
+        await TokenManager.storeTokens(loginData.access_token, loginData.refresh_token);
+        await TokenManager.storeUserData(loginData.user);
+      } else {
+        // OTP verification required - store pending user data
+        console.log('📱 OTP required - storing pending user');
+        const otpData = response.data as OTPVerificationResponse;
+        await TokenManager.storePendingUser(otpData);
+      }
     }
 
     return response;
+  }
+
+  // Verify OTP
+  async verifyOTP(request: OTPVerificationRequest): Promise<ApiResponse<LoginResponse>> {
+    const response = await this.httpClient.makeRequest<LoginResponse>(
+      API_ENDPOINTS.AUTH.VERIFY_OTP,
+      'POST',
+      request,
+      false
+    );
+
+    if (response.success && response.data) {
+      // Store tokens and user data after successful OTP verification
+      await TokenManager.storeTokens(response.data.access_token, response.data.refresh_token);
+      await TokenManager.storeUserData(response.data.user);
+      
+      // Clear pending user data
+      await TokenManager.clearPendingUser();
+    }
+
+    return response;
+  }
+
+  // Check if user requires OTP verification
+  async requiresOTP(): Promise<boolean> {
+    const pendingUser = await TokenManager.getPendingUser();
+    return pendingUser !== null;
+  }
+
+  // Get pending user data
+  async getPendingUser(): Promise<User | null> {
+    return TokenManager.getPendingUser();
   }
 
   // Logout user
@@ -82,7 +127,12 @@ export class AuthService {
   }
 
   // Get user data
-  async getUserData(): Promise<any | null> {
+  async getUserData(): Promise<User | null> {
     return TokenManager.getUserData();
+  }
+
+  // Check if role requires OTP
+  static doesRoleRequireOTP(role: string): boolean {
+    return ROLES_REQUIRING_OTP.includes(role as any);
   }
 }

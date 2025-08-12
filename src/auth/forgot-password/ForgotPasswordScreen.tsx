@@ -72,7 +72,7 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
     }
 
     try {
-      await forgotPassword({ email: email.trim() });
+      await forgotPassword(email.trim());
       setIsEmailSent(true);
       
       // Show success animation
