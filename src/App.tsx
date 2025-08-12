@@ -2,8 +2,9 @@ import "../global.css";
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, View } from 'react-native';
 import RootNavigator from '@/navigation/RootNavigator';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import CustomSplashScreen from './components/SplashScreen';
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -11,6 +12,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function App() {
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+
   useEffect(() => {
     const showThenHide = async () => {
       // Simulate some startup work, then hide the splash
@@ -23,6 +26,14 @@ export default function App() {
     };
     showThenHide();
   }, []);
+
+  const handleSplashFinish = () => {
+    setIsSplashVisible(false);
+  };
+
+  if (isSplashVisible) {
+    return <CustomSplashScreen onFinish={handleSplashFinish} />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-black">
