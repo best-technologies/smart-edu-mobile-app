@@ -18,7 +18,7 @@ export type Teacher = {
   totalSubjects: number;
   classTeacher: string;
   nextClass: NextClass | null;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'suspended';
 };
 
 export type TeachersBasicDetails = {

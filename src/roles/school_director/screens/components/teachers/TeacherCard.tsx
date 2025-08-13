@@ -23,18 +23,16 @@ export function TeacherCard({ teacher }: { teacher: Teacher }) {
             </View>
           )}
           <View className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white dark:border-black ${
-            teacher.status === 'active' ? 'bg-emerald-500' : 
-            teacher.status === 'inactive' ? 'bg-gray-400' : 'bg-red-500'
+            teacher.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'
           }`} />
         </View>
 
         {/* Teacher Info */}
-        <View className="flex-1">
+        <View className="flex-1 min-w-0">
           <View className="flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{teacher.name}</Text>
+            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 flex-1 mr-2" numberOfLines={1}>{teacher.name}</Text>
             <View className={`px-2 py-1 rounded-full ${
               teacher.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-              teacher.status === 'inactive' ? 'bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300' :
               'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
             }`}>
               <Text className="text-xs font-semibold capitalize">{teacher.status}</Text>
@@ -42,14 +40,14 @@ export function TeacherCard({ teacher }: { teacher: Teacher }) {
           </View>
 
           {/* Contact Info */}
-          <View className="flex-row items-center gap-4 mt-2">
+          <View className="mt-2 space-y-1">
             <View className="flex-row items-center gap-1">
               <Ionicons name="mail-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">{teacher.contact.email}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>{teacher.contact.email}</Text>
             </View>
             <View className="flex-row items-center gap-1">
               <Ionicons name="call-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">{teacher.contact.phone}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>{teacher.contact.phone}</Text>
             </View>
           </View>
 
@@ -87,7 +85,7 @@ export function TeacherCard({ teacher }: { teacher: Teacher }) {
         </View>
 
         {/* Action Button */}
-        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
+        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 ml-2">
           <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
         </TouchableOpacity>
       </View>

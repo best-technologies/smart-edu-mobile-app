@@ -1,14 +1,53 @@
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TopBar from './components/shared/TopBar';
 import Section from './components/shared/Section';
 import EmptyState from './components/shared/EmptyState';
 import { OverviewCard, SmallOverviewCard } from './components/dashboard/OverviewCard';
 import FinanceCard from './components/dashboard/Finance';
-import { directorDashboardData } from '@/mock';
+import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDirectorDashboard';
+import { CenteredLoader } from '@/components';
 
 export default function DirectorDashboardScreen() {
-  const data = directorDashboardData.data;
+  const { data, isLoading, error, refetch } = useDirectorDashboard();
+  const refreshMutation = useRefreshDirectorDashboard();
+
+  const handleRefresh = () => {
+    refreshMutation.mutate();
+  };
+
+  // Show loading state
+  if (isLoading && !data) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center">
+          <CenteredLoader visible={true} text="Loading dashboard..." />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Failed to load dashboard
+          </Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+            {error.message || 'Something went wrong while loading the dashboard data.'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="bg-blue-500 px-6 py-3 rounded-lg"
+          >
+            <Text className="text-white font-semibold">Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -16,6 +55,13 @@ export default function DirectorDashboardScreen() {
         className="flex-1" 
         contentContainerClassName="px-4 pb-24 pt-6"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshMutation.isPending}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+          />
+        }
       >
         <TopBar
           name={data?.basic_details?.email?.split('@')?.[0] ?? 'Director'}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
@@ -6,9 +6,17 @@ import { useNavigation } from '@react-navigation/native';
 export function useAuthGuard() {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
   const navigation = useNavigation();
+  const navigationReadyRef = useRef(false);
+
+  // Check if navigation is ready
+  useEffect(() => {
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigationReadyRef.current = true;
+    }
+  }, [navigation]);
 
   useEffect(() => {
-    if (isInitialized && !isLoading && !isAuthenticated) {
+    if (navigationReadyRef.current && isInitialized && !isLoading && !isAuthenticated) {
       // Navigate to login if not authenticated
       navigation.reset({
         index: 0,
@@ -28,9 +36,17 @@ export function useAuthGuard() {
 export function useGuestGuard() {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
   const navigation = useNavigation();
+  const navigationReadyRef = useRef(false);
+
+  // Check if navigation is ready
+  useEffect(() => {
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigationReadyRef.current = true;
+    }
+  }, [navigation]);
 
   useEffect(() => {
-    if (isInitialized && !isLoading && isAuthenticated) {
+    if (navigationReadyRef.current && isInitialized && !isLoading && isAuthenticated) {
       // Navigate to role selection if already authenticated
       navigation.reset({
         index: 0,
@@ -50,9 +66,17 @@ export function useGuestGuard() {
 export function useOTPGuard() {
   const { isAuthenticated, isLoading, isInitialized, requiresOTP } = useAuth();
   const navigation = useNavigation();
+  const navigationReadyRef = useRef(false);
+
+  // Check if navigation is ready
+  useEffect(() => {
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigationReadyRef.current = true;
+    }
+  }, [navigation]);
 
   useEffect(() => {
-    if (isInitialized && !isLoading && isAuthenticated && !requiresOTP) {
+    if (navigationReadyRef.current && isInitialized && !isLoading && isAuthenticated && !requiresOTP) {
       // Only navigate to role selection if authenticated and OTP is not required
       navigation.reset({
         index: 0,
@@ -73,9 +97,17 @@ export function useOTPGuard() {
 export function useRoleGuard(allowedRoles: string[]) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigation = useNavigation();
+  const navigationReadyRef = useRef(false);
+
+  // Check if navigation is ready
+  useEffect(() => {
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigationReadyRef.current = true;
+    }
+  }, [navigation]);
 
   useEffect(() => {
-    if (isAuthenticated && user && !isLoading) {
+    if (navigationReadyRef.current && isAuthenticated && user && !isLoading) {
       if (!allowedRoles.includes(user.role)) {
         // Navigate to role selection if user doesn't have required role
         navigation.reset({

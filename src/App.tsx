@@ -8,6 +8,7 @@ import CustomSplashScreen from './components/SplashScreen';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { UserProfileProvider } from '@/contexts/UserProfileContext';
+import { QueryProvider } from '@/contexts/QueryProvider';
 import { ToastContainer } from '@/components';
 import './utils/reanimatedConfig'; // Disable Reanimated warnings
 
@@ -59,12 +60,14 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <UserProfileProvider>
-          <AppContent />
-        </UserProfileProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <QueryProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <UserProfileProvider>
+            <AppContent />
+          </UserProfileProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </QueryProvider>
   );
 }

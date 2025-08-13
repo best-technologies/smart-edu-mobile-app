@@ -4,6 +4,7 @@ import { DirectorService } from './roleServices';
 import { StudentService } from './roleServices';
 import { UserService } from './roleServices';
 import { TokenManager } from './tokenManager';
+import { directorService as directorDashboardService } from './directorService';
 
 // Create service instances
 const authService = new AuthService();
@@ -22,6 +23,9 @@ export class ApiService {
   static director = directorService;
   static student = studentService;
   static user = userService;
+  
+  // Dashboard services
+  static directorDashboard = directorDashboardService;
   
   // Token management
   static tokens = TokenManager;

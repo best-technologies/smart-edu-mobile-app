@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Modal, ViewStyle, TextStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface CenteredLoaderProps {
   visible: boolean;
@@ -18,12 +17,12 @@ export default function CenteredLoader({
   visible,
   text = 'Loading...',
   size = 'large',
-  backgroundColor = 'rgba(15, 23, 42, 0.95)',
-  spinnerColor = '#32CD32',
-  textColor = '#ffffff',
+  // backgroundColor = 'transparent',
+  spinnerColor = '#3b82f6',
+  textColor = '#6b7280',
   style,
   textStyle,
-  showBackdrop = true,
+  showBackdrop = false,
 }: CenteredLoaderProps) {
   const getSpinnerSize = () => {
     switch (size) {
@@ -74,26 +73,14 @@ export default function CenteredLoader({
       <View 
         className="flex-1 justify-center items-center"
         style={[
-          { backgroundColor: showBackdrop ? backgroundColor : 'transparent' },
+          { backgroundColor: 'transparent' },
           style
         ]}
       >
-        <LinearGradient
-          colors={['rgba(15, 23, 42, 0.9)', 'rgba(26, 26, 26, 0.8)', 'rgba(50, 205, 50, 0.7)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
           style={{
-            padding: 40,
-            borderRadius: 24,
             alignItems: 'center',
             justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            elevation: 12,
           }}
         >
           {/* Animated Spinner */}
@@ -109,20 +96,17 @@ export default function CenteredLoader({
           
           {/* Loading Text */}
           <Text 
-            className={`font-semibold text-center ${getTextSize()}`}
+            className={`font-medium text-center ${getTextSize()}`}
             style={[
               { 
                 color: textColor,
-                textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
               },
               textStyle
             ]}
           >
             {text}
           </Text>
-        </LinearGradient>
+        </View>
       </View>
     </Modal>
   );

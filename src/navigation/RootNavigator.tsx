@@ -8,6 +8,7 @@ import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentTabs from '@/roles/student/StudentTabs';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
+import React from 'react';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -38,6 +39,7 @@ const AppTheme: Theme = {
 
 // Component to handle auth navigation logic inside NavigationContainer
 function AuthNavigationHandler() {
+  // Always call the hook to maintain consistent hook order
   useAuthNavigation();
   return null;
 }
