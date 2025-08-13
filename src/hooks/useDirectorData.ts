@@ -2,7 +2,7 @@ import { useDirectorDashboard, useRefreshDirectorDashboard, useInvalidateDirecto
 import { useToast } from '@/contexts/ToastContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { directorService, SubjectsQueryParams, SubjectsData } from '@/services/api/directorService';
+import { directorService, SubjectsQueryParams, SubjectsData, StudentsQueryParams, StudentsData } from '@/services/api/directorService';
 
 /**
  * Comprehensive hook for managing director dashboard data
@@ -151,6 +151,91 @@ export function useSubjectsData(initialParams?: SubjectsQueryParams) {
     goToPage,
     searchSubjects,
     filterByClass,
+    updateParams,
+    
+    // Current params
+    currentParams: params,
+  };
+}
+
+/**
+ * Hook for managing students data with pagination and search
+ */
+export function useStudentsData(initialParams?: StudentsQueryParams) {
+  const [params, setParams] = useState<StudentsQueryParams>({
+    page: 1,
+    limit: 10,
+    ...initialParams,
+  });
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['students', params],
+    queryFn: async () => {
+      try {
+        console.log('🔍 Fetching students with params:', params);
+        const result = await directorService.fetchStudentsData(params);
+        console.log('✅ Students fetched successfully:');
+        return result;
+      } catch (err) {
+        console.error('❌ Error fetching students:', err);
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2, // Retry failed requests up to 2 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
+  const studentsData = response?.data;
+
+  const updateParams = useCallback((newParams: Partial<StudentsQueryParams>) => {
+    setParams(prev => ({
+      ...prev,
+      ...newParams,
+      // Reset to page 1 when search or filters change
+      page: newParams.search !== undefined || newParams.classId !== undefined || newParams.status !== undefined ? 1 : prev.page,
+    }));
+  }, []);
+
+  const goToPage = useCallback((page: number) => {
+    updateParams({ page });
+  }, [updateParams]);
+
+  const searchStudents = useCallback((searchTerm: string) => {
+    updateParams({ search: searchTerm || undefined });
+  }, [updateParams]);
+
+  const filterByClass = useCallback((classId: string | null) => {
+    updateParams({ classId: classId || undefined });
+  }, [updateParams]);
+
+  const filterByStatus = useCallback((status: string | null) => {
+    updateParams({ status: status || undefined });
+  }, [updateParams]);
+
+  return {
+    // Data
+    students: studentsData?.students || [],
+    pagination: studentsData?.pagination,
+    basicDetails: studentsData?.basic_details,
+    availableClasses: studentsData?.available_classes || [],
+    
+    // State
+    isLoading,
+    error,
+    
+    // Actions
+    refetch,
+    goToPage,
+    searchStudents,
+    filterByClass,
+    filterByStatus,
     updateParams,
     
     // Current params

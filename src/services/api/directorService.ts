@@ -114,9 +114,88 @@ export interface SubjectsQueryParams {
   classId?: string;
 }
 
+export interface StudentsData {
+  basic_details: {
+    totalStudents: number;
+    activeStudents: number;
+    totalClasses: number;
+  };
+  pagination: {
+    total_pages: number;
+    current_page: number;
+    total_results: number;
+    results_per_page: number;
+  };
+  students: Student[];
+  available_classes: AvailableClass[];
+}
+
+export interface AvailableClass {
+  id: string;
+  name: string;
+  class_teacher: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  student_count: number;
+}
+
+export interface Student {
+  id: string;
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  display_picture: string;
+  gender: 'male' | 'female';
+  otp: string;
+  otp_expires_at: string | null;
+  is_email_verified: boolean;
+  is_otp_verified: boolean;
+  role: string;
+  status: 'active' | 'inactive' | 'suspended';
+  school_id: string;
+  createdAt: string;
+  updatedAt: string;
+  classesEnrolled: StudentClass[];
+  current_class: string;
+  next_class: string;
+  next_class_time: string | null;
+  next_class_teacher: string | null;
+  performance: StudentPerformance;
+}
+
+export interface StudentClass {
+  id: string;
+  name: string;
+  schoolId: string;
+  classTeacherId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentPerformance {
+  cgpa: number;
+  term_average: number;
+  improvement_rate: number;
+  attendance_rate: number;
+  position: number;
+}
+
+export interface StudentsQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  classId?: string;
+  status?: string;
+}
+
 export type DirectorDashboardResponse = ApiResponse<DirectorDashboardData>;
 export type TeachersResponse = ApiResponse<TeachersData>;
 export type SubjectsResponse = ApiResponse<SubjectsData>;
+export type StudentsResponse = ApiResponse<StudentsData>;
 
 class DirectorService {
   private httpClient: HttpClient;
@@ -155,12 +234,29 @@ class DirectorService {
   /**
    * Fetch students data for the students screen
    */
-  async fetchStudentsData(): Promise<any> {
+  async fetchStudentsData(params?: StudentsQueryParams): Promise<StudentsResponse> {
     try {
-      const response = await this.httpClient.makeRequest('/director/students/fetch-students-data');
+      const queryParams = new URLSearchParams();
+      
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.classId) queryParams.append('classId', params.classId);
+      if (params?.status) queryParams.append('status', params.status);
+
+      const url = `/director/students/dashboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      console.log('🌐 Making API request to:', url);
+      
+      const response = await this.httpClient.makeRequest<StudentsData>(url);
+      
       return response;
     } catch (error) {
-      console.error('Error fetching students data:', error);
+      console.error('❌ Error in fetchStudentsData:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        params
+      });
       throw error;
     }
   }

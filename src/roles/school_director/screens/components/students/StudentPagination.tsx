@@ -1,9 +1,9 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StudentsPagination } from '@/mock';
+import { StudentsData } from '@/services/api/directorService';
 
 export function StudentPagination({ pagination, onPageChange }: { 
-  pagination: StudentsPagination; 
+  pagination: StudentsData['pagination']; 
   onPageChange: (page: number) => void;
 }) {
   const { current_page, total_pages, total_results, results_per_page } = pagination;

@@ -1,6 +1,6 @@
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Student } from '@/mock';
+import { Student } from '@/services/api/directorService';
 
 export function StudentCard({ student }: { student: Student }) {
   const initials = `${student.first_name.charAt(0).toUpperCase()}${student.last_name.charAt(0).toUpperCase()}`;
@@ -37,11 +37,11 @@ export function StudentCard({ student }: { student: Student }) {
         </View>
 
         {/* Student Info */}
-        <View className="flex-1">
+        <View className="flex-1 min-w-0">
           <View className="flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{fullName}</Text>
-              <Text className="text-sm text-gray-500 dark:text-gray-400 font-mono">{student.student_id}</Text>
+            <View className="flex-1 mr-2">
+              <Text className="text-lg font-bold text-gray-900 dark:text-gray-100" numberOfLines={1}>{fullName}</Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 font-mono" numberOfLines={1}>{student.student_id}</Text>
             </View>
             <View className={`px-2 py-1 rounded-full ${
               student.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
@@ -53,14 +53,14 @@ export function StudentCard({ student }: { student: Student }) {
           </View>
 
           {/* Contact Info */}
-          <View className="flex-row items-center gap-4 mt-2">
+          <View className="mt-2 space-y-1">
             <View className="flex-row items-center gap-1">
               <Ionicons name="mail-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">{student.email}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>{student.email}</Text>
             </View>
             <View className="flex-row items-center gap-1">
               <Ionicons name="call-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">{student.phone_number}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>{student.phone_number}</Text>
             </View>
           </View>
 
@@ -68,7 +68,9 @@ export function StudentCard({ student }: { student: Student }) {
           <View className="flex-row items-center gap-4 mt-2">
             <View className="flex-row items-center gap-1">
               <Ionicons name="school-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">Class {student.current_class}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300">
+                {student.current_class === 'Not Enrolled' ? 'Not Enrolled' : `Class ${student.current_class}`}
+              </Text>
             </View>
             <View className="flex-row items-center gap-1">
               <Ionicons name="calendar-outline" size={14} color="#6b7280" />
@@ -79,40 +81,46 @@ export function StudentCard({ student }: { student: Student }) {
           </View>
 
           {/* Performance Metrics */}
-          <View className="mt-3 flex-row items-center gap-4">
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="analytics-outline" size={14} color="#6b7280" />
-              <Text className="text-xs text-gray-500 dark:text-gray-400">CGPA:</Text>
-              <Text className={`text-sm font-bold ${getPerformanceColor(student.performance.cgpa)}`}>
-                {student.performance.cgpa.toFixed(1)}
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="trending-up-outline" size={14} color="#6b7280" />
-              <Text className="text-xs text-gray-500 dark:text-gray-400">Avg:</Text>
-              <Text className={`text-sm font-bold ${getPerformanceColor(student.performance.term_average)}`}>
-                {student.performance.term_average.toFixed(1)}%
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="checkmark-circle-outline" size={14} color="#6b7280" />
-              <Text className="text-xs text-gray-500 dark:text-gray-400">Att:</Text>
-              <Text className={`text-sm font-bold ${getPerformanceColor(student.performance.attendance_rate)}`}>
-                {student.performance.attendance_rate.toFixed(1)}%
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="trophy-outline" size={14} color="#6b7280" />
-              <Text className="text-xs text-gray-500 dark:text-gray-400">Pos:</Text>
-              <Text className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                {student.performance.position > 0 ? `${student.performance.position}${getOrdinalSuffix(student.performance.position)}` : 'N/A'}
-              </Text>
+          <View className="mt-3 space-y-2">
+            <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium">Performance:</Text>
+            <View className="flex-row flex-wrap gap-3">
+              <View className="flex-row items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                <Ionicons name="analytics-outline" size={12} color="#6b7280" />
+                <Text className="text-xs text-gray-500 dark:text-gray-400">CGPA:</Text>
+                <Text className={`text-xs font-bold ${getPerformanceColor(student.performance.cgpa)}`}>
+                  {student.performance.cgpa > 0 ? student.performance.cgpa.toFixed(1) : 'N/A'}
+                </Text>
+              </View>
+              
+              <View className="flex-row items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                <Ionicons name="trending-up-outline" size={12} color="#6b7280" />
+                <Text className="text-xs text-gray-500 dark:text-gray-400">Avg:</Text>
+                <Text className={`text-xs font-bold ${getPerformanceColor(student.performance.term_average)}`}>
+                  {student.performance.term_average > 0 ? `${student.performance.term_average.toFixed(1)}%` : 'N/A'}
+                </Text>
+              </View>
+              
+              <View className="flex-row items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                <Ionicons name="checkmark-circle-outline" size={12} color="#6b7280" />
+                <Text className="text-xs text-gray-500 dark:text-gray-400">Att:</Text>
+                <Text className={`text-xs font-bold ${getPerformanceColor(student.performance.attendance_rate)}`}>
+                  {student.performance.attendance_rate > 0 ? `${student.performance.attendance_rate.toFixed(1)}%` : 'N/A'}
+                </Text>
+              </View>
+              
+              <View className="flex-row items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                <Ionicons name="trophy-outline" size={12} color="#6b7280" />
+                <Text className="text-xs text-gray-500 dark:text-gray-400">Pos:</Text>
+                <Text className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                  {student.performance.position > 0 ? `${student.performance.position}${getOrdinalSuffix(student.performance.position)}` : 'N/A'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Action Button */}
-        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
+        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 ml-2">
           <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
         </TouchableOpacity>
       </View>

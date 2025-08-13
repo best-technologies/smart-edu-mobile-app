@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StudentsBasicDetails } from '@/mock';
+import { StudentsData } from '@/services/api/directorService';
 
-export function StudentStats({ stats }: { stats: StudentsBasicDetails }) {
+export function StudentStats({ stats }: { stats: StudentsData['basic_details'] }) {
   const inactiveStudents = stats.totalStudents - stats.activeStudents;
 
   return (
