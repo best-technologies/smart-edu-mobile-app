@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,6 +8,7 @@ interface SearchBarProps {
   initialValue?: string;
   className?: string;
   isLoading?: boolean;
+  debounceMs?: number;
 }
 
 export function SearchBar({ 
@@ -15,40 +16,72 @@ export function SearchBar({
   placeholder = "Search subjects...", 
   initialValue = "",
   className = "",
-  isLoading = false
+  isLoading = false,
+  debounceMs = 500
 }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const [isFocused, setIsFocused] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Memoize the search function to prevent infinite loops
+  // Improved debounced search with proper cleanup
   const debouncedSearch = useCallback((query: string) => {
+    // Clear any existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
+
+    // If query is empty, search immediately
     if (query.trim() === '') {
       setIsSearching(false);
       onSearch('');
       return;
     }
 
+    // Set loading state
     setIsSearching(true);
-    const timer = setTimeout(() => {
+
+    // Create new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
       onSearch(query);
       setIsSearching(false);
-    }, 300);
+      debounceTimeoutRef.current = null;
+    }, debounceMs);
+  }, [onSearch, debounceMs]);
 
-    return () => {
-      clearTimeout(timer);
-      setIsSearching(false);
-    };
-  }, [onSearch]);
-
-  // Debounce search to avoid too many API calls
+  // Debounce search when query changes
   useEffect(() => {
-    const cleanup = debouncedSearch(searchQuery);
-    return cleanup;
+    debouncedSearch(searchQuery);
+    
+    // Cleanup function to clear timeout on unmount or dependency change
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
+    };
   }, [searchQuery, debouncedSearch]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const clearSearch = () => {
+    // Clear the timeout if it exists
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
+    
     setSearchQuery('');
+    setIsSearching(false);
     onSearch('');
   };
 
