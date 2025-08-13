@@ -16,6 +16,18 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
+// School Types
+export interface School {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  type: string;
+  ownership: string;
+  status: string;
+}
+
 // User Types
 export interface User {
   id: string;
@@ -23,11 +35,20 @@ export interface User {
   first_name: string;
   last_name: string;
   phone_number: string;
-  is_email_verified: boolean;
   role: 'admin' | 'school_director' | 'teacher' | 'student' | 'developer';
+  status: string;
+  is_email_verified: boolean;
   school_id: string;
+  display_picture: string | null;
+  gender: string;
   created_at: string;
   updated_at: string;
+  school?: School;
+}
+
+// Extended User Profile (from /director/user/profile endpoint)
+export interface UserProfile extends User {
+  school: School;
 }
 
 // Authentication Types
@@ -48,9 +69,12 @@ export interface OTPVerificationResponse {
   first_name: string;
   last_name: string;
   phone_number: string;
-  is_email_verified: boolean;
   role: 'admin' | 'school_director' | 'teacher' | 'student' | 'developer';
+  status: string;
+  is_email_verified: boolean;
   school_id: string;
+  display_picture: string | null;
+  gender: string;
   created_at: string;
   updated_at: string;
 }

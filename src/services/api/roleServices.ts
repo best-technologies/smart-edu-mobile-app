@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -81,8 +81,12 @@ export class UserService {
     this.httpClient = new HttpClient();
   }
 
-  async getProfile(): Promise<ApiResponse<any>> {
-    return this.httpClient.makeRequest(API_ENDPOINTS.USER.PROFILE);
+  /**
+   * Get current user profile with school details
+   * This endpoint works for all roles (director, teacher, student)
+   */
+  async getProfile(): Promise<ApiResponse<UserProfile>> {
+    return this.httpClient.makeRequest<UserProfile>(API_ENDPOINTS.USER.PROFILE);
   }
 
   async updateProfile(profileData: any): Promise<ApiResponse<any>> {

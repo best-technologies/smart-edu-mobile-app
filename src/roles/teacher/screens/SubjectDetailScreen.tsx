@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import TopBar from './components/shared/TopBar';
@@ -175,7 +176,7 @@ export default function SubjectDetailScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
       
       <ScrollView className="flex-1" contentContainerClassName="pb-20">
@@ -336,6 +337,6 @@ export default function SubjectDetailScreen() {
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

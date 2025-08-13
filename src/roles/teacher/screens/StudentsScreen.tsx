@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, Text, View, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { studentsDashboardData } from '@/mock';
 import TopBar from './components/shared/TopBar';
@@ -19,9 +20,9 @@ export default function StudentsScreen() {
 
   if (!data) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
+      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900" edges={['top']}>
         <Text className="text-lg text-gray-500 dark:text-gray-400">No data available</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -57,7 +58,7 @@ export default function StudentsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
       
       <ScrollView className="flex-1" contentContainerClassName="pb-20">
@@ -167,6 +168,6 @@ export default function StudentsScreen() {
         icon="add"
         onPress={() => console.log('Add new student')}
       />
-    </View>
+    </SafeAreaView>
   );
 }

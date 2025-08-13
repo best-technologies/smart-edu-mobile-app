@@ -7,8 +7,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import CustomSplashScreen from './components/SplashScreen';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { UserProfileProvider } from '@/contexts/UserProfileContext';
 import { ToastContainer } from '@/components';
 import './utils/reanimatedConfig'; // Disable Reanimated warnings
+
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -59,7 +61,9 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <AppContent />
+        <UserProfileProvider>
+          <AppContent />
+        </UserProfileProvider>
       </AuthProvider>
     </ToastProvider>
   );

@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
   },
   // User Management
   USER: {
-    PROFILE: '/user/profile',
+    PROFILE: '/director/user/profile',
     UPDATE_PROFILE: '/user/profile',
     CHANGE_PASSWORD: '/user/change-password',
   },

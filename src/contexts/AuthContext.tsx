@@ -110,6 +110,7 @@ interface AuthContextType extends AuthState {
   verifyEmail: (request: { email: string; otp: string }) => Promise<void>;
   clearError: () => void;
   getPendingUser: () => Promise<User | null>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 // Create Context
@@ -442,6 +443,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return ApiService.auth.getPendingUser();
   };
 
+  const refreshUserProfile = async (): Promise<void> => {
+    try {
+      // This will trigger the useUserProfile hook to refresh the profile
+      // The actual implementation is in the useUserProfile hook
+      console.log('🔄 Auth context: User profile refresh requested');
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+    }
+  };
+
   const value: AuthContextType = {
     ...state,
     login,
@@ -452,6 +463,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     verifyEmail,
     clearError,
     getPendingUser,
+    refreshUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

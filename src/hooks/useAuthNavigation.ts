@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
@@ -14,8 +14,48 @@ type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function useAuthNavigation() {
   const navigation = useNavigation<AuthNavigationProp>();
   const { isAuthenticated, user, requiresOTP } = useAuth();
+  const lastNavigationState = useRef<{
+    isAuthenticated: boolean;
+    requiresOTP: boolean;
+    userEmail?: string;
+    userRole?: string;
+  }>({
+    isAuthenticated: false,
+    requiresOTP: false,
+  });
 
   useEffect(() => {
+    // Create current state for comparison
+    const currentState = {
+      isAuthenticated,
+      requiresOTP,
+      userEmail: user?.email,
+      userRole: user?.role,
+    };
+
+    // Check if state has actually changed to prevent infinite loops
+    const stateChanged = 
+      lastNavigationState.current.isAuthenticated !== isAuthenticated ||
+      lastNavigationState.current.requiresOTP !== requiresOTP ||
+      lastNavigationState.current.userEmail !== user?.email ||
+      lastNavigationState.current.userRole !== user?.role;
+
+    if (!stateChanged) {
+      return;
+    }
+
+    // Update last state
+    lastNavigationState.current = currentState;
+
+    // Handle logout - redirect to login if not authenticated
+    if (!isAuthenticated && !user) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+      return;
+    }
+
     // Handle OTP requirement first (even when not fully authenticated)
     if (requiresOTP && user) {
       // Add a small delay to ensure pending user is stored

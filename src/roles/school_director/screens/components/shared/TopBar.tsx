@@ -3,26 +3,58 @@ import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from './Avatar';
 import { IconButton } from './buttons/IconButton';
 import { capitalize } from './utils';
+import { useUserProfileContext } from '@/contexts/UserProfileContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function TopBar({ name, email, schoolId, avatarUri }: { name: string; email: string; schoolId?: string; avatarUri?: string }) {
+  const { userProfile, isLoading } = useUserProfileContext();
+  const { logout } = useAuth();
+  
+  // Use profile data if available, otherwise fall back to props
+  const displayName = userProfile ? `${userProfile.first_name}` : name;
+  const displayEmail = userProfile?.email || email;
+  const displaySchoolId = userProfile?.school_id || schoolId;
+  const displayAvatar = userProfile?.display_picture || avatarUri;
+  const schoolName = userProfile?.school?.name;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
-    <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+    <View className="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-200 dark:border-gray-700">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <Avatar name={name} uri={avatarUri} />
+          <Avatar name={displayName} uri={displayAvatar} />
           <View>
             <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              {schoolId ? `School ID: ${schoolId}` : 'School ID: —'}
+              {/* {displaySchoolId ? `School ID: ${displaySchoolId}` : 'School ID: —'} */}
             </Text>
             <Text className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
-              {`Welcome, ${capitalize(name)}`}
+              {`Welcome, ${capitalize(displayName)}`}
             </Text>
-            <Text className="text-xs text-gray-500 dark:text-gray-400">{email}</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400">{displayEmail}</Text>
+            {schoolName && (
+              <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {schoolName}
+              </Text>
+            )}
           </View>
         </View>
         <View className="flex-row items-center gap-3">
           <IconButton icon="notifications-outline" accessibilityLabel="Notifications" />
-          <IconButton icon="person-circle-outline" accessibilityLabel="Profile" />
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.7}
+            className="p-2 rounded-full bg-red-50 dark:bg-red-900/20"
+            accessibilityLabel="Logout"
+          >
+            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          </TouchableOpacity>
         </View>
       </View>
       <View className="mt-4">

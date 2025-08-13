@@ -7,6 +7,7 @@ import SchoolDirectorTabs from '@/roles/school_director/SchoolDirectorTabs';
 import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentTabs from '@/roles/student/StudentTabs';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
+import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -35,9 +36,16 @@ const AppTheme: Theme = {
   },
 };
 
+// Component to handle auth navigation logic inside NavigationContainer
+function AuthNavigationHandler() {
+  useAuthNavigation();
+  return null;
+}
+
 export default function RootNavigator() {
   return (
     <NavigationContainer theme={AppTheme}>
+      <AuthNavigationHandler />
       <Stack.Navigator 
         initialRouteName="Login" 
         screenOptions={{ 

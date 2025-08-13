@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import StudentDashboardScreen from './screens/StudentDashboardScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -33,7 +34,7 @@ export default function StudentTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" children={() => <Screen label="Student Dashboard" />} />
+      <Tab.Screen name="Dashboard" component={StudentDashboardScreen} />
       <Tab.Screen name="Subjects" children={() => <Screen label="Subjects" />} />
       <Tab.Screen name="Schedules" children={() => <Screen label="Schedules" />} />
       <Tab.Screen name="Tasks" children={() => <Screen label="Tasks" />} />

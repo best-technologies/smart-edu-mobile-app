@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Modal, ViewStyle, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
 interface CenteredLoaderProps {
   visible: boolean;

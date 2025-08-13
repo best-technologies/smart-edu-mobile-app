@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import VideoPlayer from './components/subjects/VideoPlayer';
@@ -18,7 +19,7 @@ export default function VideoDemoScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       {/* Header */}
       <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
         <View className="flex-row items-center gap-4">
@@ -127,6 +128,6 @@ export default function VideoDemoScreen() {
           </View>
         </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

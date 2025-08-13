@@ -87,13 +87,23 @@ export class AuthService {
   // Logout user
   async logout(): Promise<void> {
     try {
-      // Call logout endpoint
-      await this.httpClient.makeRequest(API_ENDPOINTS.AUTH.LOGOUT, 'POST');
+      console.log('🔄 Logging out user...');
+      
+      // Call logout endpoint with authentication
+      const response = await this.httpClient.makeRequest(API_ENDPOINTS.AUTH.LOGOUT, 'POST', undefined, true);
+      
+      if (response.success) {
+        console.log('✅ Logout successful:', response.message);
+      } else {
+        console.log('⚠️ Logout response indicates failure:', response.message);
+      }
     } catch (error) {
-      console.error('Logout API error:', error);
+      console.error('❌ Logout API error:', error);
     } finally {
       // Clear local storage regardless of API response
+      console.log('🧹 Clearing local tokens and data...');
       await TokenManager.clearTokens();
+      console.log('✅ Logout process completed');
     }
   }
 

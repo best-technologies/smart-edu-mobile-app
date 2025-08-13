@@ -1,4 +1,5 @@
 import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { teacherDashboardData } from '@/mock';
 import TopBar from './components/shared/TopBar';
 import QuickActions from './components/dashboard/QuickActions';
@@ -8,7 +9,7 @@ import FloatingActionButton from './components/shared/FloatingActionButton';
 
 export default function TeacherDashboardScreen() {
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
       
       <ScrollView 
@@ -24,6 +25,6 @@ export default function TeacherDashboardScreen() {
       </ScrollView>
       
       <FloatingActionButton />
-    </View>
+    </SafeAreaView>
   );
 }
