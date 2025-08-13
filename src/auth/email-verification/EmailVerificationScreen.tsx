@@ -17,21 +17,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
-import { User } from '@/services/types/apiTypes';
 import { CenteredLoader, InlineSpinner } from '@/components';
 
-type OTPVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
+type EmailVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'EmailVerification'>;
 
-interface OTPVerificationScreenProps {
-  navigation: OTPVerificationScreenNavigationProp;
+interface EmailVerificationScreenProps {
+  navigation: EmailVerificationScreenNavigationProp;
+  route: {
+    params: {
+      email: string;
+    };
+  };
 }
 
-export default function OTPVerificationScreen({ navigation }: OTPVerificationScreenProps) {
+export default function EmailVerificationScreen({ navigation, route }: EmailVerificationScreenProps) {
+  const [email, setEmail] = useState(route.params?.email || '');
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6-digit OTP
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingUser, setPendingUser] = useState<User | null>(null);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [otpSent, setOtpSent] = useState(false);
   
-  const { verifyOTP, error, clearError, getPendingUser, isAuthenticated, requiresOTP, user } = useAuth();
+  const { verifyEmail, requestEmailVerificationOTP } = useAuth();
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -62,41 +69,42 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
       }),
     ]).start();
 
-    // Get pending user data
-    loadPendingUser();
+    // Send OTP on mount
+    handleSendOTP();
   }, []);
 
-  // Handle successful OTP verification and navigation
+  // Countdown timer
   useEffect(() => {
-    if (isAuthenticated && !requiresOTP) {
-      // Check if email verification is required
-      if (user && !user.is_email_verified) {
-        navigation.navigate('EmailVerification', { email: user.email });
-      } else {
-        // Navigate to role selection after successful OTP verification
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'RoleSelect' }],
-        });
-      }
+    let interval: NodeJS.Timeout;
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
     }
-  }, [isAuthenticated, requiresOTP, user, navigation]);
+    return () => clearInterval(interval);
+  }, [countdown]);
 
-  const loadPendingUser = async () => {
-    try {
-      const user = await getPendingUser();
-      if (user) {
-        setPendingUser(user);
-      } else {
-        // If no pending user, go back to login
-        Alert.alert('Error', 'No pending verification found. Please login again.');
-        navigation.goBack();
-      }
-    } catch (error) {
-      console.error('Error loading pending user:', error);
-      Alert.alert('Error', 'Failed to load verification data. Please login again.');
-      navigation.goBack();
+  const handleSendOTP = async () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Email address is required');
+      return;
     }
+
+    setIsSendingOTP(true);
+    try {
+      await requestEmailVerificationOTP(email.trim());
+      setOtpSent(true);
+      setCountdown(180); // 3 minutes = 180 seconds
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (countdown > 0) return;
+    await handleSendOTP();
   };
 
   const handleOtpChange = (value: string, index: number) => {
@@ -117,7 +125,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyEmail = async () => {
     const otpString = otp.join('');
     
     if (otpString.length !== 6) {
@@ -125,20 +133,13 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
       return;
     }
 
-    if (!pendingUser) {
-      Alert.alert('Error', 'No pending user found. Please login again.');
-      navigation.goBack();
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      await verifyOTP({ email: pendingUser.email, otp: otpString });
-      // Navigation will be handled by useEffect when isAuthenticated becomes true
+      await verifyEmail({ email: email.trim(), otp: otpString });
+      // Navigation will be handled by the auth context
     } catch (error) {
-      // Error is handled by the context and displayed via toast
-      console.error('OTP verification error:', error);
+      console.error('Email verification error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -158,47 +159,18 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
       }),
     ]).start();
 
-    handleVerifyOTP();
-  };
-
-  const handleResendOTP = () => {
-    Alert.alert(
-      'Resend OTP',
-      'A new OTP has been sent to your email address.',
-      [{ text: 'OK' }]
-    );
+    handleVerifyEmail();
   };
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  if (!pendingUser) {
-    return (
-      <View className="flex-1">
-        <StatusBar 
-          barStyle="light-content" 
-          backgroundColor="transparent" 
-          translucent={true}
-        />
-        <LinearGradient
-          colors={['#0f172a', '#1e3a8a', '#0d9488']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ flex: 1 }}
-        >
-          <CenteredLoader 
-            visible={true}
-            text="Loading verification..."
-            size="large"
-            spinnerColor="#14b8a6"
-            textColor="#ffffff"
-            showBackdrop={false}
-          />
-        </LinearGradient>
-      </View>
-    );
-  }
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <View className="flex-1">
@@ -258,7 +230,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                 {/* Header */}
                 <View className="items-center mb-8">
                   <Text className="text-2xl font-bold text-white text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
-                    Verify OTP
+                    Verify Email Address
                   </Text>
                 </View>
 
@@ -269,7 +241,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                     className="mb-6"
                   >
                     <View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20">
-                      <Ionicons name="shield-checkmark" size={48} color="#14b8a6" />
+                      <Ionicons name="mail" size={48} color="#32CD32" />
                     </View>
                   </Animated.View>
                   
@@ -279,16 +251,44 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                   <Text className="text-white/90 text-center text-base leading-6 mb-4 font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                     We've sent a 6-digit verification code to
                   </Text>
-                  <Text className="text-cyan-300 text-center text-base font-semibold mb-6" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    {pendingUser.email}
+                  <Text className="text-lime-400 text-center text-base font-semibold mb-6" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    {email}
                   </Text>
                   <Text className="text-white/90 text-center text-sm font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    Please enter the code to continue
+                    Please enter the code to verify your email address
                   </Text>
+                </View>
+
+                {/* Email Input (Read-only) */}
+                <View className="mb-6">
+                  <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Email Address
+                  </Text>
+                  <View className="relative">
+                    <TextInput
+                      value={email}
+                      editable={false}
+                      className="w-full h-14 bg-white/10 rounded-xl px-4 text-white/70 text-base border border-white/20"
+                      style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 3,
+                        fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+                      }}
+                    />
+                    <View className="absolute right-4 top-0 bottom-0 justify-center">
+                      <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.5)" />
+                    </View>
+                  </View>
                 </View>
 
                 {/* OTP Input */}
                 <View className="mb-8">
+                  <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Verification Code
+                  </Text>
                   <View className="flex-row justify-between space-x-3">
                     {otp.map((digit, index) => (
                       <TextInput
@@ -302,7 +302,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                           backgroundColor: 'rgba(255, 255, 255, 0.15)',
                           borderRadius: 12,
                           borderWidth: 1,
-                          borderColor: digit ? '#14b8a6' : 'rgba(255, 255, 255, 0.3)',
+                          borderColor: digit ? '#32CD32' : 'rgba(255, 255, 255, 0.3)',
                           textAlign: 'center',
                           fontSize: 20,
                           fontWeight: 'bold',
@@ -360,7 +360,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                         />
                       ) : (
                         <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                          Verify OTP
+                          Verify Email
                         </Text>
                       )}
                     </LinearGradient>
@@ -372,10 +372,38 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                   <Text className="text-white/90 text-sm text-center mb-2 font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                     Didn't receive the code?
                   </Text>
-                  <TouchableOpacity onPress={handleResendOTP}>
-                    <Text className="text-cyan-300 font-semibold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                      Resend OTP
-                    </Text>
+                  <TouchableOpacity 
+                    onPress={handleResendOTP}
+                    disabled={countdown > 0 || isSendingOTP}
+                    className={`px-6 py-3 rounded-xl border ${
+                      countdown > 0 || isSendingOTP 
+                        ? 'bg-white/10 border-white/20' 
+                        : 'bg-lime-500/20 border-lime-400/30'
+                    }`}
+                                          style={{
+                        shadowColor: '#32CD32',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: countdown > 0 ? 0.1 : 0.2,
+                        shadowRadius: 4,
+                        elevation: countdown > 0 ? 2 : 4,
+                      }}
+                  >
+                    {isSendingOTP ? (
+                      <InlineSpinner 
+                        size="small"
+                        color="#ffffff"
+                        text="Sending..."
+                        textColor="#ffffff"
+                      />
+                    ) : countdown > 0 ? (
+                      <Text className="text-white/70 font-medium text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        Resend in {formatCountdown(countdown)}
+                      </Text>
+                    ) : (
+                      <Text className="text-lime-400 font-semibold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        Resend Code
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </Animated.View>
@@ -387,7 +415,7 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
       {/* Centered Loader for full-screen loading */}
       <CenteredLoader 
         visible={isLoading}
-        text="Verifying OTP..."
+        text="Verifying email..."
         size="large"
         spinnerColor="#32CD32"
         textColor="#ffffff"

@@ -30,15 +30,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('iba/sm/4787');
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, isLoading, error, clearError, requiresOTP } = useAuth();
+  const { login, isLoading, error, clearError, requiresOTP, user } = useAuth();
   const { isAuthenticated } = useGuestGuard();
 
-  // Handle OTP requirement
+  // Handle OTP requirement and email verification
   useEffect(() => {
     if (requiresOTP) {
       navigation.navigate('OTPVerification');
+    } else if (isAuthenticated && user && !user.is_email_verified) {
+      navigation.navigate('EmailVerification', { email: user.email });
     }
-  }, [requiresOTP, navigation]);
+  }, [requiresOTP, isAuthenticated, user, navigation]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -85,7 +87,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       />
       
       <LinearGradient
-        colors={['#0f172a', '#1e3a8a', '#0d9488']}
+        colors={['#0f172a', '#1a1a1a', '#32CD32']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ flex: 1 }}
@@ -205,25 +207,25 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   onPress={handleLogin}
                   disabled={isLoading}
                   className="w-full h-14 rounded-xl items-center justify-center overflow-hidden"
-                  style={{
-                    shadowColor: '#14b8a6',
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 12,
-                    elevation: 12,
-                  }}
-                >
-                  <LinearGradient
-                    colors={isLoading ? ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)'] : ['#14b8a6', '#0d9488', '#0891b2']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      justifyContent: 'center',
-                      alignItems: 'center',
+                                      style={{
+                      shadowColor: '#32CD32',
+                      shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 12,
+                      elevation: 12,
                     }}
-                  >
+                >
+                                      <LinearGradient
+                      colors={isLoading ? ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)'] : ['#32CD32', '#28a745', '#20c997']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
                     {isLoading ? (
                       <InlineSpinner 
                         size="medium"
@@ -276,16 +278,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     Don't have an account?
                   </Text>
                   <TouchableOpacity 
-                    className="bg-cyan-500/20 px-6 py-3 rounded-xl border border-cyan-400/30"
+                    className="bg-lime-500/20 px-6 py-3 rounded-xl border border-lime-400/30"
                     style={{
-                      shadowColor: '#14b8a6',
+                      shadowColor: '#32CD32',
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.2,
                       shadowRadius: 4,
                       elevation: 4,
                     }}
                   >
-                    <Text className="text-cyan-300 font-bold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    <Text className="text-lime-400 font-bold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Contact your administrator
                     </Text>
                   </TouchableOpacity>
@@ -301,7 +303,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         visible={isLoading}
         text="Signing you in..."
         size="large"
-        spinnerColor="#14b8a6"
+        spinnerColor="#32CD32"
         textColor="#ffffff"
       />
     </View>

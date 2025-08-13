@@ -70,6 +70,15 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export interface EmailVerificationRequest {
+  email: string;
+  otp: string;
+}
+
+export interface RequestEmailVerificationOTPRequest {
+  email: string;
+}
+
 // API Error Types
 export class ApiError extends Error {
   constructor(

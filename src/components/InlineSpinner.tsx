@@ -13,7 +13,7 @@ interface InlineSpinnerProps {
 
 export default function InlineSpinner({
   size = 'medium',
-  color = '#14b8a6',
+  color = '#32CD32',
   text,
   textColor = '#ffffff',
   style,

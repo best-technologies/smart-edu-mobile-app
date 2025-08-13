@@ -105,6 +105,8 @@ interface AuthContextType extends AuthState {
   verifyOTP: (request: { email: string; otp: string }) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  requestEmailVerificationOTP: (email: string) => Promise<void>;
+  verifyEmail: (request: { email: string; otp: string }) => Promise<void>;
   clearError: () => void;
   getPendingUser: () => Promise<User | null>;
 }
@@ -159,6 +161,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Direct login successful
           console.log('✅ Direct login successful');
           const loginData = response.data as any;
+          
+          // Check if email verification is required
+          if (!loginData.user.is_email_verified) {
+            console.log('📧 Email verification required');
+            
+            // Show info toast for email verification requirement
+            showInfo(
+              'Email Verification Required',
+              'Please verify your email address to continue',
+              4000
+            );
+            
+            dispatch({
+              type: 'LOGIN_SUCCESS',
+              payload: { user: loginData.user, requiresOTP: false },
+            });
+            
+            // Navigate to email verification screen
+            // This will be handled by the navigation logic
+            return;
+          }
           
           // Show success toast with backend message
           showSuccess(
@@ -221,6 +244,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.data) {
         console.log('✅ OTP verification successful');
         const loginData = response.data as any;
+        
+        // Check if email verification is required
+        if (!loginData.user.is_email_verified) {
+          console.log('📧 Email verification required after OTP');
+          
+          // Show info toast for email verification requirement
+          showInfo(
+            'Email Verification Required',
+            'Please verify your email address to continue',
+            4000
+          );
+          
+          dispatch({
+            type: 'OTP_VERIFICATION_SUCCESS',
+            payload: { user: loginData.user },
+          });
+          
+          // Navigate to email verification screen
+          // This will be handled by the navigation logic
+          return;
+        }
         
         // Show success toast with backend message
         showSuccess(
@@ -316,6 +360,82 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const requestEmailVerificationOTP = async (email: string) => {
+    try {
+      const response = await ApiService.auth.requestEmailVerificationOTP({ email });
+      
+      // Show success toast with backend message
+      showSuccess(
+        'Verification Code Sent',
+        response.message || 'Check your email for verification code',
+        4000
+      );
+    } catch (error) {
+      console.log('💥 Request email verification OTP error:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getFriendlyError(error);
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
+      } else {
+        showError(friendlyError.title, friendlyError.message, 5000);
+      }
+      
+      throw error;
+    }
+  };
+
+  const verifyEmail = async (request: { email: string; otp: string }) => {
+    try {
+      console.log('🔐 Email verification attempt for:', request.email);
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      const response = await ApiService.auth.verifyEmail(request);
+      console.log('📡 Email verification response:', response);
+
+      if (response.success) {
+        console.log('✅ Email verification successful');
+        
+        // Show success toast with backend message
+        showSuccess(
+          'Email Verified',
+          response.message || 'Your email has been successfully verified',
+          3000
+        );
+        
+        // Update user data to reflect email verification
+        const currentUser = await ApiService.getUserData();
+        if (currentUser) {
+          dispatch({
+            type: 'OTP_VERIFICATION_SUCCESS',
+            payload: { user: { ...currentUser, is_email_verified: true } },
+          });
+        }
+      } else {
+        console.log('❌ Email verification failed:', response.message);
+        throw new Error(response.message || 'Email verification failed');
+      }
+    } catch (error) {
+      console.log('💥 Email verification error:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getFriendlyError(error);
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
+      } else {
+        showError(friendlyError.title, friendlyError.message, 5000);
+      }
+      
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
   const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
@@ -330,6 +450,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     verifyOTP,
     logout,
     forgotPassword,
+    requestEmailVerificationOTP,
+    verifyEmail,
     clearError,
     getPendingUser,
   };

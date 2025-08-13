@@ -15,7 +15,6 @@
     "ios": {
       "supportsTablet": true
     },
-    
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/accessstudy-logo.png",
@@ -26,6 +25,9 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/accessstudy-logo.png"
-    }
+    },
+    "plugins": [
+      "expo-video"
+    ]
   }
 }

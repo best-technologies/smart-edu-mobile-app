@@ -23,115 +23,121 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const glowPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const startAnimations = async () => {
-      // Background fade in
-      Animated.timing(backgroundFade, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-
-      // Logo animation (gentle scale-up with fade)
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(logoScale, {
-            toValue: 1,
-            duration: 1000,
-            easing: Easing.out(Easing.back(1.2)),
-            useNativeDriver: true,
-          }),
-          Animated.timing(logoOpacity, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, 300);
-
-      // Tagline animation
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(taglineSlide, {
-            toValue: 0,
-            duration: 600,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(taglineOpacity, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, 800);
-
-      // Progress bar animation
-      setTimeout(() => {
-        Animated.timing(progressBar, {
+    // Use requestAnimationFrame to ensure animations start after render
+    const animationFrame = requestAnimationFrame(() => {
+      const startAnimations = async () => {
+        // Background fade in
+        Animated.timing(backgroundFade, {
           toValue: 1,
-          duration: 1500,
+          duration: 800,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }).start();
-      }, 1200);
 
-      // Bouncing dots animation
-      const createDotAnimation = (dot: Animated.Value, delay: number) => {
-        return Animated.loop(
-          Animated.sequence([
-            Animated.timing(dot, {
+        // Logo animation (gentle scale-up with fade)
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(logoScale, {
               toValue: 1,
-              duration: 500,
-              delay,
+              duration: 1000,
+              easing: Easing.out(Easing.back(1.2)),
+              useNativeDriver: true,
+            }),
+            Animated.timing(logoOpacity, {
+              toValue: 1,
+              duration: 800,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, 300);
+
+        // Tagline animation
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(taglineSlide, {
+              toValue: 0,
+              duration: 600,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.timing(taglineOpacity, {
+              toValue: 1,
+              duration: 600,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, 800);
+
+        // Progress bar animation
+        setTimeout(() => {
+          Animated.timing(progressBar, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+          }).start();
+        }, 1200);
+
+        // Bouncing dots animation
+        const createDotAnimation = (dot: Animated.Value, delay: number) => {
+          return Animated.loop(
+            Animated.sequence([
+              Animated.timing(dot, {
+                toValue: 1,
+                duration: 500,
+                delay,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(dot, {
+                toValue: 0,
+                duration: 500,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ])
+          );
+        };
+
+        setTimeout(() => {
+          createDotAnimation(dotAnim1, 0).start();
+          createDotAnimation(dotAnim2, 150).start();
+          createDotAnimation(dotAnim3, 300).start();
+        }, 1400);
+
+        // Glow pulse animation
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(glowPulse, {
+              toValue: 1,
+              duration: 2000,
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
-            Animated.timing(dot, {
-              toValue: 0,
-              duration: 500,
+            Animated.timing(glowPulse, {
+              toValue: 0.3,
+              duration: 2000,
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
           ])
-        );
+        ).start();
       };
 
-      setTimeout(() => {
-        createDotAnimation(dotAnim1, 0).start();
-        createDotAnimation(dotAnim2, 150).start();
-        createDotAnimation(dotAnim3, 300).start();
-      }, 1400);
-
-      // Glow pulse animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowPulse, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowPulse, {
-            toValue: 0.3,
-            duration: 2000,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    };
-
-    startAnimations();
+      startAnimations();
+    });
 
     // Auto-finish after 3 seconds (as requested)
     const timer = setTimeout(() => {
       onFinish();
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      clearTimeout(timer);
+    };
   }, [onFinish]);
 
   return (
@@ -139,9 +145,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
       
       <Animated.View style={{ flex: 1, opacity: backgroundFade }}>
-        {/* Deep blue to teal gradient background */}
+        {/* Deep blue to lemon green gradient background */}
         <LinearGradient
-          colors={['#0f172a', '#1e3a8a', '#0d9488', '#14b8a6']}
+          colors={['#0f172a', '#1a1a1a', '#32CD32']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ flex: 1 }}
@@ -175,7 +181,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
                       right: 0,
                       bottom: 0,
                       borderRadius: 16,
-                      backgroundColor: '#14b8a6',
+                      backgroundColor: '#32CD32',
                       opacity: glowPulse.interpolate({
                         inputRange: [0, 1],
                         outputRange: [0, 0.3],
@@ -232,7 +238,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
                       outputRange: ['0%', '100%'],
                     }),
                   }}
-                  className="h-full bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full"
+                  className="h-full bg-gradient-to-r from-lime-400 to-green-400 rounded-full"
                 />
               </View>
 

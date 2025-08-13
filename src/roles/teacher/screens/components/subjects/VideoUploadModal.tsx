@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+// TODO: Migrate to expo-video when stable API is available
 import { Video, ResizeMode } from 'expo-av';
 
 interface Topic {

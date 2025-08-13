@@ -20,7 +20,7 @@ export default function CenteredLoader({
   text = 'Loading...',
   size = 'large',
   backgroundColor = 'rgba(15, 23, 42, 0.95)',
-  spinnerColor = '#14b8a6',
+  spinnerColor = '#32CD32',
   textColor = '#ffffff',
   style,
   textStyle,
@@ -80,7 +80,7 @@ export default function CenteredLoader({
         ]}
       >
         <LinearGradient
-          colors={['rgba(15, 23, 42, 0.9)', 'rgba(30, 58, 138, 0.8)', 'rgba(13, 148, 136, 0.7)']}
+          colors={['rgba(15, 23, 42, 0.9)', 'rgba(26, 26, 26, 0.8)', 'rgba(50, 205, 50, 0.7)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{

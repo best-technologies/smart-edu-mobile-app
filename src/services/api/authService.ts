@@ -9,6 +9,8 @@ import {
   OTPVerificationResponse,
   ForgotPasswordRequest, 
   ResetPasswordRequest,
+  EmailVerificationRequest,
+  RequestEmailVerificationOTPRequest,
   User
 } from '../types/apiTypes';
 
@@ -105,6 +107,16 @@ export class AuthService {
   // Reset password
   async resetPassword(request: ResetPasswordRequest): Promise<ApiResponse> {
     return this.httpClient.makeRequest(API_ENDPOINTS.AUTH.RESET_PASSWORD, 'POST', request, false);
+  }
+
+  // Request email verification OTP
+  async requestEmailVerificationOTP(request: RequestEmailVerificationOTPRequest): Promise<ApiResponse> {
+    return this.httpClient.makeRequest(API_ENDPOINTS.AUTH.REQUEST_EMAIL_VERIFICATION_OTP, 'POST', request, false);
+  }
+
+  // Verify email address
+  async verifyEmail(request: EmailVerificationRequest): Promise<ApiResponse> {
+    return this.httpClient.makeRequest(API_ENDPOINTS.AUTH.VERIFY_EMAIL, 'POST', request, false);
   }
 
   // Check if user is authenticated
