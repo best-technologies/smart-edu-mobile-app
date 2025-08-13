@@ -2,7 +2,15 @@ import { useDirectorDashboard, useRefreshDirectorDashboard, useInvalidateDirecto
 import { useToast } from '@/contexts/ToastContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { directorService, SubjectsQueryParams, SubjectsData, StudentsQueryParams, StudentsData } from '@/services/api/directorService';
+import { 
+  directorService, 
+  SubjectsQueryParams, 
+  SubjectsData, 
+  StudentsQueryParams, 
+  StudentsData,
+  ScheduleQueryParams,
+  ScheduleData
+} from '@/services/api/directorService';
 
 /**
  * Comprehensive hook for managing director dashboard data
@@ -236,6 +244,73 @@ export function useStudentsData(initialParams?: StudentsQueryParams) {
     searchStudents,
     filterByClass,
     filterByStatus,
+    updateParams,
+    
+    // Current params
+    currentParams: params,
+  };
+}
+
+/**
+ * Hook for managing schedule data
+ */
+export function useScheduleData(initialParams?: ScheduleQueryParams) {
+  const [params, setParams] = useState<ScheduleQueryParams>({
+    class: 'jss1', // Default to jss1
+    ...initialParams,
+  });
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['schedule', params],
+    queryFn: async () => {
+      try {
+        console.log('🔍 Fetching schedule with params:', params);
+        const result = await directorService.fetchScheduleData(params);
+        console.log('✅ Schedule fetched successfully:');
+        return result;
+      } catch (err) {
+        console.error('❌ Error fetching schedule:', err);
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2, // Retry failed requests up to 2 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
+  const scheduleData = response?.data;
+
+  const updateParams = useCallback((newParams: Partial<ScheduleQueryParams>) => {
+    setParams(prev => ({
+      ...prev,
+      ...newParams,
+    }));
+  }, []);
+
+  const filterByClass = useCallback((className: string | null) => {
+    updateParams({ class: className || 'jss1' }); // Default to jss1 if null
+  }, [updateParams]);
+
+  return {
+    // Data
+    scheduleData,
+    classes: scheduleData?.class || [],
+    timeSlots: scheduleData?.timeSlots || [],
+    schedule: scheduleData?.schedule,
+    
+    // State
+    isLoading,
+    error,
+    
+    // Actions
+    refetch,
+    filterByClass,
     updateParams,
     
     // Current params

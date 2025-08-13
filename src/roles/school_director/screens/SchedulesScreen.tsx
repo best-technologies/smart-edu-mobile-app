@@ -1,232 +1,112 @@
-import React, { useState, useMemo } from 'react';
-import { ScrollView, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import ClassTabs from './components/schedules/ClassTabs';
+import Section from './components/shared/Section';
+import ClassSelector from './components/schedules/ClassSelector';
 import TimetableGrid from './components/schedules/TimetableGrid';
-import DayScheduleView from './components/schedules/DayScheduleView';
-import ScheduleStats from './components/schedules/ScheduleStats';
-import FloatingActionButton from './components/shared/FloatingActionButton';
+import EmptyState from './components/shared/EmptyState';
+import CenteredLoader from '@/components/CenteredLoader';
+import { useScheduleData } from '@/hooks/useDirectorData';
 
-const { width } = Dimensions.get('window');
+// Predefined list of classes that all schools have
+const DEFAULT_CLASSES = [
+  { classId: 'jss1', name: 'jss1' },
+  { classId: 'jss2', name: 'jss2' },
+  { classId: 'jss3', name: 'jss3' },
+  { classId: 'ss1', name: 'ss1' },
+  { classId: 'ss2', name: 'ss2' },
+  { classId: 'ss3', name: 'ss3' },
+];
 
 export default function SchedulesScreen() {
-  const [selectedClass, setSelectedClass] = useState('JSS1');
-  const [selectedDay, setSelectedDay] = useState('Monday');
-  const [viewMode, setViewMode] = useState<'grid' | 'day'>('grid');
+  const [selectedClassId, setSelectedClassId] = useState<string>('jss1'); // Default to jss1
 
-  const classes = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const timeSlots = [
-    '08:00 - 09:00',
-    '09:00 - 10:00', 
-    '10:00 - 11:00',
-    '11:00 - 12:00',
-    '12:00 - 13:00',
-    '13:00 - 14:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00'
-  ];
+  const {
+    scheduleData,
+    classes,
+    timeSlots,
+    schedule,
+    isLoading,
+    error,
+    refetch,
+    filterByClass,
+  } = useScheduleData({ class: 'jss1' }); // Initialize with jss1
 
-  // Calculate stats for the selected class
-  const stats = useMemo(() => {
-    const timetableData = getTimetableData(selectedClass);
-    let totalPeriods = 0;
-    const teachers = new Set<string>();
-    const subjects = new Set<string>();
+  const handleRefresh = () => {
+    refetch();
+  };
 
-    Object.values(timetableData).forEach(dayData => {
-      Object.values(dayData).forEach(period => {
-        if (period) {
-          totalPeriods++;
-          teachers.add(period.teacher);
-          subjects.add(period.subject);
-        }
-      });
-    });
+  const handleClassSelect = useCallback((classId: string) => {
+    setSelectedClassId(classId);
+    filterByClass(classId);
+  }, [filterByClass]);
 
-    return {
-      totalPeriods,
-      totalTeachers: teachers.size,
-      totalSubjects: subjects.size
-    };
-  }, [selectedClass]);
-
-  // Mock data function
-  function getTimetableData(classId: string): Record<string, Record<string, any>> {
-    const data: Record<string, Record<string, any>> = {};
-    
-    // Initialize empty timetable
-    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
-      data[day] = {};
-      ['08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00', 
-       '12:00 - 13:00', '13:00 - 14:00', '14:00 - 15:00', '15:00 - 16:00'].forEach(time => {
-        data[day][time] = null;
-      });
-    });
-
-    // Add sample data for different classes
-    if (classId === 'JSS1') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
-      data['Monday']['09:00 - 10:00'] = { subject: 'English Language', teacher: 'Mrs. Smith', color: 'green' };
-      data['Tuesday']['08:00 - 09:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['13:00 - 14:00'] = { subject: 'Biology', teacher: 'Ms. Davis', color: 'green' };
-      data['Friday']['14:00 - 15:00'] = { subject: 'History', teacher: 'Mr. Wilson', color: 'orange' };
-    } else if (classId === 'JSS2') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
-      data['Tuesday']['09:00 - 10:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['11:00 - 12:00'] = { subject: 'Literature', teacher: 'Mrs. Anderson', color: 'green' };
-    } else if (classId === 'SS1') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Advanced Math', teacher: 'Dr. Johnson', color: 'purple' };
-      data['Tuesday']['09:00 - 10:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['13:00 - 14:00'] = { subject: 'Biology', teacher: 'Ms. Davis', color: 'green' };
-      data['Friday']['14:00 - 15:00'] = { subject: 'Economics', teacher: 'Mr. Thompson', color: 'orange' };
-    }
-
-    return data;
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center px-4">
+          <EmptyState 
+            title="Error loading schedules" 
+            subtitle="Unable to load schedule data. Please try again." 
+          />
+          <TouchableOpacity 
+            onPress={handleRefresh}
+            className="mt-4 px-6 py-3 bg-blue-600 rounded-xl flex-row items-center gap-2"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="refresh" size={18} color="#ffffff" />
+            <Text className="text-white font-semibold">Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
-
-  const handleAddPeriod = () => {
-    console.log('Add new period for class:', selectedClass);
-  };
-
-  const handleClassChange = (classId: string) => {
-    setSelectedClass(classId);
-  };
-
-  const handleDayChange = (day: string) => {
-    setSelectedDay(day);
-  };
-
-  const handlePeriodPress = (time: string, period: any) => {
-    if (period) {
-      console.log('Edit period:', period);
-    } else {
-      console.log('Add period for:', selectedDay, time);
-    }
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <ScrollView 
         className="flex-1" 
-        contentContainerClassName="pb-24"
+        contentContainerClassName="px-4 pb-24 pt-2"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+            colors={["#3b82f6"]}
+            progressBackgroundColor="#ffffff"
+          />
+        }
       >
-        {/* Header Section */}
-        <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <View className="flex-row items-center justify-between mb-2">
-            <View>
-              <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Class Schedules
-              </Text>
-              <Text className="text-sm text-gray-500 dark:text-gray-400">
-                Manage and view class timetables
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleAddPeriod}
-              activeOpacity={0.7}
-              className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
-            >
-              <Ionicons name="add" size={16} color="white" />
-              <Text className="text-white font-semibold text-sm">Add Period</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Class Selection Tabs */}
-        <View className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-          <ClassTabs 
-            classes={classes}
-            selectedClass={selectedClass}
-            onClassChange={handleClassChange}
+        <Section title="Class Schedules">
+          {/* Class Selector */}
+          <ClassSelector
+            classes={DEFAULT_CLASSES}
+            selectedClassId={selectedClassId}
+            onClassSelect={handleClassSelect}
           />
-          <View className="px-6 py-2 flex-row items-center justify-between">
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
-              Viewing timetable for {selectedClass}
-            </Text>
-            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-              <TouchableOpacity
-                onPress={() => setViewMode('grid')}
-                activeOpacity={0.7}
-                className={`px-3 py-1 rounded-md ${
-                  viewMode === 'grid' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : ''
-                }`}
-              >
-                <Text className={`text-xs font-medium ${
-                  viewMode === 'grid' 
-                    ? 'text-gray-900 dark:text-gray-100' 
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                  Grid
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setViewMode('day')}
-                activeOpacity={0.7}
-                className={`px-3 py-1 rounded-md ${
-                  viewMode === 'day' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : ''
-                }`}
-              >
-                <Text className={`text-xs font-medium ${
-                  viewMode === 'day' 
-                    ? 'text-gray-900 dark:text-gray-100' 
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                  Day
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
 
-        {/* Schedule Stats */}
-        <View className="px-6 py-2">
-          <ScheduleStats 
-            selectedClass={selectedClass}
-            totalPeriods={stats.totalPeriods}
-            totalTeachers={stats.totalTeachers}
-            totalSubjects={stats.totalSubjects}
-          />
-        </View>
-
-        {/* Timetable View */}
-        <View className="px-6 py-2">
-          {viewMode === 'grid' ? (
-            <TimetableGrid 
-              selectedClass={selectedClass}
-              days={days}
+          {isLoading ? (
+            <CenteredLoader visible={true} text="Loading schedule..." />
+          ) : schedule && timeSlots.length > 0 ? (
+            <TimetableGrid
+              selectedClass={selectedClassId}
               timeSlots={timeSlots}
-              selectedDay={selectedDay}
-              onDayChange={handleDayChange}
-              timetableData={getTimetableData(selectedClass)}
+              schedule={schedule}
             />
           ) : (
-            <DayScheduleView 
-              day={selectedDay}
-              timeSlots={timeSlots}
-              periods={getTimetableData(selectedClass)[selectedDay] || {}}
-              onPeriodPress={handlePeriodPress}
+            <EmptyState 
+              title="No schedule found" 
+              subtitle={
+                selectedClassId 
+                  ? "No schedule available for the selected class."
+                  : "Please select a class to view its schedule."
+              }
             />
           )}
-        </View>
+        </Section>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FloatingActionButton 
-        icon="chatbubble-outline"
-        text="Chat with Support"
-        color="bg-green-500"
-        onPress={() => console.log('Chat with support')}
-      />
     </SafeAreaView>
   );
 }

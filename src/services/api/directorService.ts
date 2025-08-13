@@ -197,6 +197,59 @@ export type TeachersResponse = ApiResponse<TeachersData>;
 export type SubjectsResponse = ApiResponse<SubjectsData>;
 export type StudentsResponse = ApiResponse<StudentsData>;
 
+export interface ScheduleClass {
+  classId: string;
+  name: string;
+}
+
+export interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  order: number;
+}
+
+export interface ScheduleSubject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+}
+
+export interface ScheduleTeacher {
+  id: string;
+  name: string;
+}
+
+export interface ScheduleItem {
+  timeSlotId: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  subject: ScheduleSubject | null;
+  teacher: ScheduleTeacher | null;
+  room: string | null;
+}
+
+export interface ScheduleData {
+  class: ScheduleClass[];
+  timeSlots: TimeSlot[];
+  schedule: {
+    MONDAY: ScheduleItem[];
+    TUESDAY: ScheduleItem[];
+    WEDNESDAY: ScheduleItem[];
+    THURSDAY: ScheduleItem[];
+    FRIDAY: ScheduleItem[];
+  };
+}
+
+export interface ScheduleQueryParams {
+  class?: string;
+}
+
+export type ScheduleResponse = ApiResponse<ScheduleData>;
+
 class DirectorService {
   private httpClient: HttpClient;
 
@@ -299,6 +352,29 @@ class DirectorService {
       return response;
     } catch (error) {
       console.error('Error fetching schedules data:', error);
+      throw error;
+    }
+  }
+
+  async fetchScheduleData(params?: ScheduleQueryParams): Promise<ScheduleResponse> {
+    try {
+      const requestBody = params?.class ? { class: params.class } : { class: 'jss1' };
+      console.log('🌐 Making API request to: /director/schedules/timetable');
+      console.log('📦 Request body:', requestBody);
+
+      const response = await this.httpClient.makeRequest<ScheduleData>(
+        '/director/schedules/timetable',
+        'POST',
+        requestBody
+      );
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchScheduleData:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        params
+      });
       throw error;
     }
   }

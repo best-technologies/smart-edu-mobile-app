@@ -39,8 +39,13 @@ const AppTheme: Theme = {
 
 // Component to handle auth navigation logic inside NavigationContainer
 function AuthNavigationHandler() {
-  // Always call the hook to maintain consistent hook order
-  useAuthNavigation();
+  // Only call the hook when navigation is ready
+  try {
+    useAuthNavigation();
+  } catch (error) {
+    // Ignore navigation context errors during initialization
+    console.log('Navigation not ready yet, skipping auth navigation');
+  }
   return null;
 }
 
