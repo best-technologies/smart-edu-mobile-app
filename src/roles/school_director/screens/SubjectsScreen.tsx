@@ -1,4 +1,5 @@
 import { ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { subjectsDashboardData } from '@/mock';
 import TopBar from './components/shared/TopBar';
 import Section from './components/shared/Section';
@@ -12,9 +13,11 @@ export default function SubjectsScreen() {
 
   if (!data) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
-        <EmptyState title="No data available" subtitle="Unable to load subjects data." />
-      </View>
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center">
+          <EmptyState title="No data available" subtitle="Unable to load subjects data." />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -24,7 +27,12 @@ export default function SubjectsScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-black" contentContainerClassName="px-4 pb-12 pt-6">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerClassName="px-4 pb-24 pt-6"
+        showsVerticalScrollIndicator={false}
+      >
       <TopBar
         name="director"
         email="director@school.edu"
@@ -53,6 +61,7 @@ export default function SubjectsScreen() {
           <EmptyState title="No subjects found" subtitle="No subjects are currently registered." />
         )}
       </Section>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 // TODO: Migrate to expo-video when stable API is available
+// @ts-ignore - expo-av is deprecated but expo-video API is not yet stable
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';

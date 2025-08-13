@@ -10,7 +10,9 @@ export function Section({ title, children }: { title: string; children: React.Re
           {title}
         </Text>
       </View>
-      {children}
+      <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+        {children}
+      </View>
     </View>
   );
 }

@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 import { ApiService } from '@/services';
 import { User } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { getRouteForRole } from '@/utils/roleMapper';
 
 // Auth State Interface
 interface AuthState {
@@ -149,7 +150,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
-      console.log('🔐 Login attempt for:', credentials.email);
       dispatch({ type: 'LOGIN_START' });
 
       const response = await ApiService.auth.signIn(credentials);
@@ -195,8 +195,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             payload: { user: loginData.user, requiresOTP: false },
           });
         } else {
-          // OTP verification required
-          console.log('📱 OTP verification required');
           const otpData = response.data as any;
           
           // Show info toast for OTP requirement
@@ -277,7 +275,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           type: 'OTP_VERIFICATION_SUCCESS',
           payload: { user: loginData.user },
         });
-        // Navigation will be handled by the component using useGuestGuard
+        // Navigation will be handled by the component using useAuthNavigation
       } else {
         console.log('❌ OTP verification failed:', response.message);
         throw new Error(response.message || 'OTP verification failed');

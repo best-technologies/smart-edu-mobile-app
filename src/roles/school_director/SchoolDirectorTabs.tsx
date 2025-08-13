@@ -1,5 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DirectorDashboardScreen from './screens/DirectorDashboardScreen';
 import TeachersScreen from './screens/TeachersScreen';
@@ -24,7 +24,28 @@ export default function SchoolDirectorTabs() {
         headerShown: false,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: { height: 60, paddingBottom: 8, paddingTop: 8 },
+        tabBarStyle: {
+          height: 80,
+          paddingBottom: 16,
+          paddingTop: 8,
+          paddingHorizontal: 16,
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e5e7eb',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
         tabBarIcon: ({ color, size }) => {
           const map: Record<string, keyof typeof Ionicons.glyphMap> = {
             Dashboard: 'home-outline',

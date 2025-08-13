@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { CenteredLoader, InlineSpinner } from '@/components';
+import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 
 type EmailVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'EmailVerification'>;
 
@@ -39,6 +40,7 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
   const [otpSent, setOtpSent] = useState(false);
   
   const { verifyEmail, requestEmailVerificationOTP } = useAuth();
+  useAuthNavigation(); // Handle navigation logic centrally
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -83,6 +85,8 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
     }
     return () => clearInterval(interval);
   }, [countdown]);
+
+  // Navigation is now handled centrally by useAuthNavigation hook
 
   const handleSendOTP = async () => {
     if (!email.trim()) {
@@ -137,7 +141,7 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
 
     try {
       await verifyEmail({ email: email.trim(), otp: otpString });
-      // Navigation will be handled by the auth context
+      // Navigation will be handled by the auth context after user data is updated
     } catch (error) {
       console.error('Email verification error:', error);
     } finally {

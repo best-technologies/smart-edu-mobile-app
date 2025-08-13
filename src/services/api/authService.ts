@@ -23,8 +23,7 @@ export class AuthService {
 
   // Sign in user
   async signIn(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse | OTPVerificationResponse>> {
-    console.log('🌐 Making sign-in request to:', API_ENDPOINTS.AUTH.SIGN_IN);
-    console.log('📤 Request payload:', { email: credentials.email, password: '***' });
+    // console.log('📤 Request payload:', { email: credentials.email, password: '***' });
     
     const response = await this.httpClient.makeRequest<LoginResponse | OTPVerificationResponse>(
       API_ENDPOINTS.AUTH.SIGN_IN,
@@ -45,7 +44,6 @@ export class AuthService {
         await TokenManager.storeUserData(loginData.user);
       } else {
         // OTP verification required - store pending user data
-        console.log('📱 OTP required - storing pending user');
         const otpData = response.data as OTPVerificationResponse;
         await TokenManager.storePendingUser(otpData);
       }

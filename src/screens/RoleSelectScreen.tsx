@@ -49,6 +49,7 @@ export default function RoleSelectScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Select Your Role</Text>
       <Text style={styles.subtitle}>Welcome, {user?.first_name} {user?.last_name}</Text>
+      <Text style={styles.fallbackText}>Role selection fallback - your role should be automatically detected</Text>
       
       <View style={styles.roleContainer}>
         <TouchableOpacity
@@ -129,6 +130,13 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#FF3B30',
     fontSize: 16,
+  },
+  fallbackText: {
+    color: '#FF9500',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontStyle: 'italic',
   },
 });
 

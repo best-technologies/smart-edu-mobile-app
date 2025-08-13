@@ -19,6 +19,7 @@ import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/services/types/apiTypes';
 import { CenteredLoader, InlineSpinner } from '@/components';
+import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 
 type OTPVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 
@@ -31,7 +32,8 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
   const [isLoading, setIsLoading] = useState(false);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   
-  const { verifyOTP, error, clearError, getPendingUser, isAuthenticated, requiresOTP, user } = useAuth();
+  const { verifyOTP, error, clearError, getPendingUser } = useAuth();
+  useAuthNavigation(); // Handle navigation logic centrally
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -66,31 +68,25 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
     loadPendingUser();
   }, []);
 
-  // Handle successful OTP verification and navigation
-  useEffect(() => {
-    if (isAuthenticated && !requiresOTP) {
-      // Check if email verification is required
-      if (user && !user.is_email_verified) {
-        navigation.navigate('EmailVerification', { email: user.email });
-      } else {
-        // Navigate to role selection after successful OTP verification
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'RoleSelect' }],
-        });
-      }
-    }
-  }, [isAuthenticated, requiresOTP, user, navigation]);
+  // Navigation is now handled centrally by useAuthNavigation hook
 
   const loadPendingUser = async () => {
     try {
       const user = await getPendingUser();
+      
       if (user) {
         setPendingUser(user);
       } else {
-        // If no pending user, go back to login
-        Alert.alert('Error', 'No pending verification found. Please login again.');
-        navigation.goBack();
+        // If no pending user, wait a bit and try again (in case of timing issue)
+        setTimeout(async () => {
+          const retryUser = await getPendingUser();
+          if (retryUser) {
+            setPendingUser(retryUser);
+          } else {
+            Alert.alert('Error', 'No pending verification found. Please login again.');
+            navigation.goBack();
+          }
+        }, 500);
       }
     } catch (error) {
       console.error('Error loading pending user:', error);

@@ -8,6 +8,7 @@ import CustomSplashScreen from './components/SplashScreen';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { ToastContainer } from '@/components';
+import './utils/reanimatedConfig'; // Disable Reanimated warnings
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -44,7 +45,7 @@ function AppContent() {
   return (
     <View className="flex-1" style={{ backgroundColor: 'transparent' }}>
       <StatusBar 
-        barStyle="light-content" 
+        barStyle="dark-content" 
         backgroundColor="transparent" 
         translucent={true}
       />

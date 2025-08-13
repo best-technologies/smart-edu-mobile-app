@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import TopBar from './components/shared/TopBar';
 import ClassTabs from './components/schedules/ClassTabs';
@@ -110,7 +111,7 @@ export default function SchedulesScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar 
         name="director"
         email="director@school.edu"
@@ -118,7 +119,11 @@ export default function SchedulesScreen() {
         avatarUri={undefined}
       />
       
-      <ScrollView className="flex-1" contentContainerClassName="pb-20">
+      <ScrollView 
+        className="flex-1" 
+        contentContainerClassName="pb-24"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header Section */}
         <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <View className="flex-row items-center justify-between mb-2">
@@ -230,6 +235,6 @@ export default function SchedulesScreen() {
         color="bg-green-500"
         onPress={() => console.log('Chat with support')}
       />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -16,8 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGuestGuard } from '@/hooks/useAuthGuard';
 import { CenteredLoader, InlineSpinner } from '@/components';
+import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -30,17 +30,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('iba/sm/4787');
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, isLoading, error, clearError, requiresOTP, user } = useAuth();
-  const { isAuthenticated } = useGuestGuard();
+  const { login, isLoading, error, clearError } = useAuth();
+  useAuthNavigation(); // Handle navigation logic centrally
 
-  // Handle OTP requirement and email verification
-  useEffect(() => {
-    if (requiresOTP) {
-      navigation.navigate('OTPVerification');
-    } else if (isAuthenticated && user && !user.is_email_verified) {
-      navigation.navigate('EmailVerification', { email: user.email });
-    }
-  }, [requiresOTP, isAuthenticated, user, navigation]);
+  // Navigation is now handled centrally by useAuthNavigation hook
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -50,7 +43,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       await login({ email: email.trim(), password });
-      // Navigation will be handled by useGuestGuard if login is successful and no OTP required
+      // Navigation will be handled by useAuthNavigation hook
     } catch (error) {
       // Error is handled by the context and displayed via toast
     }

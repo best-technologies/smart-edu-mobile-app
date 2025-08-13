@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Text, Image, Dimensions, StatusBar, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,123 +22,123 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const dotAnim3 = useRef(new Animated.Value(0)).current;
   const glowPulse = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    // Use requestAnimationFrame to ensure animations start after render
-    const animationFrame = requestAnimationFrame(() => {
-      const startAnimations = async () => {
-        // Background fade in
-        Animated.timing(backgroundFade, {
+  const startAnimations = useCallback(() => {
+    // Background fade in
+    Animated.timing(backgroundFade, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    // Logo animation (gentle scale-up with fade)
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(logoScale, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.out(Easing.back(1.2)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 800,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
-        }).start();
+        }),
+      ]).start();
+    }, 300);
 
-        // Logo animation (gentle scale-up with fade)
-        setTimeout(() => {
-          Animated.parallel([
-            Animated.timing(logoScale, {
-              toValue: 1,
-              duration: 1000,
-              easing: Easing.out(Easing.back(1.2)),
-              useNativeDriver: true,
-            }),
-            Animated.timing(logoOpacity, {
-              toValue: 1,
-              duration: 800,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, 300);
+    // Tagline animation
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(taglineSlide, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(taglineOpacity, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 800);
 
-        // Tagline animation
-        setTimeout(() => {
-          Animated.parallel([
-            Animated.timing(taglineSlide, {
-              toValue: 0,
-              duration: 600,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-            Animated.timing(taglineOpacity, {
-              toValue: 1,
-              duration: 600,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, 800);
+    // Progress bar animation
+    setTimeout(() => {
+      Animated.timing(progressBar, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }, 1200);
 
-        // Progress bar animation
-        setTimeout(() => {
-          Animated.timing(progressBar, {
+    // Bouncing dots animation
+    const createDotAnimation = (dot: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(dot, {
             toValue: 1,
-            duration: 1500,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: false,
-          }).start();
-        }, 1200);
+            duration: 500,
+            delay,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
 
-        // Bouncing dots animation
-        const createDotAnimation = (dot: Animated.Value, delay: number) => {
-          return Animated.loop(
-            Animated.sequence([
-              Animated.timing(dot, {
-                toValue: 1,
-                duration: 500,
-                delay,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-              }),
-              Animated.timing(dot, {
-                toValue: 0,
-                duration: 500,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-              }),
-            ])
-          );
-        };
+    setTimeout(() => {
+      createDotAnimation(dotAnim1, 0).start();
+      createDotAnimation(dotAnim2, 150).start();
+      createDotAnimation(dotAnim3, 300).start();
+    }, 1400);
 
-        setTimeout(() => {
-          createDotAnimation(dotAnim1, 0).start();
-          createDotAnimation(dotAnim2, 150).start();
-          createDotAnimation(dotAnim3, 300).start();
-        }, 1400);
+    // Glow pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowPulse, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowPulse, {
+          toValue: 0.3,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [backgroundFade, logoScale, logoOpacity, taglineSlide, taglineOpacity, progressBar, dotAnim1, dotAnim2, dotAnim3, glowPulse]);
 
-        // Glow pulse animation
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(glowPulse, {
-              toValue: 1,
-              duration: 2000,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(glowPulse, {
-              toValue: 0.3,
-              duration: 2000,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ])
-        ).start();
-      };
-
+  useEffect(() => {
+    // Start animations after component is mounted
+    const animationTimer = setTimeout(() => {
       startAnimations();
-    });
+    }, 100);
 
-    // Auto-finish after 3 seconds (as requested)
-    const timer = setTimeout(() => {
+    // Auto-finish after 3 seconds
+    const finishTimer = setTimeout(() => {
       onFinish();
     }, 3000);
 
     return () => {
-      cancelAnimationFrame(animationFrame);
-      clearTimeout(timer);
+      clearTimeout(animationTimer);
+      clearTimeout(finishTimer);
     };
-  }, [onFinish]);
+  }, [startAnimations, onFinish]);
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#0f172a' }}>

@@ -1,4 +1,5 @@
 import { ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TopBar from './components/shared/TopBar';
 import Section from './components/shared/Section';
 import EmptyState from './components/shared/EmptyState';
@@ -10,13 +11,18 @@ export default function DirectorDashboardScreen() {
   const data = directorDashboardData.data;
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-black" contentContainerClassName="px-4 pb-12 pt-6">
-      <TopBar
-        name={data?.basic_details?.email?.split('@')?.[0] ?? 'Director'}
-        email={data?.basic_details?.email ?? 'director@school.edu'}
-        schoolId={data?.basic_details?.school_id}
-        avatarUri={undefined}
-      />
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerClassName="px-4 pb-24 pt-6"
+        showsVerticalScrollIndicator={false}
+      >
+        <TopBar
+          name={data?.basic_details?.email?.split('@')?.[0] ?? 'Director'}
+          email={data?.basic_details?.email ?? 'director@school.edu'}
+          schoolId={data?.basic_details?.school_id}
+          avatarUri={undefined}
+        />
 
       <Section title="Overview">
         <View className="gap-3">
@@ -64,16 +70,18 @@ export default function DirectorDashboardScreen() {
         {data?.ongoingClasses?.length ? (
           <View className="gap-3">
             {data.ongoingClasses.map((c, idx) => (
-              <View key={`${c.className}-${idx}`} className="rounded-2xl p-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+              <View key={`${c.className}-${idx}`} className="rounded-xl p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-900 dark:text-gray-100 font-semibold">
+                  <Text className="text-gray-900 dark:text-gray-100 font-semibold text-base">
                     {c.className ?? '—'} • {c.subject ?? '—'}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
-                    {c.startTime ?? '—'} - {c.endTime ?? '—'}
-                  </Text>
+                  <View className="bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-full">
+                    <Text className="text-blue-700 dark:text-blue-300 text-sm font-medium">
+                      {c.startTime ?? '—'} - {c.endTime ?? '—'}
+                    </Text>
+                  </View>
                 </View>
-                <Text className="text-gray-600 dark:text-gray-300 mt-1">{c.teacher ?? '—'}</Text>
+                <Text className="text-gray-600 dark:text-gray-300 mt-2 text-sm">{c.teacher ?? '—'}</Text>
               </View>
             ))}
           </View>
@@ -86,15 +94,15 @@ export default function DirectorDashboardScreen() {
         {data?.notifications?.length ? (
           <View className="gap-3">
             {data.notifications.map((n) => (
-              <View key={n.id} className="rounded-2xl p-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+              <View key={n.id} className="rounded-xl p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-900 dark:text-gray-100 font-semibold">{n.title ?? '—'}</Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs">{n.createdAt ?? ''}</Text>
+                  <Text className="text-gray-900 dark:text-gray-100 font-semibold text-base">{n.title ?? '—'}</Text>
+                  <Text className="text-gray-500 dark:text-gray-400 text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">{n.createdAt ?? ''}</Text>
                 </View>
-                <Text className="text-gray-600 dark:text-gray-300 mt-1">{n.description ?? ''}</Text>
+                <Text className="text-gray-600 dark:text-gray-300 mt-2 text-sm leading-5">{n.description ?? ''}</Text>
                 {n.comingUpOn ? (
-                  <View className="mt-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 px-3 py-2 self-start">
-                    <Text className="text-blue-700 dark:text-blue-300 text-xs">Coming up: {n.comingUpOn}</Text>
+                  <View className="mt-3 rounded-xl bg-amber-50 dark:bg-amber-900/40 px-3 py-2 self-start border border-amber-200 dark:border-amber-800">
+                    <Text className="text-amber-700 dark:text-amber-300 text-xs font-medium">Coming up: {n.comingUpOn}</Text>
                   </View>
                 ) : null}
               </View>
@@ -104,7 +112,8 @@ export default function DirectorDashboardScreen() {
           <EmptyState title="No notifications" subtitle="You're all caught up." />
         )}
       </Section>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
  
