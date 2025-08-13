@@ -1,7 +1,6 @@
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDirectorTeachers, useRefreshDirectorTeachers } from '@/hooks/useDirectorTeachers';
-import TopBar from './components/shared/TopBar';
 import Section from './components/shared/Section';
 import TeacherStats from './components/teachers/TeacherStats';
 import TeacherCard from './components/teachers/TeacherCard';
@@ -53,7 +52,7 @@ export default function TeachersScreen() {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <ScrollView 
         className="flex-1" 
-        contentContainerClassName="px-4 pb-24 pt-6"
+        contentContainerClassName="px-4 pb-24 pt-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -63,28 +62,21 @@ export default function TeachersScreen() {
           />
         }
       >
-      <TopBar
-        name="director"
-        email="director@school.edu"
-        schoolId="sch_1234567890"
-        avatarUri={undefined}
-      />
+        <Section title="Overview">
+          {data?.basic_details && <TeacherStats stats={data.basic_details} />}
+        </Section>
 
-      <Section title="Overview">
-        {data?.basic_details && <TeacherStats stats={data.basic_details} />}
-      </Section>
-
-      <Section title="All Teachers">
-        {data?.teachers && data.teachers.length > 0 ? (
-          <View className="gap-4">
-            {data.teachers.map((teacher) => (
-              <TeacherCard key={teacher.id} teacher={teacher} />
-            ))}
-          </View>
-        ) : (
-          <EmptyState title="No teachers found" subtitle="No teachers are currently registered." />
-        )}
-      </Section>
+        <Section title="All Teachers">
+          {data?.teachers && data.teachers.length > 0 ? (
+            <View className="gap-4">
+              {data.teachers.map((teacher) => (
+                <TeacherCard key={teacher.id} teacher={teacher} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState title="No teachers found" subtitle="No teachers are currently registered." />
+          )}
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );

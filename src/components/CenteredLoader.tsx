@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Modal, ViewStyle, TextStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Modal, ViewStyle, TextStyle, Animated, Easing } from 'react-native';
 
 interface CenteredLoaderProps {
   visible: boolean;
@@ -24,6 +24,28 @@ export default function CenteredLoader({
   textStyle,
   showBackdrop = false,
 }: CenteredLoaderProps) {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      const spinAnimation = Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+      spinAnimation.start();
+      return () => spinAnimation.stop();
+    }
+  }, [visible, spinValue]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   const getSpinnerSize = () => {
     switch (size) {
       case 'small':
@@ -84,13 +106,14 @@ export default function CenteredLoader({
           }}
         >
           {/* Animated Spinner */}
-          <View 
-            className="border-4 border-t-transparent rounded-full animate-spin mb-4"
+          <Animated.View 
+            className="border-4 border-t-transparent rounded-full mb-4"
             style={{
               width: getSpinnerSize(),
               height: getSpinnerSize(),
               borderColor: spinnerColor,
               borderTopColor: 'transparent',
+              transform: [{ rotate: spin }],
             }}
           />
           

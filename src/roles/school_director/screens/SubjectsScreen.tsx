@@ -1,66 +1,133 @@
-import { ScrollView, Text, View } from 'react-native';
+import React from 'react';
+import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { subjectsDashboardData } from '@/mock';
-import TopBar from './components/shared/TopBar';
+import { Ionicons } from '@expo/vector-icons';
 import Section from './components/shared/Section';
 import SubjectStats from './components/subjects/SubjectStats';
 import SubjectCard from './components/subjects/SubjectCard';
 import SubjectPagination from './components/subjects/Pagination';
+import SearchBar from './components/subjects/SearchBar';
 import EmptyState from './components/shared/EmptyState';
+import CenteredLoader from '@/components/CenteredLoader';
+import { useSubjectsData } from '@/hooks/useDirectorData';
 
 export default function SubjectsScreen() {
-  const data = subjectsDashboardData.data;
+  const {
+    subjects,
+    pagination,
+    filters,
+    isLoading,
+    error,
+    refetch,
+    goToPage,
+    searchSubjects,
+    filterByClass,
+  } = useSubjectsData();
 
-  if (!data) {
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const handlePageChange = (page: number) => {
+    goToPage(page);
+  };
+
+  if (error) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-        <View className="flex-1 items-center justify-center">
-          <EmptyState title="No data available" subtitle="Unable to load subjects data." />
+        <View className="flex-1 items-center justify-center px-4">
+          <EmptyState 
+            title="Error loading subjects" 
+            subtitle="Unable to load subjects data. Please try again." 
+          />
+          <TouchableOpacity 
+            onPress={handleRefresh}
+            className="mt-4 px-6 py-3 bg-blue-600 rounded-xl flex-row items-center gap-2"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="refresh" size={18} color="#ffffff" />
+            <Text className="text-white font-semibold">Try Again</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  const handlePageChange = (page: number) => {
-    // TODO: Implement pagination logic
-    console.log('Navigate to page:', page);
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <ScrollView 
         className="flex-1" 
-        contentContainerClassName="px-4 pb-24 pt-6"
+        contentContainerClassName="px-4 pb-24 pt-2"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+            colors={["#3b82f6"]}
+            progressBackgroundColor="#ffffff"
+          />
+        }
       >
-      <TopBar
-        name="director"
-        email="director@school.edu"
-        schoolId="sch_1234567890"
-        avatarUri={undefined}
-      />
-
-      <Section title="Overview">
-        <SubjectStats subjects={data.subjects} />
-      </Section>
-
-      <Section title="All Subjects">
-        {data.subjects.length > 0 ? (
-          <View className="gap-4">
-            {data.subjects.map((subject) => (
-              <SubjectCard key={subject.id} subject={subject} />
-            ))}
-            
-            {/* Pagination */}
-            <SubjectPagination 
-              pagination={data.pagination} 
-              onPageChange={handlePageChange}
+        {/* Manual Refresh Button */}
+        {/* <View className="flex-row justify-end mb-4">
+          <TouchableOpacity 
+            onPress={handleRefresh}
+            disabled={isLoading}
+            className="flex-row items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="refresh" 
+              size={16} 
+              color={isLoading ? "#9ca3af" : "#3b82f6"} 
             />
-          </View>
-        ) : (
-          <EmptyState title="No subjects found" subtitle="No subjects are currently registered." />
-        )}
-      </Section>
+            <Text className={`text-sm font-medium ${
+              isLoading ? "text-gray-400" : "text-blue-600 dark:text-blue-400"
+            }`}>
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </Text>
+          </TouchableOpacity>
+        </View> */}
+
+        <Section title="Overview">
+          <SubjectStats subjects={subjects} />
+        </Section>
+
+        <Section title="All Subjects">
+          {/* Search Bar */}
+          <SearchBar 
+            onSearch={searchSubjects}
+            placeholder="Search subjects by name or code..."
+            className="mb-4"
+          />
+
+          {isLoading && subjects.length === 0 ? (
+            <CenteredLoader visible={true} text="Loading subjects..." />
+          ) : subjects.length > 0 ? (
+            <View className="gap-4">
+              {subjects.map((subject) => (
+                <SubjectCard key={subject.id} subject={subject} />
+              ))}
+              
+              {/* Pagination */}
+              {pagination && pagination.totalPages > 1 && (
+                <SubjectPagination 
+                  pagination={pagination} 
+                  onPageChange={handlePageChange}
+                />
+              )}
+            </View>
+          ) : (
+            <EmptyState 
+              title="No subjects found" 
+              subtitle={filters?.search 
+                ? `No subjects match "${filters.search}"` 
+                : "No subjects are currently registered."
+              } 
+            />
+          )}
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );

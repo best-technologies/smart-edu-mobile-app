@@ -1,6 +1,6 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Pagination } from '@/mock';
+import { Pagination } from '@/services/api/directorService';
 
 export function SubjectPagination({ pagination, onPageChange }: { 
   pagination: Pagination; 

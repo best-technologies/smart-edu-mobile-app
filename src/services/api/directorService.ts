@@ -66,8 +66,57 @@ export interface TeachersData {
   }>;
 }
 
+export interface SubjectTeacher {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface SubjectClass {
+  id: string;
+  name: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  description: string;
+  class: SubjectClass | null;
+  teachers: SubjectTeacher[];
+}
+
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface SubjectFilters {
+  search: string | null;
+  classId: string | null;
+}
+
+export interface SubjectsData {
+  pagination: Pagination;
+  filters: SubjectFilters;
+  subjects: Subject[];
+}
+
+export interface SubjectsQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  classId?: string;
+}
+
 export type DirectorDashboardResponse = ApiResponse<DirectorDashboardData>;
 export type TeachersResponse = ApiResponse<TeachersData>;
+export type SubjectsResponse = ApiResponse<SubjectsData>;
 
 class DirectorService {
   private httpClient: HttpClient;
@@ -117,14 +166,30 @@ class DirectorService {
   }
 
   /**
-   * Fetch subjects data for the subjects screen
+   * Fetch subjects data for the subjects screen with pagination and search
    */
-  async fetchSubjectsData(): Promise<any> {
+  async fetchSubjectsData(params?: SubjectsQueryParams): Promise<SubjectsResponse> {
     try {
-      const response = await this.httpClient.makeRequest('/director/subjects/fetch-subjects-data');
+      const queryParams = new URLSearchParams();
+      
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.classId) queryParams.append('classId', params.classId);
+
+      const url = `/director/subjects/fetch-all-subjects${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      console.log('🌐 Making API request to:', url);
+      
+      const response = await this.httpClient.makeRequest<SubjectsData>(url);
+      
       return response;
     } catch (error) {
-      console.error('Error fetching subjects data:', error);
+      console.error('❌ Error in fetchSubjectsData:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        params
+      });
       throw error;
     }
   }

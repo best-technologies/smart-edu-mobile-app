@@ -8,7 +8,7 @@ import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentTabs from '@/roles/student/StudentTabs';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
-import React from 'react';
+import React, { useState } from 'react';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -45,9 +45,19 @@ function AuthNavigationHandler() {
 }
 
 export default function RootNavigator() {
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  const handleNavigationReady = () => {
+    console.log('🚀 NavigationContainer is ready');
+    setIsNavigationReady(true);
+  };
+
   return (
-    <NavigationContainer theme={AppTheme}>
-      <AuthNavigationHandler />
+    <NavigationContainer 
+      theme={AppTheme}
+      onReady={handleNavigationReady}
+    >
+      {isNavigationReady && <AuthNavigationHandler />}
       <Stack.Navigator 
         initialRouteName="Login" 
         screenOptions={{ 

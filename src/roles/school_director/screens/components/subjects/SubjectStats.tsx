@@ -1,10 +1,10 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Subject } from '@/mock';
+import { Subject } from '@/services/api/directorService';
 
 export function SubjectStats({ subjects }: { subjects: Subject[] }) {
   const totalSubjects = subjects.length;
-  const uniqueClasses = new Set(subjects.map(s => s.class.id)).size;
+  const uniqueClasses = new Set(subjects.filter(s => s.class).map(s => s.class!.id)).size;
   const totalTeachers = new Set(subjects.flatMap(s => s.teachers.map(t => t.id))).size;
   const averageTeachersPerSubject = totalSubjects > 0 ? (totalTeachers / totalSubjects).toFixed(1) : '0';
 

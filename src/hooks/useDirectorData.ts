@@ -1,5 +1,8 @@
 import { useDirectorDashboard, useRefreshDirectorDashboard, useInvalidateDirectorDashboard, useDirectorDashboardCache } from './useDirectorDashboard';
 import { useToast } from '@/contexts/ToastContext';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { directorService, SubjectsQueryParams, SubjectsData } from '@/services/api/directorService';
 
 /**
  * Comprehensive hook for managing director dashboard data
@@ -74,5 +77,83 @@ export function useDirectorData() {
     // Query object for advanced usage
     query: dashboardQuery,
     refreshMutation,
+  };
+}
+
+/**
+ * Hook for managing subjects data with pagination and search
+ */
+export function useSubjectsData(initialParams?: SubjectsQueryParams) {
+  const [params, setParams] = useState<SubjectsQueryParams>({
+    page: 1,
+    limit: 10,
+    ...initialParams,
+  });
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['subjects', params],
+    queryFn: async () => {
+      try {
+        console.log('🔍 Fetching subjects with params:', params);
+        const result = await directorService.fetchSubjectsData(params);
+        return result;
+      } catch (err) {
+        console.error('❌ Error fetching subjects:', err);
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2, // Retry failed requests up to 2 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
+  const subjectsData = response?.data;
+
+  const updateParams = useCallback((newParams: Partial<SubjectsQueryParams>) => {
+    setParams(prev => ({
+      ...prev,
+      ...newParams,
+      // Reset to page 1 when search or filters change
+      page: newParams.search !== undefined || newParams.classId !== undefined ? 1 : prev.page,
+    }));
+  }, []);
+
+  const goToPage = useCallback((page: number) => {
+    updateParams({ page });
+  }, [updateParams]);
+
+  const searchSubjects = useCallback((searchTerm: string) => {
+    updateParams({ search: searchTerm || undefined });
+  }, [updateParams]);
+
+  const filterByClass = useCallback((classId: string | null) => {
+    updateParams({ classId: classId || undefined });
+  }, [updateParams]);
+
+  return {
+    // Data
+    subjects: subjectsData?.subjects || [],
+    pagination: subjectsData?.pagination,
+    filters: subjectsData?.filters,
+    
+    // State
+    isLoading,
+    error,
+    
+    // Actions
+    refetch,
+    goToPage,
+    searchSubjects,
+    filterByClass,
+    updateParams,
+    
+    // Current params
+    currentParams: params,
   };
 }

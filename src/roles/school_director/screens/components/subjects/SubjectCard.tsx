@@ -1,6 +1,6 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Subject } from '@/mock';
+import { Subject } from '@/services/api/directorService';
 
 export function SubjectCard({ subject }: { subject: Subject }) {
   const formatSubjectName = (name: string) => {
@@ -50,7 +50,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
             <View className="flex-row items-center gap-1">
               <Ionicons name="school-outline" size={14} color="#6b7280" />
               <Text className="text-sm text-gray-600 dark:text-gray-300">
-                Class {subject.class.name}
+                {subject.class ? `Class ${subject.class.name}` : 'No class assigned'}
               </Text>
             </View>
             <View className="flex-row items-center gap-1">

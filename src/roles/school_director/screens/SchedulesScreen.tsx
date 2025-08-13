@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import TopBar from './components/shared/TopBar';
 import ClassTabs from './components/schedules/ClassTabs';
 import TimetableGrid from './components/schedules/TimetableGrid';
 import DayScheduleView from './components/schedules/DayScheduleView';
@@ -112,13 +111,6 @@ export default function SchedulesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      <TopBar 
-        name="director"
-        email="director@school.edu"
-        schoolId="sch_1234567890"
-        avatarUri={undefined}
-      />
-      
       <ScrollView 
         className="flex-1" 
         contentContainerClassName="pb-24"
