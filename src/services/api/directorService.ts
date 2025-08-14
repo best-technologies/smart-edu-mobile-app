@@ -423,12 +423,6 @@ class DirectorService {
         payload
       );
       
-      // Log the complete response for debugging
-      console.log('📥 Response from create-timetable API:', JSON.stringify(response, null, 2));
-      console.log('📊 Response success:', response.success);
-      console.log('📊 Response message:', response.message);
-      console.log('📊 Response data:', response.data);
-      
       return response;
     } catch (error) {
       console.error('❌ Error in createTimetableEntry:', error);
@@ -436,6 +430,57 @@ class DirectorService {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new class
+   */
+  async createClass(payload: { name: string }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/classes/create');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/classes/create',
+        'POST',
+        payload
+      );
+      
+      console.log('📥 Response from create-class API:', JSON.stringify(response, null, 2));
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in createClass:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch all classes
+   */
+  async fetchAllClasses(): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/classes/fetch-all-classes');
+      
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/classes/fetch-all-classes',
+        'GET'
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchAllClasses:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       });
       throw error;
     }

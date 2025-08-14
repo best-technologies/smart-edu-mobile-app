@@ -4,6 +4,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScheduleItem, TimeSlot } from '@/services/api/directorService';
 import CreateScheduleModal from './CreateScheduleModal';
 
+// Predefined color palette for subjects
+const SUBJECT_COLORS = [
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Amber
+  '#EF4444', // Red
+  '#8B5CF6', // Purple
+  '#06B6D4', // Cyan
+  '#F97316', // Orange
+  '#EC4899', // Pink
+  '#84CC16', // Lime
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
+  '#F43F5E', // Rose
+];
+
+// Function to get a consistent color for a subject
+const getSubjectColor = (subjectName: string): string => {
+  if (!subjectName) return SUBJECT_COLORS[0];
+  
+  // Create a simple hash from the subject name
+  let hash = 0;
+  for (let i = 0; i < subjectName.length; i++) {
+    const char = subjectName.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Use the hash to select a color
+  const colorIndex = Math.abs(hash) % SUBJECT_COLORS.length;
+  return SUBJECT_COLORS[colorIndex];
+};
+
 interface TimetableGridProps {
   selectedClass: string;
   timeSlots: TimeSlot[];
@@ -76,6 +109,10 @@ export function TimetableGrid({
     return day.charAt(0) + day.slice(1).toLowerCase();
   };
 
+  const formatClassName = (className: string) => {
+    return className.toUpperCase().replace('JSS', 'JSS ').replace('SS', 'SS ');
+  };
+
   const formatTime = (time: string) => {
     // Convert 24-hour format to 12-hour format
     const [hours, minutes] = time.split(':');
@@ -90,7 +127,7 @@ export function TimetableGrid({
       {/* Header */}
       <View className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
         <Text className="text-xl font-bold text-center">
-          {selectedClass.toUpperCase()} Timetable
+          {formatClassName(selectedClass)} Timetable
         </Text>
         <Text className="text-center mt-1 font-medium">
           Weekly Schedule Overview
@@ -181,9 +218,9 @@ export function TimetableGrid({
                         activeOpacity={0.8}
                         className="h-full p-3"
                         style={{
-                          backgroundColor: scheduleItem.subject.color + '15',
+                          backgroundColor: getSubjectColor(scheduleItem.subject.name) + '15',
                           borderLeftWidth: 4,
-                          borderLeftColor: scheduleItem.subject.color,
+                          borderLeftColor: getSubjectColor(scheduleItem.subject.name),
                         }}
                         onPress={() => console.log('Edit period:', scheduleItem)}
                       >
@@ -246,6 +283,7 @@ export function TimetableGrid({
         selectedDay={selectedDay}
         selectedTimeSlot={selectedTimeSlot}
         selectedClass={selectedClass}
+        timeSlots={timeSlots}
       />
     </View>
   );

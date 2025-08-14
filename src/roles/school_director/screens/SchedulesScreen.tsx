@@ -5,26 +5,21 @@ import { Ionicons } from '@expo/vector-icons';
 import Section from './components/shared/Section';
 import ClassSelector from './components/schedules/ClassSelector';
 import TimetableGrid from './components/schedules/TimetableGrid';
+import AddClassButton from './components/schedules/AddClassButton';
+import AddClassModal from './components/schedules/AddClassModal';
 import EmptyState from './components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useScheduleData } from '@/hooks/useDirectorData';
-
-// Predefined list of classes that all schools have
-const DEFAULT_CLASSES = [
-  { classId: 'jss1', name: 'jss1' },
-  { classId: 'jss2', name: 'jss2' },
-  { classId: 'jss3', name: 'jss3' },
-  { classId: 'ss1', name: 'ss1' },
-  { classId: 'ss2', name: 'ss2' },
-  { classId: 'ss3', name: 'ss3' },
-];
+import { directorService } from '@/services/api/directorService';
 
 export default function SchedulesScreen() {
   const [selectedClassId, setSelectedClassId] = useState<string>('jss1'); // Default to jss1
+  const [addClassModalVisible, setAddClassModalVisible] = useState(false);
+  const [classes, setClasses] = useState<Array<{ classId: string; name: string }>>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
 
   const {
     scheduleData,
-    classes,
     timeSlots,
     schedule,
     isLoading,
@@ -39,8 +34,42 @@ export default function SchedulesScreen() {
 
   const handleClassSelect = useCallback((classId: string) => {
     setSelectedClassId(classId);
-    filterByClass(classId);
-  }, [filterByClass]);
+    // Find the class name from the classId
+    const selectedClass = classes.find(c => c.classId === classId);
+    if (selectedClass) {
+      filterByClass(selectedClass.name); // Send class name instead of ID
+    }
+  }, [filterByClass, classes]);
+
+  // Fetch classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      setIsLoadingClasses(true);
+      const response = await directorService.fetchAllClasses();
+      
+      if (response.success && response.data) {
+        const formattedClasses = response.data.map((classItem: any) => ({
+          classId: classItem.id,
+          name: classItem.name,
+        }));
+        setClasses(formattedClasses);
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+    } finally {
+      setIsLoadingClasses(false);
+    }
+  };
+
+  const handleAddClassSuccess = () => {
+    // Refresh both schedule data and classes
+    refetch();
+    fetchClasses();
+  };
 
   if (error) {
     return (
@@ -79,19 +108,29 @@ export default function SchedulesScreen() {
           />
         }
       >
-        <Section title="Class Schedules">
+        <Section 
+          title="Class Schedules"
+          action={
+            <AddClassButton
+              onPress={() => setAddClassModalVisible(true)}
+              size="small"
+              variant="primary"
+            />
+          }
+        >
           {/* Class Selector */}
           <ClassSelector
-            classes={DEFAULT_CLASSES}
+            classes={classes}
             selectedClassId={selectedClassId}
             onClassSelect={handleClassSelect}
+            isLoading={isLoadingClasses}
           />
 
           {isLoading ? (
             <CenteredLoader visible={true} text="Loading schedule..." />
           ) : schedule && timeSlots.length > 0 ? (
             <TimetableGrid
-              selectedClass={selectedClassId}
+              selectedClass={classes.find(c => c.classId === selectedClassId)?.name || selectedClassId}
               timeSlots={timeSlots}
               schedule={schedule}
               onScheduleCreated={refetch}
@@ -108,6 +147,13 @@ export default function SchedulesScreen() {
           )}
         </Section>
       </ScrollView>
+
+      {/* Add Class Modal */}
+      <AddClassModal
+        visible={addClassModalVisible}
+        onClose={() => setAddClassModalVisible(false)}
+        onSuccess={handleAddClassSuccess}
+      />
     </SafeAreaView>
   );
 }
