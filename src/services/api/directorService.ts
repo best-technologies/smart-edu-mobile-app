@@ -378,6 +378,68 @@ class DirectorService {
       throw error;
     }
   }
+
+  /**
+   * Fetch timetable options for creating new schedule entries
+   */
+  async fetchTimetableOptions(): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/timetable-options');
+      
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/schedules/timetable-options',
+        'GET'
+      );
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchTimetableOptions:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new timetable entry
+   */
+  async createTimetableEntry(payload: {
+    class_id: string;
+    subject_id: string;
+    teacher_id: string;
+    timeSlotId: string;
+    day_of_week: string;
+    room?: string;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/create-timetable');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/schedules/create-timetable',
+        'POST',
+        payload
+      );
+      
+      // Log the complete response for debugging
+      console.log('📥 Response from create-timetable API:', JSON.stringify(response, null, 2));
+      console.log('📊 Response success:', response.success);
+      console.log('📊 Response message:', response.message);
+      console.log('📊 Response data:', response.data);
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in createTimetableEntry:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
 }
 
 export const directorService = new DirectorService();

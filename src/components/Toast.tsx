@@ -136,7 +136,8 @@ export default function Toast({
         top: 50,
         left: 16,
         right: 16,
-        zIndex: 9999,
+        zIndex: 999999,
+        elevation: 999999,
         transform: [{ translateY }, { scale }],
         opacity,
       }}
@@ -149,11 +150,12 @@ export default function Toast({
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.15,
           shadowRadius: 8,
-          elevation: 8,
+          elevation: 999999,
+          zIndex: 999999,
         }}
       >
         <LinearGradient
-          colors={config.colors}
+          colors={config.colors as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{

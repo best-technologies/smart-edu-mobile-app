@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScheduleItem, TimeSlot } from '@/services/api/directorService';
+import CreateScheduleModal from './CreateScheduleModal';
 
 interface TimetableGridProps {
   selectedClass: string;
@@ -13,14 +14,21 @@ interface TimetableGridProps {
     THURSDAY: ScheduleItem[];
     FRIDAY: ScheduleItem[];
   };
+  onScheduleCreated?: () => void;
 }
 
 export function TimetableGrid({ 
   selectedClass, 
   timeSlots, 
-  schedule
+  schedule,
+  onScheduleCreated
 }: TimetableGridProps) {
   const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+  
+  // Modal state
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
 
   // Use useMemo to calculate dimensions only when needed
   const { cellWidth, cellHeight } = useMemo(() => {
@@ -36,6 +44,26 @@ export function TimetableGrid({
       return { cellWidth: 120, cellHeight: 100 };
     }
   }, []);
+
+  // Modal handlers
+  const handleOpenModal = (day: string, timeSlotId: string) => {
+    setSelectedDay(day);
+    setSelectedTimeSlot(timeSlotId);
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleModalSuccess = () => {
+    // This will be called when a schedule is successfully created
+    // The parent component should handle refreshing the data
+    console.log('Schedule created successfully');
+    if (onScheduleCreated) {
+      onScheduleCreated();
+    }
+  };
 
   const getScheduleItemForTimeSlot = (day: string, timeSlotId: string): ScheduleItem | null => {
     const daySchedule = schedule[day as keyof typeof schedule];
@@ -183,7 +211,7 @@ export function TimetableGrid({
                       <TouchableOpacity 
                         activeOpacity={0.7}
                         className="h-full p-3 items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600"
-                        onPress={() => console.log('Add period for:', day, timeSlot.label)}
+                        onPress={() => handleOpenModal(day, timeSlot.id)}
                       >
                         {timeSlot.label === 'break' ? (
                           <View className="items-center">
@@ -209,6 +237,16 @@ export function TimetableGrid({
           ))}
         </View>
       </ScrollView>
+
+      {/* Create Schedule Modal */}
+      <CreateScheduleModal
+        visible={isModalVisible}
+        onClose={handleCloseModal}
+        onSuccess={handleModalSuccess}
+        selectedDay={selectedDay}
+        selectedTimeSlot={selectedTimeSlot}
+        selectedClass={selectedClass}
+      />
     </View>
   );
 }

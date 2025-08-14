@@ -7,3 +7,7 @@ export { default as InlineLoader } from './InlineLoader';
 export { default as Toast } from './Toast';
 export { default as ToastContainer } from './ToastContainer';
 export type { ToastType, ToastProps } from './Toast';
+export { default as SuccessModal } from './SuccessModal';
+export { default as ErrorModal } from './ErrorModal';
+export type { SuccessModalProps } from './SuccessModal';
+export type { ErrorModalProps } from './ErrorModal';

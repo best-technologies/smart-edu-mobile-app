@@ -94,6 +94,7 @@ export default function SchedulesScreen() {
               selectedClass={selectedClassId}
               timeSlots={timeSlots}
               schedule={schedule}
+              onScheduleCreated={refetch}
             />
           ) : (
             <EmptyState 

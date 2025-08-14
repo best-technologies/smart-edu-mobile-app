@@ -7,7 +7,14 @@ export default function ToastContainer() {
   const { toasts, removeToast } = useToast();
 
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999 }}>
+    <View style={{ 
+      position: 'absolute', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      zIndex: 999999,
+      elevation: 999999,
+    }}>
       {toasts.map((toast, index) => (
         <Toast
           key={toast.id}
