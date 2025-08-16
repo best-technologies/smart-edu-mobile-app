@@ -138,6 +138,7 @@ export interface SubjectsData {
   pagination: Pagination;
   filters: SubjectFilters;
   subjects: Subject[];
+  availableClasses?: AvailableClass[];
 }
 
 export interface SubjectsQueryParams {

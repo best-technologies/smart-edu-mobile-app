@@ -2,11 +2,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SchoolDirectorTabs from './SchoolDirectorTabs';
 import AllStudentsListScreen from './screens/students/AllStudentsListScreen';
 import AllTeachersListScreen from './screens/teachers/AllTeachersListScreen';
+import AllSubjectsListScreen from './screens/subjects/AllSubjectsListScreen';
 
 export type SchoolDirectorStackParamList = {
   SchoolDirectorTabs: undefined;
   AllStudentsList: undefined;
   AllTeachersList: undefined;
+  AllSubjectsList: undefined;
 };
 
 const Stack = createNativeStackNavigator<SchoolDirectorStackParamList>();
@@ -21,6 +23,7 @@ export default function SchoolDirectorNavigator() {
       <Stack.Screen name="SchoolDirectorTabs" component={SchoolDirectorTabs} />
       <Stack.Screen name="AllStudentsList" component={AllStudentsListScreen} />
       <Stack.Screen name="AllTeachersList" component={AllTeachersListScreen} />
+      <Stack.Screen name="AllSubjectsList" component={AllSubjectsListScreen} />
     </Stack.Navigator>
   );
 }
