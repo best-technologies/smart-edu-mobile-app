@@ -24,7 +24,13 @@ export function ClassSelector({
     const jssClasses = classes.filter(c => c.name.toLowerCase().startsWith('jss')).sort((a, b) => a.name.localeCompare(b.name));
     const ssClasses = classes.filter(c => c.name.toLowerCase().startsWith('ss')).sort((a, b) => a.name.localeCompare(b.name));
     
-    return { pryClasses, jssClasses, ssClasses };
+    // Get all other classes that don't match the known prefixes
+    const otherClasses = classes.filter(c => {
+      const name = c.name.toLowerCase();
+      return !name.startsWith('pry') && !name.startsWith('jss') && !name.startsWith('ss');
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    
+    return { pryClasses, jssClasses, ssClasses, otherClasses };
   };
 
   if (isLoading) {
@@ -64,7 +70,7 @@ export function ClassSelector({
     );
   }
 
-  const { pryClasses, jssClasses, ssClasses } = groupClassesByType(classes);
+  const { pryClasses, jssClasses, ssClasses, otherClasses } = groupClassesByType(classes);
 
   const renderClassRow = (classList: Array<{ classId: string; name: string }>, title: string) => {
     if (classList.length === 0) return null;
@@ -114,6 +120,7 @@ export function ClassSelector({
         {renderClassRow(pryClasses, 'Primary')}
         {renderClassRow(jssClasses, 'Junior Secondary')}
         {renderClassRow(ssClasses, 'Senior Secondary')}
+        {renderClassRow(otherClasses, 'Others')}
       </View>
     </View>
   );

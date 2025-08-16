@@ -7,6 +7,7 @@ import ClassSelector from './components/schedules/ClassSelector';
 import TimetableGrid from './components/schedules/TimetableGrid';
 import AddClassButton from './components/schedules/AddClassButton';
 import AddClassModal from './components/schedules/AddClassModal';
+import TimeSlotModal from './components/schedules/TimeSlotModal';
 import EmptyState from './components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useScheduleData } from '@/hooks/useDirectorData';
@@ -15,6 +16,7 @@ import { directorService } from '@/services/api/directorService';
 export default function SchedulesScreen() {
   const [selectedClassId, setSelectedClassId] = useState<string>('jss1'); // Default to jss1
   const [addClassModalVisible, setAddClassModalVisible] = useState(false);
+  const [timeSlotModalVisible, setTimeSlotModalVisible] = useState(false);
   const [classes, setClasses] = useState<Array<{ classId: string; name: string }>>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
 
@@ -52,7 +54,7 @@ export default function SchedulesScreen() {
       const response = await directorService.fetchAllClasses();
       
       if (response.success && response.data) {
-        const formattedClasses = response.data.map((classItem: any) => ({
+        const formattedClasses = response.data.classes.map((classItem: any) => ({
           classId: classItem.id,
           name: classItem.name,
         }));
@@ -69,6 +71,11 @@ export default function SchedulesScreen() {
     // Refresh both schedule data and classes
     refetch();
     fetchClasses();
+  };
+
+  const handleTimeSlotSuccess = () => {
+    // Refresh schedule data to get updated time slots
+    refetch();
   };
 
   if (error) {
@@ -111,11 +118,21 @@ export default function SchedulesScreen() {
         <Section 
           title="Class Schedules"
           action={
-            <AddClassButton
-              onPress={() => setAddClassModalVisible(true)}
-              size="small"
-              variant="primary"
-            />
+            <View className="flex-row space-x-2">
+              <TouchableOpacity
+                onPress={() => setTimeSlotModalVisible(true)}
+                className="px-4 py-2 bg-purple-600 rounded-lg flex-row items-center space-x-2"
+                activeOpacity={0.8}
+              >
+                <Ionicons name="time-outline" size={16} color="#ffffff" />
+                <Text className="text-white font-medium text-sm">Time Slots</Text>
+              </TouchableOpacity>
+              <AddClassButton
+                onPress={() => setAddClassModalVisible(true)}
+                size="small"
+                variant="primary"
+              />
+            </View>
           }
         >
           {/* Class Selector */}
@@ -153,6 +170,13 @@ export default function SchedulesScreen() {
         visible={addClassModalVisible}
         onClose={() => setAddClassModalVisible(false)}
         onSuccess={handleAddClassSuccess}
+      />
+
+      {/* Time Slot Modal */}
+      <TimeSlotModal
+        visible={timeSlotModalVisible}
+        onClose={() => setTimeSlotModalVisible(false)}
+        onSuccess={handleTimeSlotSuccess}
       />
     </SafeAreaView>
   );

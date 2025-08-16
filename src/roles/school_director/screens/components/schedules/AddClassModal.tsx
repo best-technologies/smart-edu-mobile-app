@@ -10,23 +10,15 @@ import {
   ScrollView,
   Image,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { directorService } from '@/services/api/directorService';
+import { directorService, ClassData, TeacherData } from '@/services/api/directorService';
 import { SuccessModal, ErrorModal } from '@/components';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-interface ClassData {
-  id: string;
-  name: string;
-  classTeacher: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    display_picture: string | null;
-  } | null;
-}
+
 
 interface AddClassModalProps {
   visible: boolean;
@@ -40,12 +32,20 @@ export default function AddClassModal({
   onSuccess,
 }: AddClassModalProps) {
   const [className, setClassName] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [existingClasses, setExistingClasses] = useState<ClassData[]>([]);
+  const [availableTeachers, setAvailableTeachers] = useState<TeacherData[]>([]);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Inline editing states
+  const [editingField, setEditingField] = useState<{ id: string; field: string; value: string } | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleSubmit = async () => {
     if (!className.trim()) {
@@ -57,13 +57,19 @@ export default function AddClassModal({
     try {
       setIsLoading(true);
       
-      const payload = {
+      const payload: { name: string; classTeacherId?: string } = {
         name: className.trim().toLowerCase(),
       };
+
+      // Add teacher ID if selected
+      if (selectedTeacherId) {
+        payload.classTeacherId = selectedTeacherId;
+      }
 
       const response = await directorService.createClass(payload);
 
       if (response.success) {
+        setSuccessMessage('Class created successfully');
         setSuccessModalVisible(true);
       } else {
         const errorMsg = response.message || 'Failed to create class';
@@ -83,6 +89,7 @@ export default function AddClassModal({
   const handleClose = () => {
     if (!isLoading) {
       setClassName('');
+      setSelectedTeacherId('');
       onClose();
     }
   };
@@ -90,7 +97,11 @@ export default function AddClassModal({
   const handleSuccessModalClose = () => {
     setSuccessModalVisible(false);
     setClassName('');
-    onSuccess();
+    setSelectedTeacherId('');
+    // Only call onSuccess when creating a new class, not when editing
+    if (!editingField) {
+      onSuccess();
+    }
     onClose();
   };
 
@@ -107,7 +118,8 @@ export default function AddClassModal({
       const response = await directorService.fetchAllClasses();
       
       if (response.success && response.data) {
-        setExistingClasses(response.data);
+        setExistingClasses(response.data.classes);
+        setAvailableTeachers(response.data.teachers);
       }
     } catch (error) {
       console.error('Error fetching existing classes:', error);
@@ -123,6 +135,87 @@ export default function AddClassModal({
   const getTeacherDisplayName = (teacher: any) => {
     if (!teacher) return 'No teacher assigned';
     return `${teacher.first_name} ${teacher.last_name}`;
+  };
+
+  // Inline editing functions
+  const startEditing = (classItem: ClassData, field: string) => {
+    setEditingField({ id: classItem.id, field, value: classItem[field as keyof ClassData]?.toString() || '' });
+    setEditValue(classItem[field as keyof ClassData]?.toString() || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const handleEditChange = (text: string) => {
+    setEditValue(text);
+  };
+
+  const saveEdit = async () => {
+    if (!editingField || !editValue.trim()) return;
+
+    try {
+      setIsUpdating(true);
+      
+      const payload: any = {};
+      payload[editingField.field] = editingField.field === 'name' ? editValue.trim() : editValue;
+
+      const response = await directorService.editClass(editingField.id, payload);
+
+      if (response.success) {
+        // Update the local state
+        setExistingClasses(prev => prev.map(classItem => 
+          classItem.id === editingField.id 
+            ? { ...classItem, [editingField.field]: payload[editingField.field] }
+            : classItem
+        ));
+        
+        setSuccessMessage(`${editingField.field} updated successfully`);
+        setSuccessModalVisible(true);
+        cancelEditing();
+      } else {
+        const errorMsg = response.message || 'Failed to update class';
+        setErrorMessage(errorMsg);
+        setErrorModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Error updating class:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update class';
+      setErrorMessage(errorMsg);
+      setErrorModalVisible(true);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = (classItem: ClassData) => {
+    Alert.alert(
+      'Delete Class',
+      `Are you sure you want to delete "${classItem.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => deleteClass(classItem.id)
+        },
+      ]
+    );
+  };
+
+  const deleteClass = async (id: string) => {
+    try {
+      // TODO: Add delete API call when endpoint is provided
+      console.log('Delete class with ID:', id);
+      setSuccessMessage('Class deleted successfully');
+      setSuccessModalVisible(true);
+      fetchExistingClasses(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      setErrorMessage('Failed to delete class');
+      setErrorModalVisible(true);
+    }
   };
 
   return (
@@ -185,6 +278,47 @@ export default function AddClassModal({
               />
             </View>
 
+            {/* Teacher Selection */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                Class Teacher (Optional)
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (availableTeachers.length > 0) {
+                    Alert.alert(
+                      'Select Teacher',
+                      'Choose a teacher for this class:',
+                      [
+                        { text: 'No Teacher', onPress: () => setSelectedTeacherId('') },
+                        ...availableTeachers.map(teacher => ({
+                          text: `${teacher.first_name} ${teacher.last_name}`,
+                          onPress: () => setSelectedTeacherId(teacher.id)
+                        }))
+                      ]
+                    );
+                  }
+                }}
+                className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center flex-1">
+                  {selectedTeacherId && availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture ? (
+                    <Image
+                      source={{ uri: availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture! }}
+                      className="w-6 h-6 rounded-full mr-2"
+                    />
+                  ) : null}
+                  <Text className="text-gray-900 flex-1">
+                    {selectedTeacherId 
+                      ? `${availableTeachers.find(t => t.id === selectedTeacherId)?.first_name} ${availableTeachers.find(t => t.id === selectedTeacherId)?.last_name}`
+                      : 'Select a teacher (optional)'
+                    }
+                  </Text>
+                </View>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
             {/* Existing Classes Section */}
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-3">
@@ -215,31 +349,133 @@ export default function AddClassModal({
                     renderItem={({ item: classItem }) => (
                       <View className="flex-row items-center p-3 bg-gray-50 rounded-lg mb-2">
                         {/* Teacher Avatar */}
-                        <View className="w-8 h-8 rounded-full mr-3 overflow-hidden bg-gray-200 items-center justify-center">
+                        <View className="w-10 h-10 rounded-full mr-3 overflow-hidden bg-gray-200 items-center justify-center">
                           {classItem.classTeacher?.display_picture ? (
                             <Image
                               source={{ uri: classItem.classTeacher.display_picture }}
-                              className="w-8 h-8 rounded-full"
+                              className="w-10 h-10 rounded-full"
                             />
                           ) : (
-                            <Ionicons name="person" size={16} color="#6b7280" />
+                            <Ionicons name="person" size={20} color="#6b7280" />
                           )}
                         </View>
                         
                         {/* Class Info */}
                         <View className="flex-1">
-                          <Text className="text-sm font-semibold text-gray-900">
-                            {classItem.name.toUpperCase()}
-                          </Text>
-                          <Text className="text-xs text-gray-500">
-                            {getTeacherDisplayName(classItem.classTeacher)}
-                          </Text>
+                          <View className="flex-row items-center mb-1">
+                            {editingField?.id === classItem.id && editingField?.field === 'name' ? (
+                              <View className="flex-row items-center flex-1">
+                                <TextInput
+                                  value={editValue}
+                                  onChangeText={handleEditChange}
+                                  className="bg-white border border-blue-300 rounded px-2 py-1 text-sm font-semibold text-gray-900 flex-1"
+                                  autoFocus
+                                  maxLength={20}
+                                />
+                                <View className="flex-row items-center space-x-2 ml-2">
+                                  <TouchableOpacity
+                                    onPress={saveEdit}
+                                    disabled={isUpdating}
+                                    className="w-6 h-6 bg-green-100 rounded-full items-center justify-center"
+                                  >
+                                    <Ionicons name="checkmark" size={14} color="#10b981" />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={cancelEditing}
+                                    className="w-6 h-6 bg-red-100 rounded-full items-center justify-center"
+                                  >
+                                    <Ionicons name="close" size={14} color="#ef4444" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            ) : (
+                              <View className="flex-row items-center flex-1">
+                                <Text className="text-sm font-semibold text-gray-900">
+                                  {classItem.name.toUpperCase()}
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={() => startEditing(classItem, 'name')}
+                                  className="w-6 h-6 bg-blue-100 rounded-full items-center justify-center ml-2"
+                                >
+                                  <Ionicons name="pencil" size={14} color="#3b82f6" />
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                          
+                          <View className="flex-row items-center">
+                            {editingField?.id === classItem.id && editingField?.field === 'classTeacher' ? (
+                              <View className="flex-row items-center flex-1">
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    if (availableTeachers.length > 0) {
+                                      Alert.alert(
+                                        'Select Teacher',
+                                        'Choose a teacher for this class:',
+                                        [
+                                          { text: 'No Teacher', onPress: () => setEditValue('') },
+                                          ...availableTeachers.map(teacher => ({
+                                            text: `${teacher.first_name} ${teacher.last_name}`,
+                                            onPress: () => setEditValue(teacher.id)
+                                          }))
+                                        ]
+                                      );
+                                    }
+                                  }}
+                                  className="bg-white border border-blue-300 rounded px-2 py-1 text-xs text-gray-500 flex-1"
+                                >
+                                  <Text>
+                                    {editValue 
+                                      ? availableTeachers.find(t => t.id === editValue)?.first_name + ' ' + 
+                                        availableTeachers.find(t => t.id === editValue)?.last_name
+                                      : 'Select a teacher'
+                                    }
+                                  </Text>
+                                </TouchableOpacity>
+                                <View className="flex-row items-center space-x-2 ml-2">
+                                  <TouchableOpacity
+                                    onPress={saveEdit}
+                                    disabled={isUpdating}
+                                    className="w-6 h-6 bg-green-100 rounded-full items-center justify-center"
+                                  >
+                                    <Ionicons name="checkmark" size={14} color="#10b981" />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={cancelEditing}
+                                    className="w-6 h-6 bg-red-100 rounded-full items-center justify-center"
+                                  >
+                                    <Ionicons name="close" size={14} color="#ef4444" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            ) : (
+                              <View className="flex-row items-center flex-1">
+                                <Text className="text-xs text-gray-500">
+                                  {getTeacherDisplayName(classItem.classTeacher)}
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={() => startEditing(classItem, 'classTeacher')}
+                                  className="w-6 h-6 bg-blue-100 rounded-full items-center justify-center ml-2"
+                                >
+                                  <Ionicons name="pencil" size={14} color="#3b82f6" />
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
                         </View>
                         
                         {/* Status Indicator */}
-                        <View className={`w-2 h-2 rounded-full ${
+                        <View className={`w-3 h-3 rounded-full mr-2 ${
                           classItem.classTeacher ? 'bg-green-500' : 'bg-yellow-500'
                         }`} />
+                        
+                        {/* Delete Button */}
+                        <TouchableOpacity
+                          onPress={() => handleDelete(classItem)}
+                          className="w-6 h-6 bg-red-100 rounded-full items-center justify-center"
+                        >
+                          <Ionicons name="trash" size={12} color="#ef4444" />
+                        </TouchableOpacity>
                       </View>
                     )}
                   />
@@ -284,7 +520,7 @@ export default function AddClassModal({
       <SuccessModal
         visible={successModalVisible}
         title="Success!"
-        message="Class created successfully"
+        message={successMessage}
         onClose={handleSuccessModalClose}
         confirmText="OK"
         autoClose={false}

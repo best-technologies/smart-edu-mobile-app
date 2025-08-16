@@ -1,6 +1,33 @@
 import { HttpClient } from './httpClient';
 import { ApiResponse } from '../types/apiTypes';
 
+export interface ClassTeacher {
+  id: string;
+  first_name: string;
+  last_name: string;
+  display_picture: string | null;
+}
+
+export interface ClassData {
+  id: string;
+  name: string;
+  classTeacher: ClassTeacher | null;
+}
+
+export interface TeacherData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  display_picture: string | null;
+  email: string;
+  phone_number: string;
+}
+
+export interface ClassesAndTeachersResponse {
+  classes: ClassData[];
+  teachers: TeacherData[];
+}
+
 export interface DirectorDashboardData {
   basic_details: {
     email: string;
@@ -438,13 +465,13 @@ class DirectorService {
   /**
    * Create a new class
    */
-  async createClass(payload: { name: string }): Promise<ApiResponse<any>> {
+  async createClass(payload: { name: string; classTeacherId?: string }): Promise<ApiResponse<any>> {
     try {
-      console.log('🌐 Making API request to: /director/classes/create');
+      console.log('🌐 Making API request to: /director/classes/create-class');
       console.log('📦 Request payload:', payload);
 
       const response = await this.httpClient.makeRequest<any>(
-        '/director/classes/create',
+        '/director/classes/create-class',
         'POST',
         payload
       );
@@ -464,13 +491,41 @@ class DirectorService {
   }
 
   /**
-   * Fetch all classes
+   * Edit a class
    */
-  async fetchAllClasses(): Promise<ApiResponse<any>> {
+  async editClass(id: string, payload: { name?: string; classTeacherId?: string }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/classes/edit-class/' + id);
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        `/director/classes/edit-class/${id}`,
+        'PATCH',
+        payload
+      );
+      
+      console.log('📥 Response from edit-class API:', JSON.stringify(response, null, 2));
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in editClass:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch all classes and teachers
+   */
+  async fetchAllClasses(): Promise<ApiResponse<ClassesAndTeachersResponse>> {
     try {
       console.log('🌐 Making API request to: /director/classes/fetch-all-classes');
       
-      const response = await this.httpClient.makeRequest<any>(
+      const response = await this.httpClient.makeRequest<ClassesAndTeachersResponse>(
         '/director/classes/fetch-all-classes',
         'GET'
       );
@@ -481,6 +536,91 @@ class DirectorService {
       console.error('❌ Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch all time slots
+   */
+  async fetchTimeSlots(): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/time-slots');
+      
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/schedules/time-slots',
+        'GET'
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchTimeSlots:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new time slot
+   */
+  async createTimeSlot(payload: {
+    startTime: string;
+    endTime: string;
+    label: string;
+    order: number;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/create-time-slot');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/schedules/create-time-slot',
+        'POST',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in createTimeSlot:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update a time slot
+   */
+  async updateTimeSlot(id: string, payload: {
+    startTime?: string;
+    endTime?: string;
+    label?: string;
+    order?: number;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/time-slots/' + id);
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        `/director/schedules/time-slots/${id}`,
+        'PATCH',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in updateTimeSlot:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
       });
       throw error;
     }
