@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import RoleSelectScreen from '@/screens/RoleSelectScreen';
 import { LoginScreen, ForgotPasswordScreen, OTPVerificationScreen } from '@/auth';
 import EmailVerificationScreen from '@/auth/email-verification/EmailVerificationScreen';
-import SchoolDirectorTabs from '@/roles/school_director/SchoolDirectorTabs';
+import SchoolDirectorNavigator from '@/roles/school_director/SchoolDirectorNavigator';
 import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentTabs from '@/roles/student/StudentTabs';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
@@ -76,7 +76,7 @@ export default function RootNavigator() {
         <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
         <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
-        <Stack.Screen name="SchoolDirector" component={SchoolDirectorTabs} />
+        <Stack.Screen name="SchoolDirector" component={SchoolDirectorNavigator} />
         <Stack.Screen name="Teacher" component={TeacherTabs} />
         <Stack.Screen name="Student" component={StudentTabs} />
         <Stack.Screen name="Developer" component={DeveloperTabs} />

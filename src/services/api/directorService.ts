@@ -73,6 +73,12 @@ export interface TeachersData {
     maleTeachers: number;
     femaleTeachers: number;
   };
+  pagination: {
+    total_pages: number;
+    current_page: number;
+    total_results: number;
+    results_per_page: number;
+  };
   teachers: Array<{
     id: string;
     name: string;
@@ -175,8 +181,8 @@ export interface Student {
   last_name: string;
   email: string;
   phone_number: string;
-  display_picture: string;
-  gender: 'male' | 'female';
+  display_picture: string | null;
+  gender: 'male' | 'female' | 'other';
   otp: string;
   otp_expires_at: string | null;
   is_email_verified: boolean;
@@ -216,6 +222,13 @@ export interface StudentsQueryParams {
   limit?: number;
   search?: string;
   classId?: string;
+  status?: string;
+}
+
+export interface TeachersQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
   status?: string;
 }
 
@@ -299,14 +312,30 @@ class DirectorService {
   }
 
   /**
-   * Fetch teachers data for the teachers screen
+   * Fetch teachers data for the teachers screen with pagination and search
    */
-  async fetchTeachersData(): Promise<TeachersResponse> {
+  async fetchTeachersData(params?: TeachersQueryParams): Promise<TeachersResponse> {
     try {
-      const response = await this.httpClient.makeRequest<TeachersData>('/director/teachers/dashboard');
+      const queryParams = new URLSearchParams();
+      
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.status) queryParams.append('status', params.status);
+
+      const url = `/director/teachers/dashboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      console.log('🌐 Making API request to:', url);
+      
+      const response = await this.httpClient.makeRequest<TeachersData>(url);
+      
       return response;
     } catch (error) {
-      console.error('Error fetching teachers data:', error);
+      console.error('❌ Error in fetchTeachersData:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        params
+      });
       throw error;
     }
   }

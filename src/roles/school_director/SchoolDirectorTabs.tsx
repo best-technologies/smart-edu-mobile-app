@@ -1,11 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DirectorDashboardScreen from './screens/DirectorDashboardScreen';
-import TeachersScreen from './screens/TeachersScreen';
-import SubjectsScreen from './screens/SubjectsScreen';
-import StudentsScreen from './screens/StudentsScreen';
-import SchedulesScreen from './screens/SchedulesScreen';
+import DirectorDashboardScreen from './screens/dashboard/DirectorDashboardScreen';
+import TeachersScreen from './screens/teachers/TeachersScreen';
+import SubjectsScreen from './screens/subjects/SubjectsScreen';
+import StudentsScreen from './screens/students/StudentsScreen';
+import SchedulesScreen from './screens/schedules/SchedulesScreen';
 
 function Screen({ label }: { label: string }) {
   return (

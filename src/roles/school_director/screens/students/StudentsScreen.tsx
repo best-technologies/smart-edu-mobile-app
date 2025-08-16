@@ -2,18 +2,22 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Section from './components/shared/Section';
-import StudentStats from './components/students/StudentStats';
-import StudentCard from './components/students/StudentCard';
-import StudentPagination from './components/students/StudentPagination';
-import SearchBar from './components/subjects/SearchBar';
-import ClassFilter from './components/students/ClassFilter';
-import EmptyState from './components/shared/EmptyState';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SchoolDirectorStackParamList } from '../../SchoolDirectorNavigator';
+import Section from '../../components/shared/Section';
+import StudentStats from '../../components/students/StudentStats';
+import StudentCard from '../../components/students/StudentCard';
+import StudentPagination from '../../components/students/StudentPagination';
+import SearchBar from '../../components/subjects/SearchBar';
+import ClassFilter from '../../components/students/ClassFilter';
+import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useStudentsData } from '@/hooks/useDirectorData';
 
 export default function StudentsScreen() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
 
   const {
     students,
@@ -45,6 +49,10 @@ export default function StudentsScreen() {
     setSelectedClassId(classId);
     filterByClass(classId);
   }, [filterByClass]);
+
+  const handleViewAllStudents = () => {
+    navigation.navigate('AllStudentsList');
+  };
 
   if (error) {
     return (
@@ -87,7 +95,21 @@ export default function StudentsScreen() {
           {basicDetails && <StudentStats stats={basicDetails} />}
         </Section>
 
-        <Section title="All Students">
+        <Section 
+          title="All Students"
+          action={
+            <TouchableOpacity
+              onPress={handleViewAllStudents}
+              className="flex-row items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg"
+              activeOpacity={0.7}
+            >
+              <Text className="text-blue-600 dark:text-blue-400 text-sm font-medium mr-1">
+                View All
+              </Text>
+              <Ionicons name="arrow-forward" size={14} color="#2563eb" />
+            </TouchableOpacity>
+          }
+        >
           {/* Search Bar */}
           <SearchBar 
             onSearch={handleSearch}

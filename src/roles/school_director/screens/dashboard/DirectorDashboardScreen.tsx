@@ -1,10 +1,10 @@
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import TopBar from './components/shared/TopBar';
-import Section from './components/shared/Section';
-import EmptyState from './components/shared/EmptyState';
-import { OverviewCard, SmallOverviewCard } from './components/dashboard/OverviewCard';
-import FinanceCard from './components/dashboard/Finance';
+import TopBar from '../../components/shared/TopBar';
+import Section from '../../components/shared/Section';
+import EmptyState from '../../components/shared/EmptyState';
+import { OverviewCard, SmallOverviewCard } from '../../components/dashboard/OverviewCard';
+import FinanceCard from '../../components/dashboard/Finance';
 import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDirectorDashboard';
 import { CenteredLoader } from '@/components';
 

@@ -2,12 +2,12 @@ import React from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Section from './components/shared/Section';
-import SubjectStats from './components/subjects/SubjectStats';
-import SubjectCard from './components/subjects/SubjectCard';
-import SubjectPagination from './components/subjects/Pagination';
-import SearchBar from './components/subjects/SearchBar';
-import EmptyState from './components/shared/EmptyState';
+import Section from '../../components/shared/Section';
+import SubjectStats from '../../components/subjects/SubjectStats';
+import SubjectCard from '../../components/subjects/SubjectCard';
+import SubjectPagination from '../../components/subjects/Pagination';
+import SearchBar from '../../components/subjects/SearchBar';
+import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useSubjectsData } from '@/hooks/useDirectorData';
 
