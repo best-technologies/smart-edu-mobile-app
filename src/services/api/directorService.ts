@@ -232,6 +232,39 @@ export interface TeachersQueryParams {
   status?: string;
 }
 
+export interface EnrollTeacherPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  status: 'active' | 'suspended';
+}
+
+export interface EnrollTeacherResponse {
+  teacher: {
+    id: string;
+    school_id: string;
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone_number: string;
+    display_picture: string | null;
+    gender: string;
+    otp: string;
+    otp_expires_at: string | null;
+    is_email_verified: boolean;
+    is_otp_verified: boolean;
+    role: string;
+    status: 'active' | 'suspended';
+    createdAt: string;
+    updatedAt: string;
+  };
+  generatedPassword: string;
+}
+
+export type EnrollTeacherApiResponse = ApiResponse<EnrollTeacherResponse>;
+
 export type DirectorDashboardResponse = ApiResponse<DirectorDashboardData>;
 export type TeachersResponse = ApiResponse<TeachersData>;
 export type SubjectsResponse = ApiResponse<SubjectsData>;
@@ -335,6 +368,32 @@ class DirectorService {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         params
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Enroll a new teacher
+   */
+  async enrollTeacher(payload: EnrollTeacherPayload): Promise<EnrollTeacherApiResponse> {
+    try {
+      console.log('🌐 Making API request to: /director/teachers');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<EnrollTeacherResponse>(
+        '/director/teachers',
+        'POST',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in enrollTeacher:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
       });
       throw error;
     }
