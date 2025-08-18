@@ -149,6 +149,7 @@ export function useSubjectsData(initialParams?: SubjectsQueryParams) {
     subjects: subjectsData?.subjects || [],
     pagination: subjectsData?.pagination,
     filters: subjectsData?.filters,
+    availableClasses: subjectsData?.availableClasses || [],
     
     // State
     isLoading,

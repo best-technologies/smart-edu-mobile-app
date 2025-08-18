@@ -460,6 +460,80 @@ class DirectorService {
   }
 
   /**
+   * Update subject details
+   */
+  async updateSubject(subjectId: string, payload: {
+    subject_name?: string;
+    description?: string;
+    color?: string;
+    code?: string;
+    class_taking_it?: string;
+    teachers_taking_it?: string[];
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to:', `/director/subjects/${subjectId}`);
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        `/director/subjects/${subjectId}`,
+        'PATCH',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in updateSubject:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        subjectId,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch available teachers and classes for subject assignment
+   */
+  async fetchAvailableTeachersAndClasses(): Promise<ApiResponse<{
+    teachers: Array<{
+      id: string;
+      name: string;
+      display_picture: string | null;
+    }>;
+    classes: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>> {
+    try {
+      console.log('🌐 Making API request to: /director/subjects/available-teachers-classes');
+      
+      const response = await this.httpClient.makeRequest<{
+        teachers: Array<{
+          id: string;
+          name: string;
+          display_picture: string | null;
+        }>;
+        classes: Array<{
+          id: string;
+          name: string;
+        }>;
+      }>('/director/subjects/available-teachers-classes');
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchAvailableTeachersAndClasses:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Fetch schedules data for the schedules screen
    */
   async fetchSchedulesData(): Promise<any> {

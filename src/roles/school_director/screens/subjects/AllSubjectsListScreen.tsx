@@ -148,7 +148,15 @@ export default function AllSubjectsListScreen() {
   const renderSubjectItem = ({ item, index }: { item: Subject; index: number }) => {
     return (
       <View className="flex-1 mx-1 mb-4">
-        <SubjectCard subject={item} />
+        <SubjectCard 
+          subject={item} 
+          onUpdate={(updatedSubject) => {
+            // Update the local subjects array
+            setSubjects(prev => prev.map(subject => 
+              subject.id === updatedSubject.id ? updatedSubject : subject
+            ));
+          }}
+        />
       </View>
     );
   };

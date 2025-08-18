@@ -20,6 +20,7 @@ export default function SubjectsScreen() {
     subjects,
     pagination,
     filters,
+    availableClasses,
     isLoading,
     error,
     refetch,
@@ -129,7 +130,14 @@ export default function SubjectsScreen() {
           ) : subjects.length > 0 ? (
             <View className="gap-4">
               {subjects.map((subject) => (
-                <SubjectCard key={subject.id} subject={subject} />
+                <SubjectCard 
+                  key={subject.id} 
+                  subject={subject} 
+                  onUpdate={(updatedSubject) => {
+                    // The hook will handle the update through refetch
+                    refetch();
+                  }}
+                />
               ))}
               
               {/* Pagination */}

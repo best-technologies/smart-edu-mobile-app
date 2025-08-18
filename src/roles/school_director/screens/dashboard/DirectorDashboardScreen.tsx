@@ -103,14 +103,7 @@ export default function DirectorDashboardScreen() {
         </View>
       </Section>
 
-      <Section title="Finance">
-        <FinanceCard
-          revenue={data?.finance?.totalRevenue ?? 0}
-          expenses={data?.finance?.totalExpenses ?? 0}
-          outstanding={data?.finance?.outstandingFees ?? 0}
-          netBalance={data?.finance?.netBalance ?? 0}
-        />
-      </Section>
+      
 
       <Section title="Ongoing Classes">
         {data?.ongoingClasses?.length ? (
@@ -158,6 +151,16 @@ export default function DirectorDashboardScreen() {
           <EmptyState title="No notifications" subtitle="You're all caught up." />
         )}
       </Section>
+
+      <Section title="Finance">
+        <FinanceCard
+          revenue={data?.finance?.totalRevenue ?? 0}
+          expenses={data?.finance?.totalExpenses ?? 0}
+          outstanding={data?.finance?.outstandingFees ?? 0}
+          netBalance={data?.finance?.netBalance ?? 0}
+        />
+      </Section>
+      
       </ScrollView>
     </SafeAreaView>
   );
