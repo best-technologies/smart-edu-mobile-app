@@ -16,6 +16,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SchoolDirectorStackParamList } from '../../SchoolDirectorNavigator';
 import { directorService } from '@/services/api/directorService';
 import EmptyState from '../../components/shared/EmptyState';
+import UpdateTeacherModal from '../../components/teachers/UpdateTeacherModal';
+import { SuccessModal, ErrorModal } from '@/components';
 
 // Define the Teacher interface based on the API response
 interface Teacher {
@@ -49,6 +51,14 @@ export default function AllTeachersListScreen() {
   const [totalResults, setTotalResults] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Modal states
+  const [updateTeacherModalVisible, setUpdateTeacherModalVisible] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchTeachers = useCallback(async (page: number = 1, search: string = '', isLoadMore: boolean = false) => {
     try {
@@ -141,6 +151,11 @@ export default function AllTeachersListScreen() {
     setHasMore(true);
   };
 
+  const handleUpdateTeacher = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setUpdateTeacherModalVisible(true);
+  };
+
   const renderTeacherItem = ({ item, index }: { item: Teacher; index: number }) => {
     const nameParts = item.name.split(' ');
     const initials = nameParts.length >= 2 
@@ -188,8 +203,17 @@ export default function AllTeachersListScreen() {
                 </Text>
               </View>
             </View>
-            <View className={`px-2 py-1 rounded-full ${getStatusColor(item.status)}`}>
-              <Text className="text-xs font-semibold capitalize">{item.status}</Text>
+            <View className="flex-row items-center gap-2">
+              <View className={`px-2 py-1 rounded-full ${getStatusColor(item.status)}`}>
+                <Text className="text-xs font-semibold capitalize">{item.status}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleUpdateTeacher(item)}
+                className="bg-blue-500 px-2 py-1 rounded-lg"
+                activeOpacity={0.7}
+              >
+                <Text className="text-white text-xs font-medium">Update</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -354,6 +378,56 @@ export default function AllTeachersListScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Update Teacher Modal */}
+      <UpdateTeacherModal
+        visible={updateTeacherModalVisible}
+        teacher={selectedTeacher}
+        onClose={() => {
+          setUpdateTeacherModalVisible(false);
+          setSelectedTeacher(null);
+        }}
+        onSuccess={() => {
+          setUpdateTeacherModalVisible(false);
+          setSelectedTeacher(null);
+          handleRefresh(); // Refresh the list after update
+        }}
+        onShowSuccess={(message) => {
+          setSuccessMessage(message);
+          setSuccessModalVisible(true);
+        }}
+        onShowError={(message) => {
+          setErrorMessage(message);
+          setErrorModalVisible(true);
+        }}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        visible={successModalVisible}
+        title="Success!"
+        message={successMessage}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          setSuccessMessage('');
+        }}
+        confirmText="OK"
+        autoClose={true}
+        autoCloseDelay={3000}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        visible={errorModalVisible}
+        title="Error"
+        message={errorMessage}
+        onClose={() => {
+          setErrorModalVisible(false);
+          setErrorMessage('');
+        }}
+        closeText="OK"
+        autoClose={false}
+      />
     </SafeAreaView>
   );
 }

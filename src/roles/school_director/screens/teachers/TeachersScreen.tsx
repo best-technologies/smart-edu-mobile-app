@@ -13,12 +13,15 @@ import TeacherStats from '../../components/teachers/TeacherStats';
 import TeacherCard from '../../components/teachers/TeacherCard';
 import EmptyState from '../../components/shared/EmptyState';
 import { CenteredLoader, SuccessModal, ErrorModal } from '@/components';
+import UpdateTeacherModal from '../../components/teachers/UpdateTeacherModal';
 
 export default function TeachersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
   const { data, isLoading, error, refetch } = useDirectorTeachers();
   const refreshMutation = useRefreshDirectorTeachers();
   const [enrollModalVisible, setEnrollModalVisible] = useState(false);
+  const [updateTeacherModalVisible, setUpdateTeacherModalVisible] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -43,6 +46,11 @@ export default function TeachersScreen() {
 
   const handleViewAllTeachers = () => {
     navigation.navigate('AllTeachersList');
+  };
+
+  const handleUpdateTeacher = (teacher: any) => {
+    setSelectedTeacher(teacher);
+    setUpdateTeacherModalVisible(true);
   };
 
   // Show loading state
@@ -128,7 +136,7 @@ export default function TeachersScreen() {
           {data?.teachers && data.teachers.length > 0 ? (
             <View className="gap-4">
               {data.teachers.map((teacher) => (
-                <TeacherCard key={teacher.id} teacher={teacher} />
+                <TeacherCard key={teacher.id} teacher={teacher} onUpdate={handleUpdateTeacher} />
               ))}
             </View>
           ) : (
@@ -182,6 +190,29 @@ export default function TeachersScreen() {
         }}
         closeText="OK"
         autoClose={false}
+      />
+
+      {/* Update Teacher Modal */}
+      <UpdateTeacherModal
+        visible={updateTeacherModalVisible}
+        teacher={selectedTeacher}
+        onClose={() => {
+          setUpdateTeacherModalVisible(false);
+          setSelectedTeacher(null);
+        }}
+        onSuccess={() => {
+          setUpdateTeacherModalVisible(false);
+          setSelectedTeacher(null);
+          refetch();
+        }}
+        onShowSuccess={(message) => {
+          setSuccessMessage(message);
+          setSuccessModalVisible(true);
+        }}
+        onShowError={(message) => {
+          setErrorMessage(message);
+          setErrorModalVisible(true);
+        }}
       />
     </SafeAreaView>
   );

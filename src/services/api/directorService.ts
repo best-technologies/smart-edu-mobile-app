@@ -534,6 +534,52 @@ class DirectorService {
   }
 
   /**
+   * Fetch classes and subjects for teacher assignment
+   */
+  async fetchClassesAndSubjects(): Promise<ApiResponse<{
+    classes: Array<{
+      id: string;
+      name: string;
+      hasClassTeacher: boolean;
+      classTeacher: any;
+    }>;
+    subjects: Array<{
+      id: string;
+      name: string;
+    }>;
+    totalClasses: number;
+    totalSubjects: number;
+  }>> {
+    try {
+      console.log('🌐 Making API request to: /director/teachers/classes-subjects');
+      
+      const response = await this.httpClient.makeRequest<{
+        classes: Array<{
+          id: string;
+          name: string;
+          hasClassTeacher: boolean;
+          classTeacher: any;
+        }>;
+        subjects: Array<{
+          id: string;
+          name: string;
+        }>;
+        totalClasses: number;
+        totalSubjects: number;
+      }>('/director/teachers/classes-subjects');
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchClassesAndSubjects:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create a new subject
    */
   async createSubject(payload: {
@@ -560,6 +606,42 @@ class DirectorService {
       console.error('❌ Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update teacher details
+   */
+  async updateTeacher(teacherId: string, payload: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone_number?: string;
+    display_picture?: string;
+    status?: string;
+    subjectsTeaching?: string[];
+    classesManaging?: string[];
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to:', `/director/teachers/${teacherId}`);
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        `/director/teachers/${teacherId}`,
+        'PATCH',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in updateTeacher:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        teacherId,
         payload
       });
       throw error;

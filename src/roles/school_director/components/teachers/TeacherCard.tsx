@@ -2,7 +2,12 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Teacher } from '@/mock';
 
-export function TeacherCard({ teacher }: { teacher: Teacher }) {
+interface TeacherCardProps {
+  teacher: Teacher;
+  onUpdate?: (teacher: Teacher) => void;
+}
+
+export function TeacherCard({ teacher, onUpdate }: TeacherCardProps) {
   const initials = teacher.name
     .split(' ')
     .filter(Boolean)
@@ -29,14 +34,23 @@ export function TeacherCard({ teacher }: { teacher: Teacher }) {
 
         {/* Teacher Info */}
         <View className="flex-1 min-w-0">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 flex-1 mr-2" numberOfLines={1}>{teacher.name}</Text>
-            <View className={`px-2 py-1 rounded-full ${
-              teacher.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-              'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-            }`}>
-              <Text className="text-xs font-semibold capitalize">{teacher.status}</Text>
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-1">
+              <Text className="text-lg font-bold text-gray-900 dark:text-gray-100" numberOfLines={1}>{teacher.name}</Text>
+              <View className={`px-2 py-1 rounded-full self-start mt-1 ${
+                teacher.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+              }`}>
+                <Text className="text-xs font-semibold capitalize">{teacher.status}</Text>
+              </View>
             </View>
+            <TouchableOpacity
+              onPress={() => onUpdate?.(teacher)}
+              className="bg-blue-500 px-3 py-1.5 rounded-lg"
+              activeOpacity={0.7}
+            >
+              <Text className="text-white text-sm font-medium">Update</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Contact Info */}
@@ -84,10 +98,7 @@ export function TeacherCard({ teacher }: { teacher: Teacher }) {
           )}
         </View>
 
-        {/* Action Button */}
-        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 ml-2">
-          <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
-        </TouchableOpacity>
+
       </View>
     </TouchableOpacity>
   );
