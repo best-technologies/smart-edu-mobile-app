@@ -272,7 +272,7 @@ export function useScheduleData(initialParams?: ScheduleQueryParams) {
       try {
         console.log('🔍 Fetching schedule with params:', params);
         const result = await directorService.fetchScheduleData(params);
-        console.log('✅ Schedule fetched successfully:');
+        console.log('✅ Schedule fetched successfully');
         return result;
       } catch (err) {
         console.error('❌ Error fetching schedule:', err);
@@ -283,20 +283,45 @@ export function useScheduleData(initialParams?: ScheduleQueryParams) {
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2, // Retry failed requests up to 2 times
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    // Prevent refetching on window focus to avoid unnecessary API calls
+    refetchOnWindowFocus: false,
+    // Prevent refetching on mount if data is fresh
+    refetchOnMount: true,
   });
 
   const scheduleData = response?.data;
 
   const updateParams = useCallback((newParams: Partial<ScheduleQueryParams>) => {
-    setParams(prev => ({
-      ...prev,
-      ...newParams,
-    }));
+    setParams(prev => {
+      const updated = {
+        ...prev,
+        ...newParams,
+      };
+      // Only update if params actually changed to prevent unnecessary re-renders
+      if (JSON.stringify(prev) !== JSON.stringify(updated)) {
+        return updated;
+      }
+      return prev;
+    });
   }, []);
 
   const filterByClass = useCallback((className: string | null) => {
-    updateParams({ class: className || 'jss1' }); // Default to jss1 if null
+    const newClass = className || 'jss1'; // Default to jss1 if null
+    updateParams({ class: newClass });
   }, [updateParams]);
+
+  // Enhanced refetch function with error handling
+  const safeRefetch = useCallback(async () => {
+    try {
+      console.log('🔄 Refetching schedule data...');
+      const result = await refetch();
+      console.log('✅ Schedule data refetched successfully');
+      return result;
+    } catch (error) {
+      console.error('❌ Error refetching schedule data:', error);
+      throw error;
+    }
+  }, [refetch]);
 
   return {
     // Data
@@ -310,7 +335,7 @@ export function useScheduleData(initialParams?: ScheduleQueryParams) {
     error,
     
     // Actions
-    refetch,
+    refetch: safeRefetch,
     filterByClass,
     updateParams,
     

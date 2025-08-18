@@ -94,7 +94,14 @@ export function TimetableGrid({
     // The parent component should handle refreshing the data
     console.log('Schedule created successfully');
     if (onScheduleCreated) {
-      onScheduleCreated();
+      // Add a small delay to ensure modal is fully closed
+      setTimeout(() => {
+        try {
+          onScheduleCreated();
+        } catch (error) {
+          console.error('Error in onScheduleCreated callback:', error);
+        }
+      }, 100);
     }
   };
 

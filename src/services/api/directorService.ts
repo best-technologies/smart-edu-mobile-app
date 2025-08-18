@@ -827,6 +827,60 @@ class DirectorService {
   }
 
   /**
+   * Fetch subjects with their assigned teachers
+   */
+  async fetchSubjectsWithTeachers(): Promise<ApiResponse<{
+    subjects: Array<{
+      id: string;
+      name: string;
+      code: string;
+      color: string;
+      teachers: Array<{
+        id: string;
+        name: string;
+        display_picture: string | null;
+      }>;
+    }>;
+    summary: {
+      total_subjects: number;
+      subjects_with_teachers: number;
+      subjects_without_teachers: number;
+    };
+  }>> {
+    try {
+      console.log('🌐 Making API request to: /director/schedules/subjects-with-teachers');
+      
+      const response = await this.httpClient.makeRequest<{
+        subjects: Array<{
+          id: string;
+          name: string;
+          code: string;
+          color: string;
+          teachers: Array<{
+            id: string;
+            name: string;
+            display_picture: string | null;
+          }>;
+        }>;
+        summary: {
+          total_subjects: number;
+          subjects_with_teachers: number;
+          subjects_without_teachers: number;
+        };
+      }>('/director/schedules/subjects-with-teachers');
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchSubjectsWithTeachers:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Fetch timetable options for creating new schedule entries
    */
   async fetchTimetableOptions(): Promise<ApiResponse<any>> {

@@ -37,10 +37,8 @@ export default function AddClassModal({
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [existingClasses, setExistingClasses] = useState<ClassData[]>([]);
   const [availableTeachers, setAvailableTeachers] = useState<TeacherData[]>([]);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   
   // Inline editing states
   const [editingField, setEditingField] = useState<{ id: string; field: string; value: string } | null>(null);
@@ -69,8 +67,13 @@ export default function AddClassModal({
       const response = await directorService.createClass(payload);
 
       if (response.success) {
-        setSuccessMessage('Class created successfully');
-        setSuccessModalVisible(true);
+        // Close modal directly without showing success modal
+        console.log('✅ Class created successfully, closing modal...');
+        onSuccess();
+        onClose();
+        // Reset form
+        setClassName('');
+        setSelectedTeacherId('');
       } else {
         const errorMsg = response.message || 'Failed to create class';
         setErrorMessage(errorMsg);
@@ -92,17 +95,6 @@ export default function AddClassModal({
       setSelectedTeacherId('');
       onClose();
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setSuccessModalVisible(false);
-    setClassName('');
-    setSelectedTeacherId('');
-    // Only call onSuccess when creating a new class, not when editing
-    if (!editingField) {
-      onSuccess();
-    }
-    onClose();
   };
 
   // Fetch existing classes when modal opens
@@ -171,8 +163,7 @@ export default function AddClassModal({
             : classItem
         ));
         
-        setSuccessMessage(`${editingField.field} updated successfully`);
-        setSuccessModalVisible(true);
+        console.log(`${editingField.field} updated successfully`);
         cancelEditing();
       } else {
         const errorMsg = response.message || 'Failed to update class';
@@ -208,8 +199,7 @@ export default function AddClassModal({
     try {
       // TODO: Add delete API call when endpoint is provided
       console.log('Delete class with ID:', id);
-      setSuccessMessage('Class deleted successfully');
-      setSuccessModalVisible(true);
+      console.log('Class deleted successfully');
       fetchExistingClasses(); // Refresh the list
     } catch (error) {
       console.error('Error deleting class:', error);
@@ -515,16 +505,6 @@ export default function AddClassModal({
             </View>
           </View>
         </View>
-
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Success!"
-        message={successMessage}
-        onClose={handleSuccessModalClose}
-        confirmText="OK"
-        autoClose={false}
-      />
 
       {/* Error Modal */}
       <ErrorModal

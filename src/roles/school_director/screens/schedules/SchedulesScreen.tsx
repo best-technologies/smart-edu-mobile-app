@@ -19,6 +19,7 @@ export default function SchedulesScreen() {
   const [timeSlotModalVisible, setTimeSlotModalVisible] = useState(false);
   const [classes, setClasses] = useState<Array<{ classId: string; name: string }>>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     scheduleData,
@@ -30,9 +31,16 @@ export default function SchedulesScreen() {
     filterByClass,
   } = useScheduleData({ class: 'jss1' }); // Initialize with jss1
 
-  const handleRefresh = () => {
-    refetch();
-  };
+  const handleRefresh = useCallback(async () => {
+    try {
+      setIsRefreshing(true);
+      await refetch();
+    } catch (error) {
+      console.error('Error refreshing schedule data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleClassSelect = useCallback((classId: string) => {
     setSelectedClassId(classId);
@@ -48,7 +56,7 @@ export default function SchedulesScreen() {
     fetchClasses();
   }, []);
 
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       setIsLoadingClasses(true);
       const response = await directorService.fetchAllClasses();
@@ -65,18 +73,40 @@ export default function SchedulesScreen() {
     } finally {
       setIsLoadingClasses(false);
     }
-  };
+  }, []);
 
-  const handleAddClassSuccess = () => {
-    // Refresh both schedule data and classes
-    refetch();
-    fetchClasses();
-  };
+  const handleAddClassSuccess = useCallback(async () => {
+    try {
+      console.log('🔄 Starting handleAddClassSuccess...');
+      // Add a small delay to ensure modal is fully closed
+      setTimeout(async () => {
+        // Refresh both schedule data and classes with proper error handling
+        await Promise.all([
+          refetch().catch(error => {
+            console.error('Error refetching schedule data:', error);
+          }),
+          fetchClasses().catch(error => {
+            console.error('Error fetching classes:', error);
+          })
+        ]);
+        console.log('✅ handleAddClassSuccess completed successfully');
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error in handleAddClassSuccess:', error);
+    }
+  }, [refetch, fetchClasses]);
 
-  const handleTimeSlotSuccess = () => {
-    // Refresh schedule data to get updated time slots
-    refetch();
-  };
+  const handleTimeSlotSuccess = useCallback(async () => {
+    try {
+      // Add a small delay to ensure modal is fully closed
+      setTimeout(async () => {
+        // Refresh schedule data to get updated time slots
+        await refetch();
+      }, 100);
+    } catch (error) {
+      console.error('Error refreshing time slots:', error);
+    }
+  }, [refetch]);
 
   if (error) {
     return (
@@ -107,7 +137,7 @@ export default function SchedulesScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
+            refreshing={isLoading || isRefreshing}
             onRefresh={handleRefresh}
             tintColor="#3b82f6"
             colors={["#3b82f6"]}
@@ -150,7 +180,7 @@ export default function SchedulesScreen() {
               selectedClass={classes.find(c => c.classId === selectedClassId)?.name || selectedClassId}
               timeSlots={timeSlots}
               schedule={schedule}
-              onScheduleCreated={refetch}
+              onScheduleCreated={handleRefresh}
             />
           ) : (
             <EmptyState 

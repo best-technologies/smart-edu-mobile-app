@@ -33,6 +33,18 @@ interface TimetableOptions {
   timeSlots: TimetableOption[];
 }
 
+interface SubjectWithTeachers {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  teachers: Array<{
+    id: string;
+    name: string;
+    display_picture: string | null;
+  }>;
+}
+
 interface CreateScheduleModalProps {
   visible: boolean;
   onClose: () => void;
@@ -141,6 +153,7 @@ export default function CreateScheduleModal({
 }: CreateScheduleModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<TimetableOptions | null>(null);
+  const [subjectsWithTeachers, setSubjectsWithTeachers] = useState<SubjectWithTeachers[]>([]);
   const [formData, setFormData] = useState({
     class_id: '',
     subject_id: '',
@@ -150,7 +163,6 @@ export default function CreateScheduleModal({
   });
 
   // Modal states
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -164,12 +176,19 @@ export default function CreateScheduleModal({
   const fetchTimetableOptions = async () => {
     try {
       setIsLoading(true);
-      const response = await directorService.fetchTimetableOptions();
-      setOptions(response.data);
+      
+      // Fetch both timetable options and subjects with teachers
+      const [timetableResponse, subjectsResponse] = await Promise.all([
+        directorService.fetchTimetableOptions(),
+        directorService.fetchSubjectsWithTeachers()
+      ]);
+      
+      setOptions(timetableResponse.data);
+      setSubjectsWithTeachers(subjectsResponse.data?.subjects || []);
       
       // Pre-select the current class if available
-      if (response.data.classes) {
-        const currentClass = response.data.classes.find(
+      if (timetableResponse.data.classes) {
+        const currentClass = timetableResponse.data.classes.find(
           (cls: TimetableOption) => cls.name === selectedClass
         );
         if (currentClass) {
@@ -208,7 +227,18 @@ export default function CreateScheduleModal({
       
       // Check if the response indicates success
       if (response.success === true) {
-        setSuccessModalVisible(true);
+        // Close modal directly without showing success modal
+        console.log('✅ Schedule created successfully, closing modal...');
+        onSuccess();
+        onClose();
+        // Reset form
+        setFormData({
+          class_id: '',
+          subject_id: '',
+          teacher_id: '',
+          room: '',
+          notes: '',
+        });
       } else {
         // Handle case where backend returns 201 but with error message
         const errorMessage = response.message || response.data?.message || 'Failed to create schedule';
@@ -239,20 +269,6 @@ export default function CreateScheduleModal({
         notes: '',
       });
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    setSuccessModalVisible(false);
-    onSuccess();
-    onClose();
-    // Reset form
-    setFormData({
-      class_id: '',
-      subject_id: '',
-      teacher_id: '',
-      room: '',
-      notes: '',
-    });
   };
 
   const handleErrorModalClose = () => {
@@ -359,7 +375,27 @@ export default function CreateScheduleModal({
               <Dropdown
                 label="Subject"
                 value={formData.subject_id}
-                onSelect={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
+                onSelect={(value) => {
+                  console.log('📚 Subject selected:', value);
+                  setFormData(prev => ({ ...prev, subject_id: value }));
+                  
+                  // Try to auto-populate teacher based on subject
+                  let teacherId = '';
+                  
+                  // Find the selected subject in subjectsWithTeachers
+                  const selectedSubjectWithTeachers = subjectsWithTeachers.find(subject => subject.id === value);
+                  if (selectedSubjectWithTeachers && selectedSubjectWithTeachers.teachers.length > 0) {
+                    teacherId = selectedSubjectWithTeachers.teachers[0].id; // Use the first teacher as default
+                    console.log('👨‍🏫 Auto-populating teacher:', selectedSubjectWithTeachers.teachers[0].name, '(', teacherId, ')');
+                    if (selectedSubjectWithTeachers.teachers.length > 1) {
+                      console.log(`ℹ️ ${selectedSubjectWithTeachers.teachers.length} teachers available for this subject`);
+                    }
+                    setFormData(prev => ({ ...prev, teacher_id: teacherId }));
+                  } else {
+                    console.log('⚠️ No teachers found for this subject, clearing teacher selection');
+                    setFormData(prev => ({ ...prev, teacher_id: '' }));
+                  }
+                }}
                 options={options?.subjects || []}
                 placeholder="Select a subject"
                 required
@@ -370,9 +406,23 @@ export default function CreateScheduleModal({
                 label="Teacher"
                 value={formData.teacher_id}
                 onSelect={(value) => setFormData(prev => ({ ...prev, teacher_id: value }))}
-                options={options?.teachers || []}
-                placeholder="Select a teacher"
+                options={
+                  formData.subject_id 
+                    ? subjectsWithTeachers
+                        .find(subject => subject.id === formData.subject_id)
+                        ?.teachers.map(teacher => ({
+                          id: teacher.id,
+                          name: teacher.name
+                        })) || []
+                    : options?.teachers || []
+                }
+                placeholder={
+                  formData.subject_id 
+                    ? "Select a teacher for this subject"
+                    : "Select a subject first"
+                }
                 required
+                disabled={!formData.subject_id}
               />
 
               {/* Room Input */}
@@ -436,16 +486,6 @@ export default function CreateScheduleModal({
           </View>
         </View>
       </View>
-
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Success!"
-        message="Schedule entry created successfully"
-        onClose={handleSuccessModalClose}
-        confirmText="OK"
-        autoClose={false}
-      />
 
       {/* Error Modal */}
       <ErrorModal
