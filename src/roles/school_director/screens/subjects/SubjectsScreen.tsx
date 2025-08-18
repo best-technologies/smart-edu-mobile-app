@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,9 +13,17 @@ import SearchBar from '../../components/subjects/SearchBar';
 import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useSubjectsData } from '@/hooks/useDirectorData';
+import AddSubjectModal from '../../components/subjects/AddSubjectModal';
+import { SuccessModal, ErrorModal } from '@/components';
 
 export default function SubjectsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
+  const [addSubjectModalVisible, setAddSubjectModalVisible] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  
   const {
     subjects,
     pagination,
@@ -39,6 +47,10 @@ export default function SubjectsScreen() {
 
   const handleViewAllSubjects = () => {
     navigation.navigate('AllSubjectsList');
+  };
+
+  const handleAddSubject = () => {
+    setAddSubjectModalVisible(true);
   };
 
   if (error) {
@@ -99,7 +111,21 @@ export default function SubjectsScreen() {
           </TouchableOpacity>
         </View> */}
 
-        <Section title="Overview">
+        <Section 
+          title="Overview"
+          action={
+            <TouchableOpacity
+              onPress={handleAddSubject}
+              className="flex-row items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle" size={16} color="#10b981" />
+              <Text className="text-emerald-600 dark:text-emerald-400 text-sm font-medium ml-1">
+                Add Subject
+              </Text>
+            </TouchableOpacity>
+          }
+        >
           <SubjectStats subjects={subjects} />
         </Section>
 
@@ -159,6 +185,51 @@ export default function SubjectsScreen() {
           )}
         </Section>
       </ScrollView>
+
+      {/* Add Subject Modal */}
+      <AddSubjectModal
+        visible={addSubjectModalVisible}
+        onClose={() => setAddSubjectModalVisible(false)}
+        onSuccess={() => {
+          setAddSubjectModalVisible(false);
+          refetch();
+        }}
+        onShowSuccess={(message) => {
+          setSuccessMessage(message);
+          setSuccessModalVisible(true);
+        }}
+        onShowError={(message) => {
+          setErrorMessage(message);
+          setErrorModalVisible(true);
+        }}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        visible={successModalVisible}
+        title="Success!"
+        message={successMessage}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          setSuccessMessage('');
+        }}
+        confirmText="OK"
+        autoClose={true}
+        autoCloseDelay={3000}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        visible={errorModalVisible}
+        title="Error"
+        message={errorMessage}
+        onClose={() => {
+          setErrorModalVisible(false);
+          setErrorMessage('');
+        }}
+        closeText="OK"
+        autoClose={false}
+      />
     </SafeAreaView>
   );
 }

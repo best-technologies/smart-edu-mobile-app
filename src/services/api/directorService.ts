@@ -534,6 +534,39 @@ class DirectorService {
   }
 
   /**
+   * Create a new subject
+   */
+  async createSubject(payload: {
+    subject_name: string;
+    code: string;
+    description: string;
+    color: string;
+    class_taking_it?: string;
+    teacher_taking_it?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/subjects');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/subjects/create-subject',
+        'POST',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in createSubject:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Fetch schedules data for the schedules screen
    */
   async fetchSchedulesData(): Promise<any> {
