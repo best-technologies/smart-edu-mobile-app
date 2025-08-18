@@ -580,6 +580,148 @@ class DirectorService {
   }
 
   /**
+   * Fetch specific teacher's classes and subjects with assignments
+   */
+  async fetchTeacherClassesAndSubjects(teacherId: string): Promise<ApiResponse<{
+    teacher: {
+      id: string;
+      name: string;
+      email: string;
+      display_picture: string | null;
+    };
+    assigned_subjects: Array<{
+      id: string;
+      name: string;
+      code: string;
+      color: string;
+      description: string;
+      assigned_class: {
+        id: string;
+        name: string;
+      } | null;
+    }>;
+    managed_classes: Array<{
+      id: string;
+      name: string;
+      student_count: number;
+      subject_count: number;
+    }>;
+    available_subjects: Array<{
+      id: string;
+      name: string;
+      code: string;
+      color: string;
+      description: string;
+      assigned_class: {
+        id: string;
+        name: string;
+      } | null;
+    }>;
+    available_classes: Array<{
+      id: string;
+      name: string;
+      has_class_teacher: boolean;
+      class_teacher: string | null;
+      student_count: number;
+      subject_count: number;
+    }>;
+    summary: {
+      total_assigned_subjects: number;
+      total_managed_classes: number;
+      total_available_subjects: number;
+      total_available_classes: number;
+    };
+  }>> {
+    try {
+      console.log('🌐 Making API request to:', `/director/teachers/${teacherId}/classes-subjects`);
+      
+      const response = await this.httpClient.makeRequest<{
+        teacher: {
+          id: string;
+          name: string;
+          email: string;
+          display_picture: string | null;
+        };
+        assigned_subjects: Array<{
+          id: string;
+          name: string;
+          code: string;
+          color: string;
+          description: string;
+          assigned_class: {
+            id: string;
+            name: string;
+          } | null;
+        }>;
+        managed_classes: Array<{
+          id: string;
+          name: string;
+          student_count: number;
+          subject_count: number;
+        }>;
+        available_subjects: Array<{
+          id: string;
+          name: string;
+          code: string;
+          color: string;
+          description: string;
+          assigned_class: {
+            id: string;
+            name: string;
+          } | null;
+        }>;
+        available_classes: Array<{
+          id: string;
+          name: string;
+          has_class_teacher: boolean;
+          class_teacher: string | null;
+          student_count: number;
+          subject_count: number;
+        }>;
+        summary: {
+          total_assigned_subjects: number;
+          total_managed_classes: number;
+          total_available_subjects: number;
+          total_available_classes: number;
+        };
+      }>(`/director/teachers/${teacherId}/classes-subjects`);
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchTeacherClassesAndSubjects:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        teacherId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch teacher details with current assignments
+   */
+  async fetchTeacherDetails(teacherId: string): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to:', `/director/teachers/${teacherId}`);
+      
+      const response = await this.httpClient.makeRequest<any>(`/director/teachers/${teacherId}`);
+      
+      console.log('📧 Teacher details response:', JSON.stringify(response, null, 2));
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchTeacherDetails:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        teacherId
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create a new subject
    */
   async createSubject(payload: {

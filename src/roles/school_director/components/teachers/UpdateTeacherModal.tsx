@@ -71,36 +71,57 @@ export default function UpdateTeacherModal({
       setPhoneNumber(teacher.contact.phone);
       setStatus(teacher.status);
       
-      // Pre-select subjects and classes the teacher is already teaching/managing
-      if (teacher.subjectsTeaching) {
-        setSelectedSubjectIds(teacher.subjectsTeaching.map(subject => subject.id));
-      } else {
-        setSelectedSubjectIds([]);
-      }
+      // Reset selections
+      setSelectedSubjectIds([]);
+      setSelectedClassIds([]);
       
-      if (teacher.classesManaging) {
-        setSelectedClassIds(teacher.classesManaging.map(classItem => classItem.id));
-      } else {
-        setSelectedClassIds([]);
-      }
-      
+      // Fetch available data (classes will be pre-selected based on classTeacher info)
       fetchAvailableData();
     }
   }, [teacher, visible]);
 
+
+
   const fetchAvailableData = async () => {
+    if (!teacher) return;
+    
     try {
       setIsLoadingData(true);
-      const response = await directorService.fetchClassesAndSubjects();
+      const response = await directorService.fetchTeacherClassesAndSubjects(teacher.id);
       
       if (response.success && response.data) {
-        setAvailableSubjects(response.data.subjects);
-        setAvailableClasses(response.data.classes);
-        console.log('📚 Available subjects:', response.data.subjects);
-        console.log('🏫 Available classes:', response.data.classes);
+        // Combine assigned and available subjects
+        const allSubjects = [
+          ...response.data.assigned_subjects,
+          ...response.data.available_subjects
+        ];
+        
+        // Combine managed and available classes
+        const allClasses = [
+          ...response.data.managed_classes,
+          ...response.data.available_classes
+        ];
+        
+        setAvailableSubjects(allSubjects);
+        setAvailableClasses(allClasses);
+        
+        // Pre-select assigned subjects
+        const assignedSubjectIds = response.data.assigned_subjects.map(subject => subject.id);
+        setSelectedSubjectIds(assignedSubjectIds);
+        
+        // Pre-select managed classes
+        const managedClassIds = response.data.managed_classes.map(classItem => classItem.id);
+        setSelectedClassIds(managedClassIds);
+        
+        console.log('📚 Assigned subjects:', response.data.assigned_subjects);
+        console.log('📚 Available subjects:', response.data.available_subjects);
+        console.log('🏫 Managed classes:', response.data.managed_classes);
+        console.log('🏫 Available classes:', response.data.available_classes);
+        console.log('✅ Pre-selected subject IDs:', assignedSubjectIds);
+        console.log('✅ Pre-selected class IDs:', managedClassIds);
       }
     } catch (error) {
-      console.error('Error fetching available data:', error);
+      console.error('Error fetching teacher data:', error);
     } finally {
       setIsLoadingData(false);
     }
