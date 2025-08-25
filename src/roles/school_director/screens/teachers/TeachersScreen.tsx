@@ -219,8 +219,11 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [status, setStatus] = useState<'active' | 'suspended'>('active');
   const [isLoading, setIsLoading] = useState(false);
+  const [showGenderDropdown, setShowGenderDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
 
 
@@ -254,6 +257,7 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
         last_name: lastName.trim(),
         email: email.trim().toLowerCase(),
         phone_number: phoneNumber.trim(),
+        gender: gender,
         status: status,
       };
 
@@ -275,7 +279,10 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
         setLastName('');
         setEmail('');
         setPhoneNumber('');
+        setGender('male');
         setStatus('active');
+        setShowGenderDropdown(false);
+        setShowStatusDropdown(false);
         
         // Close modal and refresh data
         onSuccess();
@@ -314,10 +321,21 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
       setLastName('');
       setEmail('');
       setPhoneNumber('');
+      setGender('male');
       setStatus('active');
+      setShowGenderDropdown(false);
+      setShowStatusDropdown(false);
       onClose();
     }
   };
+
+  // Close dropdowns when modal visibility changes
+  useEffect(() => {
+    if (!visible) {
+      setShowGenderDropdown(false);
+      setShowStatusDropdown(false);
+    }
+  }, [visible]);
 
   return (
     <>
@@ -365,6 +383,23 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
 
             {/* Form */}
             <View className="space-y-4">
+              {/* Overlay to close dropdowns when clicking outside */}
+              {(showGenderDropdown || showStatusDropdown) && (
+                <Pressable
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 5,
+                  }}
+                  onPress={() => {
+                    setShowGenderDropdown(false);
+                    setShowStatusDropdown(false);
+                  }}
+                />
+              )}
               {/* First Name */}
               <View>
                 <Text className="text-sm font-medium text-gray-700 mb-2">
@@ -433,29 +468,94 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
                 />
               </View>
 
+              {/* Gender */}
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  Gender *
+                </Text>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowGenderDropdown(!showGenderDropdown)}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900 capitalize">
+                      {gender}
+                    </Text>
+                    <Ionicons 
+                      name={showGenderDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showGenderDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 z-10 shadow-lg">
+                      <TouchableOpacity
+                        onPress={() => {
+                          setGender('male');
+                          setShowGenderDropdown(false);
+                        }}
+                        className="px-3 py-3 border-b border-gray-100"
+                      >
+                        <Text className="text-gray-900">Male</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setGender('female');
+                          setShowGenderDropdown(false);
+                        }}
+                        className="px-3 py-3"
+                      >
+                        <Text className="text-gray-900">Female</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+
               {/* Status */}
               <View>
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Status *
                 </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    Alert.alert(
-                      'Select Status',
-                      'Choose the teacher status:',
-                      [
-                        { text: 'Active', onPress: () => setStatus('active') },
-                        { text: 'Suspended', onPress: () => setStatus('suspended') },
-                      ]
-                    );
-                  }}
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
-                >
-                  <Text className="text-gray-900 capitalize">
-                    {status}
-                  </Text>
-                  <Ionicons name="chevron-down" size={16} color="#6b7280" />
-                </TouchableOpacity>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowStatusDropdown(!showStatusDropdown)}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900 capitalize">
+                      {status}
+                    </Text>
+                    <Ionicons 
+                      name={showStatusDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showStatusDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 z-10 shadow-lg">
+                      <TouchableOpacity
+                        onPress={() => {
+                          setStatus('active');
+                          setShowStatusDropdown(false);
+                        }}
+                        className="px-3 py-3 border-b border-gray-100"
+                      >
+                        <Text className="text-gray-900">Active</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setStatus('suspended');
+                          setShowStatusDropdown(false);
+                        }}
+                        className="px-3 py-3"
+                      >
+                        <Text className="text-gray-900">Suspended</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
 
@@ -464,7 +564,7 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
               <TouchableOpacity
                 onPress={handleClose}
                 disabled={isLoading}
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-lg items-center"
+                className="flex-1 py-3 px-4 border border-gray-300 rounded-lg items-center mr-4"
               >
                 <Text className="text-gray-700 font-medium">
                   Cancel

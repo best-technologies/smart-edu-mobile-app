@@ -65,7 +65,7 @@ export default function AddSubjectModal({
 
   const handleSubmit = async () => {
     // Validate required fields
-    if (!subjectName.trim() || !subjectCode.trim() || !description.trim()) {
+    if (!subjectName.trim() || !subjectCode.trim()) {
       onShowError('Please fill in all required fields');
       return;
     }
@@ -90,7 +90,7 @@ export default function AddSubjectModal({
       const payload: any = {
         subject_name: subjectName.trim(),
         code: subjectCode.trim().toUpperCase(),
-        description: description.trim(),
+        description: description.trim() || '', // Use empty string if description is empty
         color: color.trim(),
       };
 
@@ -235,7 +235,7 @@ export default function AddSubjectModal({
               {/* Description */}
               <View>
                 <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Description *
+                  Description (Optional)
                 </Text>
                 <TextInput
                   value={description}

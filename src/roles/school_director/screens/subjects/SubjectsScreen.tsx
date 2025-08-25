@@ -14,15 +14,15 @@ import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useSubjectsData } from '@/hooks/useDirectorData';
 import AddSubjectModal from '../../components/subjects/AddSubjectModal';
-import { SuccessModal, ErrorModal } from '@/components';
+import { SuccessModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function SubjectsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
   const [addSubjectModalVisible, setAddSubjectModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const { showError } = useToast();
   
   const {
     subjects,
@@ -199,8 +199,7 @@ export default function SubjectsScreen() {
           setSuccessModalVisible(true);
         }}
         onShowError={(message) => {
-          setErrorMessage(message);
-          setErrorModalVisible(true);
+          showError('Subject Creation Failed', message);
         }}
       />
 
@@ -218,18 +217,7 @@ export default function SubjectsScreen() {
         autoCloseDelay={3000}
       />
 
-      {/* Error Modal */}
-      <ErrorModal
-        visible={errorModalVisible}
-        title="Error"
-        message={errorMessage}
-        onClose={() => {
-          setErrorModalVisible(false);
-          setErrorMessage('');
-        }}
-        closeText="OK"
-        autoClose={false}
-      />
+
     </SafeAreaView>
   );
 }

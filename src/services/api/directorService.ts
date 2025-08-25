@@ -238,6 +238,7 @@ export interface EnrollTeacherPayload {
   last_name: string;
   email: string;
   phone_number: string;
+  gender: 'male' | 'female';
   status: 'active' | 'suspended';
 }
 
@@ -1215,7 +1216,7 @@ class DirectorService {
     startTime: string;
     endTime: string;
     label: string;
-    order: number;
+    order?: number;
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/schedules/create-time-slot');

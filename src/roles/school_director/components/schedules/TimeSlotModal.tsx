@@ -48,7 +48,6 @@ export default function TimeSlotModal({
     startTime: '',
     endTime: '',
     label: '',
-    order: 0,
   });
   
   // Inline editing states
@@ -118,7 +117,6 @@ export default function TimeSlotModal({
         startTime: formData.startTime,
         endTime: formData.endTime,
         label: formData.label.trim(),
-        order: formData.order,
       };
 
       const response = await directorService.createTimeSlot(payload);
@@ -177,7 +175,6 @@ export default function TimeSlotModal({
       startTime: '',
       endTime: '',
       label: '',
-      order: 0,
     });
   };
 
@@ -205,11 +202,7 @@ export default function TimeSlotModal({
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  const getNextOrder = () => {
-    if (timeSlots.length === 0) return 1;
-    const maxOrder = Math.max(...timeSlots.map(slot => slot.order));
-    return maxOrder + 1;
-  };
+
 
   // Time input formatting functions
   const formatTimeInput = (text: string) => {
@@ -396,23 +389,7 @@ export default function TimeSlotModal({
                 </Text>
               </View>
 
-              {/* Order Input */}
-              <View>
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Order
-                </Text>
-                <TextInput
-                  value={formData.order.toString()}
-                  onChangeText={(text) => {
-                    const order = parseInt(text) || 0;
-                    setFormData(prev => ({ ...prev, order }));
-                  }}
-                  placeholder="1"
-                  placeholderTextColor="#9ca3af"
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
-                  keyboardType="numeric"
-                />
-              </View>
+
 
               {/* Create Button */}
               <TouchableOpacity
@@ -600,44 +577,9 @@ export default function TimeSlotModal({
                         </View>
 
                         <View className="flex-row items-center">
-                          {editingField?.id === timeSlot.id && editingField?.field === 'order' ? (
-                            <View className="flex-row items-center">
-                              <TextInput
-                                value={editValue}
-                                onChangeText={handleEditChange}
-                                className="bg-white border border-blue-300 rounded px-3 py-2 text-sm"
-                                keyboardType="numeric"
-                                autoFocus
-                              />
-                              <View className="flex-row items-center space-x-2 ml-2">
-                                <TouchableOpacity
-                                  onPress={saveEdit}
-                                  disabled={isUpdating}
-                                  className="w-8 h-8 bg-green-100 rounded-full items-center justify-center"
-                                >
-                                  <Ionicons name="checkmark" size={16} color="#10b981" />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  onPress={cancelEditing}
-                                  className="w-8 h-8 bg-red-100 rounded-full items-center justify-center"
-                                >
-                                  <Ionicons name="close" size={16} color="#ef4444" />
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          ) : (
-                            <View className="flex-row items-center">
-                              <Text className="text-sm text-gray-400 mr-2">
-                                Order: {timeSlot.order}
-                              </Text>
-                              <TouchableOpacity
-                                onPress={() => startEditing(timeSlot, 'order')}
-                                className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center"
-                              >
-                                <Ionicons name="pencil" size={16} color="#3b82f6" />
-                              </TouchableOpacity>
-                            </View>
-                          )}
+                          <Text className="text-sm text-gray-400">
+                            Order: {timeSlot.order}
+                          </Text>
                         </View>
                       </View>
                       
