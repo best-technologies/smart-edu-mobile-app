@@ -1,9 +1,12 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { formatTeacherName } from '@/utils/textFormatter';
 
 export function TopBar() {
   const { logout } = useAuth();
+  const { userProfile, isLoading } = useUserProfile();
   
   const today = new Date();
   const formattedDate = today.toLocaleDateString('en-US', {
@@ -12,6 +15,9 @@ export function TopBar() {
     day: 'numeric',
     year: 'numeric'
   });
+
+  // Get the teacher's first name from profile, fallback to "Professor" if loading or not available
+  const teacherName = userProfile?.first_name || (isLoading ? '...' : 'Professor');
 
   const handleLogout = async () => {
     try {
@@ -26,11 +32,13 @@ export function TopBar() {
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
           <View className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center">
-            <Text className="text-white font-bold text-sm">JD</Text>
+            <Text className="text-white font-bold text-sm">
+              {userProfile ? `${userProfile.first_name.charAt(0)}${userProfile.last_name.charAt(0)}` : 'JD'}
+            </Text>
           </View>
           <View>
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Welcome back, Professor
+              Welcome back, {formatTeacherName(teacherName)}
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-400">
               {formattedDate}

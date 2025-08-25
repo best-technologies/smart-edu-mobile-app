@@ -4,7 +4,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRouteForRole } from '@/utils/roleMapper';
-import { useDataPrefetching } from './useDataPrefetching';
 
 type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -15,7 +14,6 @@ type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function useAuthNavigation() {
   const navigation = useNavigation<AuthNavigationProp>();
   const { isAuthenticated, user, requiresOTP } = useAuth();
-  const { prefetchDirectorDashboard } = useDataPrefetching();
   const navigationReadyRef = useRef(false);
   const initializationDelayRef = useRef(false);
   const lastNavigationState = useRef<{
@@ -96,12 +94,22 @@ export function useAuthNavigation() {
       return;
     }
 
+    console.log('🧭 Navigation state:', {
+      isAuthenticated,
+      requiresOTP,
+      userEmail: user?.email,
+      userRole: user?.role,
+      isEmailVerified: user?.is_email_verified
+    });
+
     // Handle email verification requirement
     if (!user.is_email_verified) {
+      console.log('📧 Redirecting to email verification');
       navigation.navigate('EmailVerification', { email: user.email });
       return;
     }
 
+    console.log('✅ User fully authenticated, redirecting to dashboard');
     // User is fully authenticated, redirect to role-based dashboard
     const routeForRole = getRouteForRole(user.role);
     if (routeForRole) {

@@ -827,6 +827,176 @@ class DirectorService {
   }
 
   /**
+   * Fetch teacher dashboard data
+   */
+  async fetchTeacherDashboard(): Promise<ApiResponse<{
+    managed_class: {
+      id: string;
+      name: string;
+      students: {
+        total: number;
+        males: number;
+        females: number;
+      };
+    };
+    class_schedules: {
+      today: {
+        day: string;
+        schedule: Array<{
+          subject: {
+            id: string;
+            name: string;
+            code: string;
+            color: string;
+          };
+          class: {
+            id: string;
+            name: string;
+          };
+          time: {
+            from: string;
+            to: string;
+            label: string;
+          };
+          room: string;
+        }>;
+      };
+      tomorrow: {
+        day: string;
+        schedule: Array<{
+          subject: {
+            id: string;
+            name: string;
+            code: string;
+            color: string;
+          };
+          class: {
+            id: string;
+            name: string;
+          };
+          time: {
+            from: string;
+            to: string;
+            label: string;
+          };
+          room: string;
+        }>;
+      };
+      day_after_tomorrow: {
+        day: string;
+        schedule: Array<{
+          subject: {
+            id: string;
+            name: string;
+            code: string;
+            color: string;
+          };
+          class: {
+            id: string;
+            name: string;
+          };
+          time: {
+            from: string;
+            to: string;
+            label: string;
+          };
+          room: string;
+        }>;
+      };
+    };
+  }>> {
+    try {
+      console.log('🌐 Making API request to: /teachers/dashboard');
+      
+      const response = await this.httpClient.makeRequest<{
+        managed_class: {
+          id: string;
+          name: string;
+          students: {
+            total: number;
+            males: number;
+            females: number;
+          };
+        };
+        class_schedules: {
+          today: {
+            day: string;
+            schedule: Array<{
+              subject: {
+                id: string;
+                name: string;
+                code: string;
+                color: string;
+              };
+              class: {
+                id: string;
+                name: string;
+              };
+              time: {
+                from: string;
+                to: string;
+                label: string;
+              };
+              room: string;
+            }>;
+          };
+          tomorrow: {
+            day: string;
+            schedule: Array<{
+              subject: {
+                id: string;
+                name: string;
+                code: string;
+                color: string;
+              };
+              class: {
+                id: string;
+                name: string;
+              };
+              time: {
+                from: string;
+                to: string;
+                label: string;
+              };
+              room: string;
+            }>;
+          };
+          day_after_tomorrow: {
+            day: string;
+            schedule: Array<{
+              subject: {
+                id: string;
+                name: string;
+                code: string;
+                color: string;
+              };
+              class: {
+                id: string;
+                name: string;
+              };
+              time: {
+                from: string;
+                to: string;
+                label: string;
+              };
+              room: string;
+            }>;
+          };
+        };
+      }>('/teachers/dashboard', 'GET');
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in fetchTeacherDashboard:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Fetch subjects with their assigned teachers
    */
   async fetchSubjectsWithTeachers(): Promise<ApiResponse<{

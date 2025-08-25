@@ -61,7 +61,7 @@ export default function StudentsScreen() {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
       
-      <ScrollView className="flex-1" contentContainerClassName="pb-20">
+      <ScrollView className="flex-1" contentContainerClassName="pb-32">
         {/* Header Section */}
         <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">

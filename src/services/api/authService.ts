@@ -124,7 +124,7 @@ export class AuthService {
 
   // Verify email address
   async verifyEmail(request: EmailVerificationRequest): Promise<ApiResponse> {
-    return this.httpClient.makeRequest(API_ENDPOINTS.AUTH.VERIFY_EMAIL, 'POST', request, false);
+    return this.httpClient.makeRequest(API_ENDPOINTS.AUTH.VERIFY_OTP, 'POST', request, false);
   }
 
   // Check if user is authenticated

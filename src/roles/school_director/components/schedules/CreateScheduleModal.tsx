@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { directorService, TimeSlot } from '@/services/api/directorService';
 import { SuccessModal, ErrorModal } from '@/components';
+import { formatSubjectName, formatClassName, formatRoomName, formatTeacherName } from '@/utils/textFormatter';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -77,6 +78,18 @@ function Dropdown({
 
   const selectedOption = options.find(option => option.id === value);
 
+  // Format display text based on the type of data
+  const formatDisplayText = (option: TimetableOption) => {
+    if (label.toLowerCase().includes('subject')) {
+      return formatSubjectName(option.name);
+    } else if (label.toLowerCase().includes('class')) {
+      return formatClassName(option.name);
+    } else if (label.toLowerCase().includes('teacher')) {
+      return formatTeacherName(option.name);
+    }
+    return option.name;
+  };
+
   return (
     <View className="mb-4 relative">
       <Text className="text-sm font-medium text-gray-700 mb-2">
@@ -95,7 +108,7 @@ function Dropdown({
               : 'text-gray-500'
           }`}
         >
-          {selectedOption ? selectedOption.name : placeholder}
+          {selectedOption ? formatDisplayText(selectedOption) : placeholder}
         </Text>
         <Ionicons
           name={isOpen ? 'chevron-up' : 'chevron-down'}
@@ -123,7 +136,7 @@ function Dropdown({
                   className="px-4 py-3 border-b border-gray-200 active:bg-gray-50"
                 >
                   <Text className="text-gray-900">
-                    {option.name}
+                    {formatDisplayText(option)}
                   </Text>
                 </Pressable>
               )}
@@ -437,6 +450,11 @@ export default function CreateScheduleModal({
                   placeholderTextColor="#9ca3af"
                   className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
                 />
+                {formData.room && (
+                  <Text className="text-xs text-gray-500 mt-1">
+                    Will be displayed as: {formatRoomName(formData.room)}
+                  </Text>
+                )}
               </View>
 
               {/* Notes Input */}

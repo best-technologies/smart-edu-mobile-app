@@ -1,17 +1,19 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePrefetchDirectorDashboard } from './useDirectorDashboard';
+import { usePrefetchDirectorDashboard, usePrefetchTeacherDashboard } from './useDirectorDashboard';
 
 /**
  * Hook for prefetching data based on user role
  * This improves user experience by loading data before navigation
  */
 export function useDataPrefetching() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, requiresOTP } = useAuth();
   const prefetchDirectorDashboard = usePrefetchDirectorDashboard();
+  const prefetchTeacherDashboard = usePrefetchTeacherDashboard();
 
   useEffect(() => {
-    if (!user?.role) return;
+    // Only prefetch data when user is fully authenticated (not during OTP verification)
+    if (!user?.role || !isAuthenticated || requiresOTP) return;
 
     const role = user.role.toLowerCase();
     
@@ -24,7 +26,8 @@ export function useDataPrefetching() {
         prefetchDirectorDashboard();
         break;
       case 'teacher':
-        // TODO: Add teacher data prefetching
+        // Prefetch teacher dashboard data
+        prefetchTeacherDashboard();
         break;
       case 'student':
         // TODO: Add student data prefetching
@@ -32,10 +35,11 @@ export function useDataPrefetching() {
       default:
         break;
     }
-  }, [user?.role, prefetchDirectorDashboard]);
+  }, [user?.role, isAuthenticated, requiresOTP, prefetchDirectorDashboard, prefetchTeacherDashboard]);
 
   return {
     prefetchDirectorDashboard,
+    prefetchTeacherDashboard,
     // Add other prefetch functions as needed
   };
 }

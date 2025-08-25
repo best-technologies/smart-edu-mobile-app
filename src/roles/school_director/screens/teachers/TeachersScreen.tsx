@@ -27,19 +27,6 @@ export default function TeachersScreen() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Debug useEffect
-  useEffect(() => {
-    console.log('🎯 Main modal states:', {
-      enrollModalVisible,
-      successModalVisible,
-      errorModalVisible,
-      successMessage,
-      errorMessage
-    });
-  }, [enrollModalVisible, successModalVisible, errorModalVisible, successMessage, errorMessage]);
-
-
-
   const handleRefresh = () => {
     refreshMutation.mutate();
   };
@@ -271,10 +258,10 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
       };
 
       const response = await directorService.enrollTeacher(payload);
-      console.log('📧 Enroll teacher response:', response);
-      console.log('📧 Response success value:', response.success);
-      console.log('📧 Response type:', typeof response.success);
-      console.log('📧 Full response object:', JSON.stringify(response, null, 2));
+      // console.log('📧 Enroll teacher response:', response);
+      // console.log('📧 Response success value:', response.success);
+      // console.log('📧 Response type:', typeof response.success);
+      // console.log('📧 Full response object:', JSON.stringify(response, null, 2));
 
       if (response.success === true) {
         const password = response.data?.generatedPassword || 'N/A';

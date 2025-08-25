@@ -154,11 +154,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'LOGIN_START' });
 
       const response = await ApiService.auth.signIn(credentials);
-      // console.log('📡 Login response:', response);
+      console.log('📡 Login response:', response);
 
       if (response.success && response.data) {
         // Check if response contains tokens (direct login) or user data (OTP required)
-        if ('access_token' in response.data) {
+        // OTPVerificationResponse is just a User object, while LoginResponse has access_token
+        if ('access_token' in response.data && response.data.access_token) {
           // Direct login successful
           console.log('✅ Direct login successful');
           const loginData = response.data as any;
@@ -196,12 +197,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             payload: { user: loginData.user, requiresOTP: false },
           });
         } else {
+          // OTP verification required - response.data is the user object directly
           const otpData = response.data as any;
           
           // Show info toast for OTP requirement
           showInfo(
             'OTP Required',
-            response.message || 'Please check your email for verification code',
+            'Please check your email for the verification code',
             4000
           );
           
@@ -243,6 +245,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.data) {
         console.log('✅ OTP verification successful');
         const loginData = response.data as any;
+        console.log('📧 User data after OTP:', loginData.user);
+        console.log('📧 Email verified status:', loginData.user.is_email_verified);
         
         // Check if email verification is required
         if (!loginData.user.is_email_verified) {
@@ -264,6 +268,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // This will be handled by the navigation logic
           return;
         }
+        
+        console.log('✅ Email already verified, proceeding to dashboard');
         
         // Show success toast with backend message
         showSuccess(

@@ -219,18 +219,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                         alignItems: 'center',
                       }}
                     >
-                    {isLoading ? (
-                      <InlineSpinner 
-                        size="medium"
-                        color="#ffffff"
-                        text="Signing In..."
-                        textColor="#ffffff"
-                      />
-                    ) : (
+                    
                       <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                         Sign In
                       </Text>
-                    )}
                   </LinearGradient>
                 </TouchableOpacity>
 

@@ -6,6 +6,9 @@ import { useToast } from '@/contexts/ToastContext';
 export default function ToastContainer() {
   const { toasts, removeToast } = useToast();
 
+  // Only show the most recent toast to prevent overlapping
+  const latestToast = toasts[toasts.length - 1];
+
   return (
     <View style={{ 
       position: 'absolute', 
@@ -15,18 +18,18 @@ export default function ToastContainer() {
       zIndex: 999999,
       elevation: 999999,
     }}>
-      {toasts.map((toast, index) => (
+      {latestToast && (
         <Toast
-          key={toast.id}
+          key={latestToast.id}
           visible={true}
-          type={toast.type}
-          title={toast.title}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => removeToast(toast.id)}
-          onPress={toast.onPress}
+          type={latestToast.type}
+          title={latestToast.title}
+          message={latestToast.message}
+          duration={latestToast.duration}
+          onClose={() => removeToast(latestToast.id)}
+          onPress={latestToast.onPress}
         />
-      ))}
+      )}
     </View>
   );
 }

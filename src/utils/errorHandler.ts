@@ -1,4 +1,5 @@
 import { ApiError } from '@/services/types/apiTypes';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface UserFriendlyError {
   title: string;
@@ -251,4 +252,63 @@ export class ErrorHandler {
 
     return friendlyError;
   }
+}
+
+/**
+ * Detects if an error is an authentication/authorization error that should trigger logout
+ * @param error - The error to check
+ * @returns true if the error indicates authentication issues
+ */
+export function isAuthenticationError(error: any): boolean {
+  if (!error) return false;
+  
+  const errorMessage = error.message || error.toString() || '';
+  const errorString = errorMessage.toLowerCase();
+  
+  // Check for common authentication error patterns
+  const authErrorPatterns = [
+    'not found',
+    'user not found',
+    'director not found',
+    'teacher not found',
+    'student not found',
+    'unauthorized',
+    'forbidden',
+    'invalid token',
+    'token expired',
+    'authentication failed',
+    'access denied',
+    'user does not exist',
+    'account not found',
+  ];
+  
+  return authErrorPatterns.some(pattern => errorString.includes(pattern));
+}
+
+/**
+ * Hook to handle authentication errors and automatically logout
+ * @returns Function to handle errors with automatic logout
+ */
+export function useAuthErrorHandler() {
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    // Don't trigger logout if user is in OTP verification state
+    // 403 errors are expected during OTP verification since user is not fully authenticated yet
+    if (requiresOTP || !isAuthenticated) {
+      console.log('🔐 Skipping logout - user is in OTP verification or not authenticated yet');
+      return;
+    }
+    
+    if (isAuthenticationError(error)) {
+      console.log('🔐 Authentication error detected, logging out user:', error.message);
+      try {
+        await logout();
+      } catch (logoutError) {
+        console.error('Error during automatic logout:', logoutError);
+      }
+    }
+  };
+  
+  return handleAuthError;
 }
