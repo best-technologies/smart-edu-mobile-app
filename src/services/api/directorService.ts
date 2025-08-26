@@ -1270,6 +1270,72 @@ class DirectorService {
       throw error;
     }
   }
+
+  /**
+   * Enroll a new student
+   */
+  async enrollStudent(payload: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+    gender: 'male' | 'female';
+    class_id?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/students/enroll-new-student');
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        '/director/students/enroll-new-student',
+        'POST',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in enrollStudent:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update a student
+   */
+  async updateStudent(studentId: string, payload: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone_number?: string;
+    gender?: 'male' | 'female';
+    class_id?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      console.log('🌐 Making API request to: /director/students/' + studentId);
+      console.log('📦 Request payload:', payload);
+
+      const response = await this.httpClient.makeRequest<any>(
+        `/director/students/${studentId}`,
+        'PATCH',
+        payload
+      );
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error in updateStudent:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        payload
+      });
+      throw error;
+    }
+  }
 }
 
 export const directorService = new DirectorService();

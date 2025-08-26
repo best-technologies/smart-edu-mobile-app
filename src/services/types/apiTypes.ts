@@ -103,6 +103,12 @@ export interface RequestEmailVerificationOTPRequest {
   email: string;
 }
 
+export interface VerifyOTPAndResetPasswordRequest {
+  email: string;
+  otp: string;
+  new_password: string;
+}
+
 // API Error Types
 export class ApiError extends Error {
   constructor(

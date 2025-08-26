@@ -1,8 +1,16 @@
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Student } from '@/services/api/directorService';
+import { useState } from 'react';
 
-export function StudentCard({ student }: { student: Student }) {
+interface StudentCardProps {
+  student: Student;
+  onEditStudent?: (student: Student) => void;
+  onViewProfile?: (student: Student) => void;
+}
+
+export function StudentCard({ student, onEditStudent, onViewProfile }: StudentCardProps) {
+  const [showMenu, setShowMenu] = useState(false);
   const initials = `${student.first_name.charAt(0).toUpperCase()}${student.last_name.charAt(0).toUpperCase()}`;
   const fullName = `${student.first_name} ${student.last_name}`;
   
@@ -120,9 +128,63 @@ export function StudentCard({ student }: { student: Student }) {
         </View>
 
         {/* Action Button */}
-        <TouchableOpacity activeOpacity={0.7} className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 ml-2">
-          <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
-        </TouchableOpacity>
+        <View className="relative ml-2">
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            className="h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800"
+            onPress={() => setShowMenu(!showMenu)}
+          >
+            <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
+          </TouchableOpacity>
+          
+          {showMenu && (
+            <>
+              {/* Overlay to close menu when clicking outside */}
+              <Pressable
+                style={{
+                  position: 'absolute',
+                  top: -1000,
+                  left: -1000,
+                  right: -1000,
+                  bottom: -1000,
+                  zIndex: 10,
+                }}
+                onPress={() => setShowMenu(false)}
+              />
+              
+              {/* Dropdown Menu */}
+              <View 
+                className="absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 min-w-40"
+                style={{
+                  top: 40,
+                  right: 0,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowMenu(false);
+                    onEditStudent?.(student);
+                  }}
+                  className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700"
+                >
+                  <Ionicons name="pencil" size={16} color="#6b7280" />
+                  <Text className="text-gray-700 dark:text-gray-300 ml-3">Edit Student</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowMenu(false);
+                    onViewProfile?.(student);
+                  }}
+                  className="flex-row items-center px-4 py-3"
+                >
+                  <Ionicons name="person" size={16} color="#6b7280" />
+                  <Text className="text-gray-700 dark:text-gray-300 ml-3">View Profile</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );

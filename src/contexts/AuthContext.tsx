@@ -108,6 +108,7 @@ interface AuthContextType extends AuthState {
   forgotPassword: (email: string) => Promise<void>;
   requestEmailVerificationOTP: (email: string) => Promise<void>;
   verifyEmail: (request: { email: string; otp: string }) => Promise<void>;
+  verifyOTPAndResetPassword: (request: { email: string; otp: string; new_password: string }) => Promise<void>;
   clearError: () => void;
   getPendingUser: () => Promise<User | null>;
   refreshUserProfile: () => Promise<void>;
@@ -154,7 +155,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'LOGIN_START' });
 
       const response = await ApiService.auth.signIn(credentials);
-      console.log('📡 Login response:', response);
 
       if (response.success && response.data) {
         // Check if response contains tokens (direct login) or user data (OTP required)
@@ -441,6 +441,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const verifyOTPAndResetPassword = async (request: { email: string; otp: string; new_password: string }) => {
+    try {
+      console.log('🔐 Password reset OTP verification attempt for:', request.email);
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      const response = await ApiService.auth.verifyOTPAndResetPassword(request);
+      console.log('📡 Password reset OTP verification response:', response);
+
+      if (response.success) {
+        console.log('✅ Password reset successful');
+        
+        // Show success toast with backend message
+        showSuccess(
+          'Password Reset Successful',
+          response.message || 'Your password has been successfully reset',
+          4000
+        );
+      } else {
+        console.log('❌ Password reset failed:', response.message);
+        throw new Error(response.message || 'Password reset failed');
+      }
+    } catch (error) {
+      console.log('💥 Password reset error:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = ErrorHandler.getFriendlyError(error);
+      
+      // Show appropriate toast based on error type
+      if (friendlyError.type === 'warning') {
+        showWarning(friendlyError.title, friendlyError.message, 5000);
+      } else {
+        showError(friendlyError.title, friendlyError.message, 5000);
+      }
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: friendlyError.message });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
   const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
@@ -467,6 +508,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     forgotPassword,
     requestEmailVerificationOTP,
     verifyEmail,
+    verifyOTPAndResetPassword,
     clearError,
     getPendingUser,
     refreshUserProfile,

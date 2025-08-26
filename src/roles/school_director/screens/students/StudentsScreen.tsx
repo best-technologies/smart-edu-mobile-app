@@ -14,9 +14,19 @@ import ClassFilter from '../../components/students/ClassFilter';
 import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useStudentsData } from '@/hooks/useDirectorData';
+import AddStudentModal from '../../components/students/AddStudentModal';
+import EditStudentModal from '../../components/students/EditStudentModal';
+import { SuccessModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function StudentsScreen() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [addStudentModalVisible, setAddStudentModalVisible] = useState(false);
+  const [editStudentModalVisible, setEditStudentModalVisible] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const { showError } = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
 
   const {
@@ -52,6 +62,20 @@ export default function StudentsScreen() {
 
   const handleViewAllStudents = () => {
     navigation.navigate('AllStudentsList');
+  };
+
+  const handleAddStudent = () => {
+    setAddStudentModalVisible(true);
+  };
+
+  const handleEditStudent = (student: any) => {
+    setSelectedStudent(student);
+    setEditStudentModalVisible(true);
+  };
+
+  const handleViewProfile = (student: any) => {
+    // TODO: Implement view profile functionality
+    console.log('View profile for student:', student);
   };
 
   if (error) {
@@ -91,7 +115,21 @@ export default function StudentsScreen() {
           />
         }
       >
-        <Section title="Overview">
+        <Section 
+          title="Overview"
+          action={
+            <TouchableOpacity
+              onPress={handleAddStudent}
+              className="flex-row items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle" size={16} color="#10b981" />
+              <Text className="text-emerald-600 dark:text-emerald-400 text-sm font-medium ml-1">
+                Enroll Student
+              </Text>
+            </TouchableOpacity>
+          }
+        >
           {basicDetails && <StudentStats stats={basicDetails} />}
         </Section>
 
@@ -131,7 +169,12 @@ export default function StudentsScreen() {
           ) : students.length > 0 ? (
             <View className="gap-4">
               {students.map((student) => (
-                <StudentCard key={student.id} student={student} />
+                <StudentCard 
+                  key={student.id} 
+                  student={student}
+                  onEditStudent={handleEditStudent}
+                  onViewProfile={handleViewProfile}
+                />
               ))}
               
               {/* Pagination */}
@@ -154,6 +197,59 @@ export default function StudentsScreen() {
           )}
         </Section>
       </ScrollView>
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        visible={addStudentModalVisible}
+        onClose={() => setAddStudentModalVisible(false)}
+        onSuccess={() => {
+          setAddStudentModalVisible(false);
+          refetch();
+        }}
+        onShowSuccess={(message) => {
+          setSuccessMessage(message);
+          setSuccessModalVisible(true);
+        }}
+        onShowError={(message) => {
+          showError('Student Enrollment Failed', message);
+        }}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        visible={editStudentModalVisible}
+        student={selectedStudent}
+        onClose={() => {
+          setEditStudentModalVisible(false);
+          setSelectedStudent(null);
+        }}
+        onSuccess={() => {
+          setEditStudentModalVisible(false);
+          setSelectedStudent(null);
+          refetch();
+        }}
+        onShowSuccess={(message) => {
+          setSuccessMessage(message);
+          setSuccessModalVisible(true);
+        }}
+        onShowError={(message) => {
+          showError('Student Update Failed', message);
+        }}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        visible={successModalVisible}
+        title="Success!"
+        message={successMessage}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          setSuccessMessage('');
+        }}
+        confirmText="OK"
+        autoClose={true}
+        autoCloseDelay={3000}
+      />
     </SafeAreaView>
   );
 }
