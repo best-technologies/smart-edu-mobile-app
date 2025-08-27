@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "smart-edu-mobile-app",
-    "slug": "smart-edu-mobile-app",
+    "name": "SmartEdu",
+    "slug": "SmartEdu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/accessstudy-logo.png",

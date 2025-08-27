@@ -41,6 +41,9 @@ export function TopBar() {
               Welcome back, {formatTeacherName(teacherName)}
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-400">
+              {userProfile?.email || 'Loading...'}
+            </Text>
+            <Text className="text-xs text-gray-400 dark:text-gray-500">
               {formattedDate}
             </Text>
           </View>

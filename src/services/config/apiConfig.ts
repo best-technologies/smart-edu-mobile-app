@@ -1,6 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:1000/api/v1',
+  // BASE_URL: 'http://localhost:1000/api/v1',
+  BASE_URL: 'https://d1f5da238eef.ngrok-free.app/api/v1',
   TIMEOUT: 10000, // 10 seconds
 } as const;
 
@@ -30,6 +31,8 @@ export const API_ENDPOINTS = {
     SUBJECTS: '/teacher/subjects',
     STUDENTS: '/teacher/students',
     SCHEDULES: '/teacher/schedules',
+    STUDENT_TAB: '/teachers/student-tab',
+    SCHEDULES_TAB: '/teachers/schedules-tab',
   },
   DIRECTOR: {
     DASHBOARD: '/director/dashboard',

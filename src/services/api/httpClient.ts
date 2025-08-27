@@ -55,7 +55,8 @@ export class HttpClient {
     requiresAuth: boolean = true
   ): Promise<ApiResponse<T>> {
     try {
-      const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+      const url = `${this.baseURL}${endpoint}`;
+      // const url = `${API_CONFIG.BASE_URL}${endpoint}`;
       console.log(`🌐 ${method} ${url}`);
       
       const headers: Record<string, string> = {

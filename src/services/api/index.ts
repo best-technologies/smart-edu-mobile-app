@@ -13,6 +13,10 @@ const directorService = new DirectorService();
 const studentService = new StudentService();
 const userService = new UserService();
 
+// Ensure all methods are available
+console.log('🔧 TeacherService methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(teacherService)));
+console.log('🔧 TeacherService getScheduleTab method:', typeof teacherService.getScheduleTab);
+
 // Unified API Service class
 export class ApiService {
   // Authentication

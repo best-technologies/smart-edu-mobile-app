@@ -1,224 +1,270 @@
-import React, { useState, useMemo } from 'react';
-import { ScrollView, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Section from '../../school_director/components/shared/Section';
+import ClassSelector from '../../school_director/components/schedules/ClassSelector';
+import TeacherTimetableGrid from './components/schedules/TeacherTimetableGrid';
+import EmptyState from '../../school_director/components/shared/EmptyState';
+import CenteredLoader from '@/components/CenteredLoader';
 import TopBar from './components/shared/TopBar';
-import ClassTabs from './components/schedules/ClassTabs';
-import TimetableGrid from './components/schedules/TimetableGrid';
-import DayScheduleView from './components/schedules/DayScheduleView';
-import ScheduleStats from './components/schedules/ScheduleStats';
-import FloatingActionButton from './components/shared/FloatingActionButton';
-
-const { width } = Dimensions.get('window');
+import { ApiService } from '@/services/api';
+import { TeacherService } from '@/services/api/roleServices';
 
 export default function SchedulesScreen() {
-  const [selectedClass, setSelectedClass] = useState('JSS1');
-  const [selectedDay, setSelectedDay] = useState('Monday');
-  const [viewMode, setViewMode] = useState<'grid' | 'day'>('grid');
+  const [selectedClassId, setSelectedClassId] = useState<string>(''); // Will be set from API
+  const [classes, setClasses] = useState<Array<{ classId: string; name: string }>>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string; code: string; color: string }>>([]);
+  const [timeSlots, setTimeSlots] = useState<Array<{ id: string; label: string; startTime: string; endTime: string; order: number }>>([]);
+  const [schedule, setSchedule] = useState<{
+    MONDAY: any[];
+    TUESDAY: any[];
+    WEDNESDAY: any[];
+    THURSDAY: any[];
+    FRIDAY: any[];
+  }>({
+    MONDAY: [],
+    TUESDAY: [],
+    WEDNESDAY: [],
+    THURSDAY: [],
+    FRIDAY: []
+  });
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const classes = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const timeSlots = [
-    '08:00 - 09:00',
-    '09:00 - 10:00', 
-    '10:00 - 11:00',
-    '11:00 - 12:00',
-    '12:00 - 13:00',
-    '13:00 - 14:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00'
-  ];
+  const handleRefresh = useCallback(async () => {
+    try {
+      setIsRefreshing(true);
+      await fetchScheduleData();
+    } catch (error) {
+      console.error('Error refreshing schedule data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
-  // Calculate stats for the selected class
-  const stats = useMemo(() => {
-    const timetableData = getTimetableData(selectedClass);
-    let totalPeriods = 0;
-    const teachers = new Set<string>();
-    const subjects = new Set<string>();
+  const handleClassSelect = useCallback((classId: string) => {
+    setSelectedClassId(classId);
+    console.log('Selected class:', classId);
+    // The schedule data is already loaded, just update the selected class
+  }, []);
 
-    Object.values(timetableData).forEach(dayData => {
-      Object.values(dayData).forEach(period => {
-        if (period) {
-          totalPeriods++;
-          teachers.add(period.teacher);
-          subjects.add(period.subject);
+  // Fetch schedule data on component mount
+  useEffect(() => {
+    fetchScheduleData();
+  }, []);
+
+  const fetchScheduleData = useCallback(async () => {
+    try {
+      setIsLoadingClasses(true);
+      
+      // Check if the method exists
+      if (!ApiService.teacher.getScheduleTab) {
+        console.error('getScheduleTab method not found on ApiService.teacher');
+        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(ApiService.teacher)));
+        
+        // Fallback to mock data for now
+        const mockResponse = {
+          success: true,
+          message: "Schedules tab fetched successfully",
+          data: {
+            subjects: [
+              {
+                id: "subject-uuid-1",
+                name: "Mathematics",
+                code: "MATH101",
+                color: "#FF5733"
+              }
+            ],
+            classes: [
+              {
+                id: "class-uuid-1",
+                name: "Class 10A"
+              },
+              {
+                id: "class-uuid-2", 
+                name: "Class 10B"
+              }
+            ],
+            timetable_data: {
+              timeSlots: [
+                {
+                  id: "timeslot-uuid-1",
+                  startTime: "08:45",
+                  endTime: "09:45",
+                  label: "Period-1",
+                  order: 1
+                },
+                {
+                  id: "timeslot-uuid-2",
+                  startTime: "09:45",
+                  endTime: "10:45",
+                  label: "Period-2",
+                  order: 2
+                }
+              ],
+              schedule: {
+                MONDAY: [
+                  {
+                    timeSlotId: "timeslot-uuid-1",
+                    startTime: "08:45",
+                    endTime: "09:45",
+                    label: "Period-1",
+                    subject: {
+                      id: "subject-uuid-1",
+                      name: "Mathematics",
+                      code: "MATH101",
+                      color: "#FF5733"
+                    },
+                    teacher: {
+                      id: "teacher-uuid-1",
+                      name: "John Doe"
+                    },
+                    room: "Room 101"
+                  },
+                  {
+                    timeSlotId: "timeslot-uuid-2",
+                    startTime: "09:45",
+                    endTime: "10:45",
+                    label: "Period-2",
+                    subject: null,
+                    teacher: null,
+                    room: null
+                  }
+                ],
+                TUESDAY: [],
+                WEDNESDAY: [],
+                THURSDAY: [],
+                FRIDAY: []
+              }
+            }
+          }
+        };
+        
+        const { classes, subjects, timetable_data } = mockResponse.data;
+        const formattedClasses = classes.map((classItem: any) => ({
+          classId: classItem.id,
+          name: classItem.name,
+        }));
+        
+        setClasses(formattedClasses);
+        setSubjects(subjects);
+        setTimeSlots(timetable_data.timeSlots);
+        setSchedule(timetable_data.schedule);
+        
+        if (!selectedClassId && formattedClasses.length > 0) {
+          setSelectedClassId(formattedClasses[0].classId);
         }
-      });
-    });
-
-    return {
-      totalPeriods,
-      totalTeachers: teachers.size,
-      totalSubjects: subjects.size
-    };
-  }, [selectedClass]);
-
-  // Mock data function (moved from TimetableGrid)
-  function getTimetableData(classId: string): Record<string, Record<string, any>> {
-    const data: Record<string, Record<string, any>> = {};
-    
-    // Initialize empty timetable
-    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
-      data[day] = {};
-      ['08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00', 
-       '12:00 - 13:00', '13:00 - 14:00', '14:00 - 15:00', '15:00 - 16:00'].forEach(time => {
-        data[day][time] = null;
-      });
-    });
-
-    // Add some sample data
-    if (classId === 'JSS1') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
-      data['Monday']['09:00 - 10:00'] = { subject: 'English Language', teacher: 'Mrs. Smith', color: 'green' };
-      data['Tuesday']['08:00 - 09:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
-      data['Thursday']['13:00 - 14:00'] = { subject: 'Biology', teacher: 'Ms. Davis', color: 'green' };
-      data['Friday']['14:00 - 15:00'] = { subject: 'History', teacher: 'Mr. Wilson', color: 'orange' };
-    } else if (classId === 'JSS2') {
-      data['Monday']['08:00 - 09:00'] = { subject: 'Mathematics', teacher: 'Mr. Johnson', color: 'purple' };
-      data['Tuesday']['09:00 - 10:00'] = { subject: 'Physics', teacher: 'Dr. Williams', color: 'purple' };
-      data['Wednesday']['10:00 - 11:00'] = { subject: 'Chemistry', teacher: 'Prof. Brown', color: 'blue' };
+        
+        return;
+      }
+      
+      // Real API call to fetch schedule data
+      const teacherService = new TeacherService();
+      const response = await teacherService.getScheduleTab();
+      
+      if (response.success && response.data) {
+        // Extract data from response
+        const { classes, subjects, timetable_data } = response.data;
+        
+        // Format classes for ClassSelector
+        const formattedClasses = classes.map((classItem: any) => ({
+          classId: classItem.id,
+          name: classItem.name,
+        }));
+        
+        setClasses(formattedClasses);
+        setSubjects(subjects);
+        setTimeSlots(timetable_data.timeSlots);
+        setSchedule(timetable_data.schedule);
+        
+        // Set first class as selected if none selected
+        if (!selectedClassId && formattedClasses.length > 0) {
+          setSelectedClassId(formattedClasses[0].classId);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching schedule data:', error);
+    } finally {
+      setIsLoadingClasses(false);
     }
-
-    return data;
-  }
-
-  const handleAddPeriod = () => {
-    console.log('Add new period for class:', selectedClass);
-  };
-
-  const handleClassChange = (classId: string) => {
-    setSelectedClass(classId);
-  };
-
-  const handleDayChange = (day: string) => {
-    setSelectedDay(day);
-  };
-
-  const handlePeriodPress = (time: string, period: any) => {
-    if (period) {
-      console.log('Edit period:', period);
-    } else {
-      console.log('Add period for:', selectedDay, time);
-    }
-  };
+  }, [selectedClassId]);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
       
-      <ScrollView className="flex-1" contentContainerClassName="pb-32">
-        {/* Header Section */}
-        <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <View className="flex-row items-center justify-between mb-2">
-            <View>
-              <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Class Schedules
-              </Text>
-              <Text className="text-sm text-gray-500 dark:text-gray-400">
-                Manage and view class timetables
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleAddPeriod}
-              activeOpacity={0.7}
-              className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
-            >
-              <Ionicons name="add" size={16} color="white" />
-              <Text className="text-white font-semibold text-sm">Add Period</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Class Selection Tabs */}
-        <View className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-          <ClassTabs 
+      <ScrollView 
+        className="flex-1" 
+        contentContainerClassName="px-4 pt-0"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+            colors={["#3b82f6"]}
+            progressBackgroundColor="#ffffff"
+          />
+        }
+      >
+        <Section 
+          title="My Teaching Schedule"
+        >
+          {/* Class Selector */}
+          <ClassSelector
             classes={classes}
-            selectedClass={selectedClass}
-            onClassChange={handleClassChange}
+            selectedClassId={selectedClassId}
+            onClassSelect={handleClassSelect}
+            isLoading={isLoadingClasses}
           />
-          <View className="px-6 py-2 flex-row items-center justify-between">
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
-              Viewing timetable for {selectedClass}
-            </Text>
-            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-              <TouchableOpacity
-                onPress={() => setViewMode('grid')}
-                activeOpacity={0.7}
-                className={`px-3 py-1 rounded-md ${
-                  viewMode === 'grid' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : ''
-                }`}
-              >
-                <Text className={`text-xs font-medium ${
-                  viewMode === 'grid' 
-                    ? 'text-gray-900 dark:text-gray-100' 
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                  Grid
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setViewMode('day')}
-                activeOpacity={0.7}
-                className={`px-3 py-1 rounded-md ${
-                  viewMode === 'day' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : ''
-                }`}
-              >
-                <Text className={`text-xs font-medium ${
-                  viewMode === 'day' 
-                    ? 'text-gray-900 dark:text-gray-100' 
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                  Day
-                </Text>
-              </TouchableOpacity>
+
+          {/* Subjects Section */}
+          {subjects.length > 0 && (
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Subjects You Teach:
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {subjects.map((subject) => (
+                  <View 
+                    key={subject.id} 
+                    className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2"
+                    style={{ borderLeftColor: subject.color, borderLeftWidth: 4 }}
+                  >
+                    <Text className="text-sm font-semibold text-green-700 dark:text-green-300">
+                      {subject.name}
+                    </Text>
+                    <Text className="text-xs text-green-600 dark:text-green-400">
+                      {subject.code}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
-        </View>
+          )}
 
-        {/* Schedule Stats */}
-        <View className="px-6 py-2">
-          <ScheduleStats 
-            selectedClass={selectedClass}
-            totalPeriods={stats.totalPeriods}
-            totalTeachers={stats.totalTeachers}
-            totalSubjects={stats.totalSubjects}
-          />
-        </View>
-
-        {/* Timetable View */}
-        <View className="px-6 py-2">
-          {viewMode === 'grid' ? (
-            <TimetableGrid 
-              selectedClass={selectedClass}
-              days={days}
+          {isLoadingClasses ? (
+            <CenteredLoader visible={true} text="Loading schedule..." />
+          ) : schedule && timeSlots.length > 0 ? (
+            <TeacherTimetableGrid
+              selectedClass={classes.find(c => c.classId === selectedClassId)?.name || selectedClassId}
               timeSlots={timeSlots}
-              selectedDay={selectedDay}
-              onDayChange={handleDayChange}
-              timetableData={getTimetableData(selectedClass)}
+              schedule={schedule}
             />
           ) : (
-            <DayScheduleView 
-              day={selectedDay}
-              timeSlots={timeSlots}
-              periods={getTimetableData(selectedClass)[selectedDay] || {}}
-              onPeriodPress={handlePeriodPress}
+            <EmptyState 
+              title="No schedule found" 
+              subtitle={
+                selectedClassId 
+                  ? "No schedule available for the selected class."
+                  : "Please select a class to view its schedule."
+              }
             />
           )}
-        </View>
+        </Section>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FloatingActionButton 
-        icon="chatbubble-outline"
-        text="Chat with Support"
-        color="bg-green-500"
-        onPress={() => console.log('Chat with support')}
-      />
     </SafeAreaView>
   );
 }

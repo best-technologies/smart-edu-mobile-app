@@ -171,11 +171,9 @@ export default function UpdateTeacherModal({
       }
 
       const response = await directorService.updateTeacher(teacher.id, payload);
-      console.log('📧 Update teacher response:', response);
 
       if (response.success === true) {
         const successMessage = `Teacher "${firstName} ${lastName}" updated successfully!`;
-        console.log('✅ Success message:', successMessage);
         onShowSuccess(successMessage);
         
         // Close modal and refresh data

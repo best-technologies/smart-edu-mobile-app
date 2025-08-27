@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -23,6 +23,15 @@ export class TeacherService {
 
   async getSchedules(): Promise<ApiResponse<any[]>> {
     return this.httpClient.makeRequest(API_ENDPOINTS.TEACHER.SCHEDULES);
+  }
+
+  async getStudentTab(page?: number): Promise<StudentTabResponse> {
+    const url = page ? `${API_ENDPOINTS.TEACHER.STUDENT_TAB}?page=${page}` : API_ENDPOINTS.TEACHER.STUDENT_TAB;
+    return this.httpClient.makeRequest<StudentTabResponse['data']>(url);
+  }
+
+  async getScheduleTab(): Promise<TeacherScheduleResponse> {
+    return this.httpClient.makeRequest<TeacherScheduleResponse['data']>(API_ENDPOINTS.TEACHER.SCHEDULES_TAB);
   }
 }
 

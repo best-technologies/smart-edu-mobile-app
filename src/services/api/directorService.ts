@@ -381,7 +381,6 @@ class DirectorService {
   async enrollTeacher(payload: EnrollTeacherPayload): Promise<EnrollTeacherApiResponse> {
     try {
       console.log('🌐 Making API request to: /director/teachers');
-      console.log('📦 Request payload:', payload);
 
       const response = await this.httpClient.makeRequest<EnrollTeacherResponse>(
         '/director/teachers',
@@ -473,7 +472,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to:', `/director/subjects/${subjectId}`);
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         `/director/subjects/${subjectId}`,
@@ -735,7 +734,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/subjects');
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         '/director/subjects/create-subject',
@@ -770,7 +769,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to:', `/director/teachers/${teacherId}`);
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         `/director/teachers/${teacherId}`,
@@ -1087,7 +1086,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/schedules/create-timetable');
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         '/director/schedules/create-timetable',
@@ -1113,7 +1112,7 @@ class DirectorService {
   async createClass(payload: { name: string; classTeacherId?: string }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/classes/create-class');
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         '/director/classes/create-class',
@@ -1141,7 +1140,7 @@ class DirectorService {
   async editClass(id: string, payload: { name?: string; classTeacherId?: string }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/classes/edit-class/' + id);
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         `/director/classes/edit-class/${id}`,
@@ -1220,7 +1219,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/schedules/create-time-slot');
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         '/director/schedules/create-time-slot',
@@ -1251,7 +1250,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/schedules/time-slots/' + id);
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         `/director/schedules/time-slots/${id}`,
@@ -1284,7 +1283,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/students/enroll-new-student');
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         '/director/students/enroll-new-student',
@@ -1317,7 +1316,7 @@ class DirectorService {
   }): Promise<ApiResponse<any>> {
     try {
       console.log('🌐 Making API request to: /director/students/' + studentId);
-      console.log('📦 Request payload:', payload);
+      
 
       const response = await this.httpClient.makeRequest<any>(
         `/director/students/${studentId}`,
