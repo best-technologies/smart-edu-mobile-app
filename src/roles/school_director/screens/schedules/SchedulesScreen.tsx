@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import Section from '../../components/shared/Section';
 import ClassSelector from '../../components/schedules/ClassSelector';
 import TimetableGrid from '../../components/schedules/TimetableGrid';
@@ -20,6 +21,15 @@ export default function SchedulesScreen() {
   const [classes, setClasses] = useState<Array<{ classId: string; name: string }>>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset modal states when screen is focused
+      setAddClassModalVisible(false);
+      setTimeSlotModalVisible(false);
+    }, [])
+  );
 
   const {
     scheduleData,

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SchoolDirectorStackParamList } from '../../SchoolDirectorNavigator';
 import Section from '../../components/shared/Section';
@@ -28,6 +28,18 @@ export default function StudentsScreen() {
   const [successMessage, setSuccessMessage] = useState('');
   const { showError } = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
+  
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset modal states when screen is focused
+      setAddStudentModalVisible(false);
+      setEditStudentModalVisible(false);
+      setSelectedStudent(null);
+      setSuccessModalVisible(false);
+      setSuccessMessage('');
+    }, [])
+  );
 
   const {
     students,

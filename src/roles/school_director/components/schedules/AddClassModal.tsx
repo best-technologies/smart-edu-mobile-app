@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { directorService, ClassData, TeacherData } from '@/services/api/directorService';
-import { SuccessModal, ErrorModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -31,14 +31,16 @@ export default function AddClassModal({
   onClose,
   onSuccess,
 }: AddClassModalProps) {
+  const { showSuccess, showError } = useToast();
   const [className, setClassName] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [existingClasses, setExistingClasses] = useState<ClassData[]>([]);
   const [availableTeachers, setAvailableTeachers] = useState<TeacherData[]>([]);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Dropdown states
+  const [showTeacherDropdown, setShowTeacherDropdown] = useState(false);
   
   // Inline editing states
   const [editingField, setEditingField] = useState<{ id: string; field: string; value: string } | null>(null);
@@ -47,8 +49,13 @@ export default function AddClassModal({
 
   const handleSubmit = async () => {
     if (!className.trim()) {
-      setErrorMessage('Please enter a class name');
-      setErrorModalVisible(true);
+      showError('Please enter a class name');
+      return;
+    }
+
+    // Validate class name format
+    if (!/^[a-z0-9]+$/.test(className.trim())) {
+      showError('Class name must contain only lowercase letters and numbers (e.g., jss1, pry3, kg1)');
       return;
     }
 
@@ -67,8 +74,7 @@ export default function AddClassModal({
       const response = await directorService.createClass(payload);
 
       if (response.success) {
-        // Close modal directly without showing success modal
-        console.log('✅ Class created successfully, closing modal...');
+        showSuccess('Class created successfully!');
         onSuccess();
         onClose();
         // Reset form
@@ -76,14 +82,12 @@ export default function AddClassModal({
         setSelectedTeacherId('');
       } else {
         const errorMsg = response.message || 'Failed to create class';
-        setErrorMessage(errorMsg);
-        setErrorModalVisible(true);
+        showError(errorMsg);
       }
     } catch (error) {
       console.error('Error creating class:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to create class';
-      setErrorMessage(errorMsg);
-      setErrorModalVisible(true);
+      showError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +97,7 @@ export default function AddClassModal({
     if (!isLoading) {
       setClassName('');
       setSelectedTeacherId('');
+      setShowTeacherDropdown(false);
       onClose();
     }
   };
@@ -120,9 +125,7 @@ export default function AddClassModal({
     }
   };
 
-  const handleErrorModalClose = () => {
-    setErrorModalVisible(false);
-  };
+
 
   const getTeacherDisplayName = (teacher: any) => {
     if (!teacher) return 'No teacher assigned';
@@ -155,29 +158,27 @@ export default function AddClassModal({
 
       const response = await directorService.editClass(editingField.id, payload);
 
-      if (response.success) {
-        // Update the local state
-        setExistingClasses(prev => prev.map(classItem => 
-          classItem.id === editingField.id 
-            ? { ...classItem, [editingField.field]: payload[editingField.field] }
-            : classItem
-        ));
-        
-        console.log(`${editingField.field} updated successfully`);
-        cancelEditing();
-      } else {
-        const errorMsg = response.message || 'Failed to update class';
-        setErrorMessage(errorMsg);
-        setErrorModalVisible(true);
+              if (response.success) {
+          // Update the local state
+          setExistingClasses(prev => prev.map(classItem => 
+            classItem.id === editingField.id 
+              ? { ...classItem, [editingField.field]: payload[editingField.field] }
+              : classItem
+          ));
+          
+          showSuccess(`${editingField.field} updated successfully`);
+          cancelEditing();
+        } else {
+          const errorMsg = response.message || 'Failed to update class';
+          showError(errorMsg);
+        }
+      } catch (error) {
+        console.error('Error updating class:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Failed to update class';
+        showError(errorMsg);
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      console.error('Error updating class:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to update class';
-      setErrorMessage(errorMsg);
-      setErrorModalVisible(true);
-    } finally {
-      setIsUpdating(false);
-    }
   };
 
   const handleDelete = (classItem: ClassData) => {
@@ -203,8 +204,7 @@ export default function AddClassModal({
       fetchExistingClasses(); // Refresh the list
     } catch (error) {
       console.error('Error deleting class:', error);
-      setErrorMessage('Failed to delete class');
-      setErrorModalVisible(true);
+      showError('Failed to delete class');
     }
   };
 
@@ -223,7 +223,13 @@ export default function AddClassModal({
           alignItems: 'center',
         }}
       >
-        <Pressable onPress={handleClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        <Pressable 
+          onPress={() => {
+            handleClose();
+            setShowTeacherDropdown(false);
+          }} 
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+        />
         <View
           style={{
             width: Math.min(screenWidth - 40, 400),
@@ -256,16 +262,43 @@ export default function AddClassModal({
               <Text className="text-sm font-medium text-gray-700 mb-2">
                 Class Name
               </Text>
+              
+              {/* Instructions */}
+              <View className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <View className="flex-row items-start">
+                  <Ionicons name="information-circle" size={16} color="#3B82F6" style={{ marginTop: 1, marginRight: 8 }} />
+                  <View className="flex-1">
+                    <Text className="text-xs font-medium text-blue-800 mb-1">
+                      Class Name Format
+                    </Text>
+                    <Text className="text-xs text-blue-700 leading-4">
+                      Use lowercase letters and numbers only. Examples: jss1, pry3, kg1, ss2
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
               <TextInput
                 value={className}
-                onChangeText={setClassName}
-                placeholder="e.g., jss1, ss1"
+                onChangeText={(text) => {
+                  // Convert to lowercase and remove spaces
+                  const formattedText = text.toLowerCase().replace(/\s/g, '');
+                  setClassName(formattedText);
+                }}
+                placeholder="e.g., jss1, pry3, kg1"
                 placeholderTextColor="#9ca3af"
                 className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={8}
               />
+              
+              {/* Validation message */}
+              {className && !/^[a-z0-9]+$/.test(className) && (
+                <Text className="text-xs text-red-600 mt-1">
+                  Only lowercase letters and numbers are allowed
+                </Text>
+              )}
             </View>
 
             {/* Teacher Selection */}
@@ -273,40 +306,83 @@ export default function AddClassModal({
               <Text className="text-sm font-medium text-gray-700 mb-2">
                 Class Teacher (Optional)
               </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (availableTeachers.length > 0) {
-                    Alert.alert(
-                      'Select Teacher',
-                      'Choose a teacher for this class:',
-                      [
-                        { text: 'No Teacher', onPress: () => setSelectedTeacherId('') },
-                        ...availableTeachers.map(teacher => ({
-                          text: `${teacher.first_name} ${teacher.last_name}`,
-                          onPress: () => setSelectedTeacherId(teacher.id)
-                        }))
-                      ]
-                    );
-                  }
-                }}
-                className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
-              >
-                <View className="flex-row items-center flex-1">
-                  {selectedTeacherId && availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture ? (
-                    <Image
-                      source={{ uri: availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture! }}
-                      className="w-6 h-6 rounded-full mr-2"
-                    />
-                  ) : null}
-                  <Text className="text-gray-900 flex-1">
-                    {selectedTeacherId 
-                      ? `${availableTeachers.find(t => t.id === selectedTeacherId)?.first_name} ${availableTeachers.find(t => t.id === selectedTeacherId)?.last_name}`
-                      : 'Select a teacher (optional)'
-                    }
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={16} color="#6b7280" />
-              </TouchableOpacity>
+              <View className="relative">
+                <TouchableOpacity
+                  onPress={() => setShowTeacherDropdown(!showTeacherDropdown)}
+                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                >
+                  <View className="flex-row items-center flex-1">
+                    {selectedTeacherId && availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture ? (
+                      <Image
+                        source={{ uri: availableTeachers.find(t => t.id === selectedTeacherId)?.display_picture! }}
+                        className="w-6 h-6 rounded-full mr-2"
+                      />
+                    ) : null}
+                    <Text className="text-gray-900 flex-1">
+                      {selectedTeacherId 
+                        ? `${availableTeachers.find(t => t.id === selectedTeacherId)?.first_name} ${availableTeachers.find(t => t.id === selectedTeacherId)?.last_name}`
+                        : 'Select a teacher (optional)'
+                      }
+                    </Text>
+                  </View>
+                  <Ionicons 
+                    name={showTeacherDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color="#6b7280" 
+                  />
+                </TouchableOpacity>
+                
+                {/* Dropdown */}
+                {showTeacherDropdown && (
+                  <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10 max-h-48">
+                    <ScrollView 
+                      nestedScrollEnabled={true}
+                      showsVerticalScrollIndicator={true}
+                      keyboardShouldPersistTaps="handled"
+                    >
+                      {/* No Teacher Option */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedTeacherId('');
+                          setShowTeacherDropdown(false);
+                        }}
+                        className="flex-row items-center px-3 py-3 border-b border-gray-100"
+                      >
+                        <View className="w-6 h-6 rounded-full bg-gray-200 items-center justify-center mr-3">
+                          <Ionicons name="person-outline" size={16} color="#6b7280" />
+                        </View>
+                        <Text className="text-gray-700">No Teacher</Text>
+                      </TouchableOpacity>
+                      
+                      {/* Teacher Options */}
+                      {availableTeachers.map((teacher) => (
+                        <TouchableOpacity
+                          key={teacher.id}
+                          onPress={() => {
+                            setSelectedTeacherId(teacher.id);
+                            setShowTeacherDropdown(false);
+                          }}
+                          className="flex-row items-center px-3 py-3 border-b border-gray-100 last:border-b-0"
+                        >
+                          {teacher.display_picture ? (
+                            <Image
+                              source={{ uri: teacher.display_picture }}
+                              className="w-6 h-6 rounded-full mr-3"
+                            />
+                          ) : (
+                            <View className="w-6 h-6 rounded-full bg-gray-200 items-center justify-center mr-3">
+                              <Ionicons name="person" size={16} color="#6b7280" />
+                            </View>
+                          )}
+                          <Text className="text-gray-900">
+                            {teacher.first_name} {teacher.last_name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
             </View>
 
             {/* Existing Classes Section */}
@@ -506,15 +582,6 @@ export default function AddClassModal({
           </View>
         </View>
 
-      {/* Error Modal */}
-      <ErrorModal
-        visible={errorModalVisible}
-        title="Error"
-        message={errorMessage}
-        onClose={handleErrorModalClose}
-        closeText="OK"
-        autoClose={false}
-      />
     </Modal>
   );
 }

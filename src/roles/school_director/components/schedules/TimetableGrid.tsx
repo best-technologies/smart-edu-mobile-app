@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { ScheduleItem, TimeSlot } from '@/services/api/directorService';
 import CreateScheduleModal from './CreateScheduleModal';
 
@@ -62,6 +63,16 @@ export function TimetableGrid({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset modal states when screen is focused
+      setIsModalVisible(false);
+      setSelectedDay('');
+      setSelectedTimeSlot('');
+    }, [])
+  );
 
   // Use useMemo to calculate dimensions only when needed
   const { cellWidth, cellHeight } = useMemo(() => {

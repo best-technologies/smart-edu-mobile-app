@@ -6,27 +6,25 @@ import {
   TouchableOpacity,
   TextInput,
   Pressable,
-  Alert,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { directorService } from '@/services/api/directorService';
-import { SuccessModal, ErrorModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 interface AddSubjectModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onShowSuccess: (message: string) => void;
-  onShowError: (message: string) => void;
 }
 
 export default function AddSubjectModal({ 
   visible, 
   onClose, 
-  onSuccess, 
-  onShowSuccess, 
-  onShowError 
+  onSuccess
 }: AddSubjectModalProps) {
+  const { showSuccess, showError } = useToast();
   const [subjectName, setSubjectName] = useState('');
   const [subjectCode, setSubjectCode] = useState('');
   const [description, setDescription] = useState('');
@@ -35,6 +33,11 @@ export default function AddSubjectModal({
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  
+  // Dropdown states
+  const [showClassDropdown, setShowClassDropdown] = useState(false);
+  const [showTeacherDropdown, setShowTeacherDropdown] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   
   // Available data
   const [availableTeachers, setAvailableTeachers] = useState<Array<{ id: string; name: string; display_picture: string | null }>>([]);
@@ -66,20 +69,20 @@ export default function AddSubjectModal({
   const handleSubmit = async () => {
     // Validate required fields
     if (!subjectName.trim() || !subjectCode.trim()) {
-      onShowError('Please fill in all required fields');
+      showError('Please fill in all required fields');
       return;
     }
 
     // Validate subject code format (basic validation)
     if (subjectCode.trim().length < 2) {
-      onShowError('Subject code must be at least 2 characters long');
+      showError('Subject code must be at least 2 characters long');
       return;
     }
 
     // Validate color format
     const colorRegex = /^#[0-9A-F]{6}$/i;
     if (!colorRegex.test(color.trim())) {
-      onShowError('Please enter a valid color code (e.g., #3B82F6)');
+      showError('Please enter a valid color code (e.g., #3B82F6)');
       return;
     }
 
@@ -109,7 +112,7 @@ export default function AddSubjectModal({
       if (response.success === true) {
         const successMessage = `Subject "${subjectName}" created successfully!`;
         console.log('✅ Success message:', successMessage);
-        onShowSuccess(successMessage);
+        showSuccess(successMessage);
         
         // Reset form
         setSubjectName('');
@@ -123,16 +126,16 @@ export default function AddSubjectModal({
         onSuccess();
       } else {
         console.log('❌ Subject creation failed, showing error modal');
-        onShowError(response.message || 'Failed to create subject');
+        showError(response.message || 'Failed to create subject');
       }
     } catch (error) {
       console.error('❌ Error creating subject:', error);
       
       // Handle ApiError specifically
       if (error instanceof Error) {
-        onShowError(error.message || 'Failed to create subject');
+        showError(error.message || 'Failed to create subject');
       } else {
-        onShowError('Failed to create subject');
+        showError('Failed to create subject');
       }
     } finally {
       console.log('🏁 Subject creation process finished, setting loading to false');
@@ -148,9 +151,19 @@ export default function AddSubjectModal({
       setColor('#3B82F6');
       setSelectedClassId('');
       setSelectedTeacherId('');
+      setShowClassDropdown(false);
+      setShowTeacherDropdown(false);
+      setShowColorPicker(false);
       onClose();
     }
   };
+
+  // Predefined colors for the color picker
+  const predefinedColors = [
+    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', 
+    '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1',
+    '#14B8A6', '#F43F5E', '#A855F7', '#EAB308', '#22C55E'
+  ];
 
   return (
     <>
@@ -168,7 +181,15 @@ export default function AddSubjectModal({
             alignItems: 'center',
           }}
         >
-          <Pressable onPress={handleClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          <Pressable 
+            onPress={() => {
+              handleClose();
+              setShowClassDropdown(false);
+              setShowTeacherDropdown(false);
+              setShowColorPicker(false);
+            }} 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+          />
           <View
             style={{
               width: Math.min(400, 400),
@@ -254,16 +275,62 @@ export default function AddSubjectModal({
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Color *
                 </Text>
-                <TextInput
-                  value={color}
-                  onChangeText={setColor}
-                  placeholder="#3B82F6"
-                  placeholderTextColor="#9ca3af"
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={7}
-                />
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowColorPicker(!showColorPicker)}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <View className="flex-row items-center flex-1">
+                      <View 
+                        className="w-6 h-6 rounded-full mr-3 border border-gray-300"
+                        style={{ backgroundColor: color }}
+                      />
+                      <Text className="text-gray-900">{color}</Text>
+                    </View>
+                    <Ionicons 
+                      name={showColorPicker ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {/* Color Picker Dropdown */}
+                  {showColorPicker && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10">
+                      <View className="p-3">
+                        <Text className="text-sm font-medium text-gray-700 mb-3">Select Color</Text>
+                        <View className="flex-row flex-wrap gap-2">
+                          {predefinedColors.map((colorOption) => (
+                            <TouchableOpacity
+                              key={colorOption}
+                              onPress={() => {
+                                setColor(colorOption);
+                                setShowColorPicker(false);
+                              }}
+                              className={`w-8 h-8 rounded-full border-2 ${
+                                color === colorOption ? 'border-gray-800' : 'border-gray-300'
+                              }`}
+                              style={{ backgroundColor: colorOption }}
+                            />
+                          ))}
+                        </View>
+                        <View className="mt-3 pt-3 border-t border-gray-200">
+                          <Text className="text-xs text-gray-500 mb-2">Or enter custom color:</Text>
+                          <TextInput
+                            value={color}
+                            onChangeText={setColor}
+                            placeholder="#3B82F6"
+                            placeholderTextColor="#9ca3af"
+                            className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            maxLength={7}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </View>
               </View>
 
               {/* Class Selection */}
@@ -271,33 +338,67 @@ export default function AddSubjectModal({
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Assign to Class (Optional)
                 </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (isLoadingData) return;
-                    
-                    Alert.alert(
-                      'Select Class',
-                      'Choose a class for this subject:',
-                      [
-                        { text: 'No Class', onPress: () => setSelectedClassId('') },
-                        ...availableClasses.map(classItem => ({
-                          text: classItem.name,
-                          onPress: () => setSelectedClassId(classItem.id)
-                        }))
-                      ]
-                    );
-                  }}
-                  disabled={isLoadingData}
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
-                >
-                  <Text className="text-gray-900">
-                    {selectedClassId 
-                      ? availableClasses.find(c => c.id === selectedClassId)?.name || 'Select a class'
-                      : 'No class assigned'
-                    }
-                  </Text>
-                  <Ionicons name="chevron-down" size={16} color="#6b7280" />
-                </TouchableOpacity>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowClassDropdown(!showClassDropdown)}
+                    disabled={isLoadingData}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900">
+                      {selectedClassId 
+                        ? availableClasses.find(c => c.id === selectedClassId)?.name || 'Select a class'
+                        : 'No class assigned'
+                      }
+                    </Text>
+                    <Ionicons 
+                      name={showClassDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {/* Class Dropdown */}
+                  {showClassDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10 max-h-48">
+                      <ScrollView 
+                        nestedScrollEnabled={true}
+                        showsVerticalScrollIndicator={true}
+                        keyboardShouldPersistTaps="handled"
+                      >
+                        {/* No Class Option */}
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedClassId('');
+                            setShowClassDropdown(false);
+                          }}
+                          className="flex-row items-center px-3 py-3 border-b border-gray-100"
+                        >
+                          <View className="w-6 h-6 rounded-full bg-gray-200 items-center justify-center mr-3">
+                            <Ionicons name="school-outline" size={16} color="#6b7280" />
+                          </View>
+                          <Text className="text-gray-700">No Class</Text>
+                        </TouchableOpacity>
+                        
+                        {/* Class Options */}
+                        {availableClasses.map((classItem) => (
+                          <TouchableOpacity
+                            key={classItem.id}
+                            onPress={() => {
+                              setSelectedClassId(classItem.id);
+                              setShowClassDropdown(false);
+                            }}
+                            className="flex-row items-center px-3 py-3 border-b border-gray-100 last:border-b-0"
+                          >
+                            <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center mr-3">
+                              <Ionicons name="school" size={16} color="#3b82f6" />
+                            </View>
+                            <Text className="text-gray-900">{classItem.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
               </View>
 
               {/* Teacher Selection */}
@@ -305,33 +406,74 @@ export default function AddSubjectModal({
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Assign Teacher (Optional)
                 </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (isLoadingData) return;
-                    
-                    Alert.alert(
-                      'Select Teacher',
-                      'Choose a teacher for this subject:',
-                      [
-                        { text: 'No Teacher', onPress: () => setSelectedTeacherId('') },
-                        ...availableTeachers.map(teacher => ({
-                          text: teacher.name,
-                          onPress: () => setSelectedTeacherId(teacher.id)
-                        }))
-                      ]
-                    );
-                  }}
-                  disabled={isLoadingData}
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
-                >
-                  <Text className="text-gray-900">
-                    {selectedTeacherId 
-                      ? availableTeachers.find(t => t.id === selectedTeacherId)?.name || 'Select a teacher'
-                      : 'No teacher assigned'
-                    }
-                  </Text>
-                  <Ionicons name="chevron-down" size={16} color="#6b7280" />
-                </TouchableOpacity>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowTeacherDropdown(!showTeacherDropdown)}
+                    disabled={isLoadingData}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900">
+                      {selectedTeacherId 
+                        ? availableTeachers.find(t => t.id === selectedTeacherId)?.name || 'Select a teacher'
+                        : 'No teacher assigned'
+                      }
+                    </Text>
+                    <Ionicons 
+                      name={showTeacherDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {/* Teacher Dropdown */}
+                  {showTeacherDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10 max-h-48">
+                      <ScrollView 
+                        nestedScrollEnabled={true}
+                        showsVerticalScrollIndicator={true}
+                        keyboardShouldPersistTaps="handled"
+                      >
+                        {/* No Teacher Option */}
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedTeacherId('');
+                            setShowTeacherDropdown(false);
+                          }}
+                          className="flex-row items-center px-3 py-3 border-b border-gray-100"
+                        >
+                          <View className="w-6 h-6 rounded-full bg-gray-200 items-center justify-center mr-3">
+                            <Ionicons name="person-outline" size={16} color="#6b7280" />
+                          </View>
+                          <Text className="text-gray-700">No Teacher</Text>
+                        </TouchableOpacity>
+                        
+                        {/* Teacher Options */}
+                        {availableTeachers.map((teacher) => (
+                          <TouchableOpacity
+                            key={teacher.id}
+                            onPress={() => {
+                              setSelectedTeacherId(teacher.id);
+                              setShowTeacherDropdown(false);
+                            }}
+                            className="flex-row items-center px-3 py-3 border-b border-gray-100 last:border-b-0"
+                          >
+                            {teacher.display_picture ? (
+                              <Image
+                                source={{ uri: teacher.display_picture }}
+                                className="w-6 h-6 rounded-full mr-3"
+                              />
+                            ) : (
+                              <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center mr-3">
+                                <Ionicons name="person" size={16} color="#3b82f6" />
+                              </View>
+                            )}
+                            <Text className="text-gray-900">{teacher.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
 

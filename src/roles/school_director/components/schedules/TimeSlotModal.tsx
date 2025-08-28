@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { directorService } from '@/services/api/directorService';
-import { SuccessModal, ErrorModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -39,6 +39,7 @@ export default function TimeSlotModal({
   onClose,
   onSuccess,
 }: TimeSlotModalProps) {
+  const { showSuccess, showError } = useToast();
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
@@ -54,12 +55,6 @@ export default function TimeSlotModal({
   const [editingField, setEditingField] = useState<{ id: string; field: string; value: string } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  // Modal states
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   // Fetch time slots when modal opens
   useEffect(() => {
@@ -78,8 +73,7 @@ export default function TimeSlotModal({
       }
     } catch (error) {
       console.error('Error fetching time slots:', error);
-      setErrorMessage('Failed to load time slots');
-      setErrorModalVisible(true);
+      showError('Failed to load time slots');
     } finally {
       setIsLoadingSlots(false);
     }
@@ -88,16 +82,20 @@ export default function TimeSlotModal({
   const handleSubmit = async () => {
     // Validate form
     if (!formData.startTime || !formData.endTime || !formData.label) {
-      setErrorMessage('Please fill in all required fields');
-      setErrorModalVisible(true);
+      showError('Please fill in all required fields');
+      return;
+    }
+
+    // Validate label format
+    if (!/^[a-z0-9]+$/.test(formData.label.trim())) {
+      showError('Label must contain only lowercase letters and numbers (e.g., period1, period2)');
       return;
     }
 
     // Validate time format (HH:MM)
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(formData.startTime) || !timeRegex.test(formData.endTime)) {
-      setErrorMessage('Please enter valid time format (HH:MM)');
-      setErrorModalVisible(true);
+      showError('Please enter valid time format (HH:MM)');
       return;
     }
 
@@ -105,8 +103,7 @@ export default function TimeSlotModal({
     const startTime = new Date(`2000-01-01T${formData.startTime}:00`);
     const endTime = new Date(`2000-01-01T${formData.endTime}:00`);
     if (endTime <= startTime) {
-      setErrorMessage('End time must be after start time');
-      setErrorModalVisible(true);
+      showError('End time must be after start time');
       return;
     }
 
@@ -122,20 +119,17 @@ export default function TimeSlotModal({
       const response = await directorService.createTimeSlot(payload);
 
       if (response.success) {
-        setSuccessMessage('Time slot created successfully');
-        setSuccessModalVisible(true);
+        showSuccess('Time slot created successfully!');
         resetForm();
         fetchTimeSlots(); // Refresh the list
       } else {
         const errorMsg = response.message || 'Failed to create time slot';
-        setErrorMessage(errorMsg);
-        setErrorModalVisible(true);
+        showError(errorMsg);
       }
     } catch (error) {
       console.error('Error creating time slot:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to create time slot';
-      setErrorMessage(errorMsg);
-      setErrorModalVisible(true);
+      showError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -160,13 +154,11 @@ export default function TimeSlotModal({
     try {
       // TODO: Add delete API call when endpoint is provided
       console.log('Delete time slot with ID:', id);
-      setSuccessMessage('Time slot deleted successfully');
-      setSuccessModalVisible(true);
+      showSuccess('Time slot deleted successfully!');
       fetchTimeSlots(); // Refresh the list
     } catch (error) {
       console.error('Error deleting time slot:', error);
-      setErrorMessage('Failed to delete time slot');
-      setErrorModalVisible(true);
+      showError('Failed to delete time slot');
     }
   };
 
@@ -185,14 +177,7 @@ export default function TimeSlotModal({
     }
   };
 
-  const handleSuccessModalClose = () => {
-    setSuccessModalVisible(false);
-    onSuccess();
-  };
 
-  const handleErrorModalClose = () => {
-    setErrorModalVisible(false);
-  };
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
@@ -258,30 +243,27 @@ export default function TimeSlotModal({
 
       const response = await directorService.updateTimeSlot(editingField.id, payload);
 
-      if (response.success) {
-        // Update the local state
-        setTimeSlots(prev => prev.map(slot => 
-          slot.id === editingField.id 
-            ? { ...slot, [editingField.field]: payload[editingField.field] }
-            : slot
-        ));
-        
-        setSuccessMessage(`${editingField.field} updated successfully`);
-        setSuccessModalVisible(true);
-        cancelEditing();
-      } else {
-        const errorMsg = response.message || 'Failed to update time slot';
-        setErrorMessage(errorMsg);
-        setErrorModalVisible(true);
+              if (response.success) {
+          // Update the local state
+          setTimeSlots(prev => prev.map(slot => 
+            slot.id === editingField.id 
+              ? { ...slot, [editingField.field]: payload[editingField.field] }
+              : slot
+          ));
+          
+          showSuccess(`${editingField.field} updated successfully`);
+          cancelEditing();
+        } else {
+          const errorMsg = response.message || 'Failed to update time slot';
+          showError(errorMsg);
+        }
+      } catch (error) {
+        console.error('Error updating time slot:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Failed to update time slot';
+        showError(errorMsg);
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      console.error('Error updating time slot:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to update time slot';
-      setErrorMessage(errorMsg);
-      setErrorModalVisible(true);
-    } finally {
-      setIsUpdating(false);
-    }
   };
 
   return (
@@ -339,14 +321,43 @@ export default function TimeSlotModal({
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Label <Text className="text-red-500">*</Text>
                 </Text>
+                
+                {/* Instructions */}
+                <View className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <View className="flex-row items-start">
+                    <Ionicons name="information-circle" size={16} color="#3B82F6" style={{ marginTop: 1, marginRight: 8 }} />
+                    <View className="flex-1">
+                      <Text className="text-xs font-medium text-blue-800 mb-1">
+                        Label Format
+                      </Text>
+                      <Text className="text-xs text-blue-700 leading-4">
+                        Use lowercase letters and numbers only. Examples: period1, period2, break1, lunch
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
                 <TextInput
                   value={formData.label}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, label: text }))}
-                  placeholder="e.g., First Period, Break, Lunch"
+                  onChangeText={(text) => {
+                    // Convert to lowercase and remove spaces
+                    const formattedText = text.toLowerCase().replace(/\s/g, '');
+                    setFormData(prev => ({ ...prev, label: formattedText }));
+                  }}
+                  placeholder="e.g., period1, period2, break1"
                   placeholderTextColor="#9ca3af"
                   className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+                  autoCapitalize="none"
+                  autoCorrect={false}
                   maxLength={20}
                 />
+                
+                {/* Validation message */}
+                {formData.label && !/^[a-z0-9]+$/.test(formData.label) && (
+                  <Text className="text-xs text-red-600 mt-1">
+                    Only lowercase letters and numbers are allowed
+                  </Text>
+                )}
               </View>
 
               {/* Time Inputs */}
@@ -603,25 +614,6 @@ export default function TimeSlotModal({
         </View>
       </View>
 
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Success!"
-        message={successMessage}
-        onClose={handleSuccessModalClose}
-        confirmText="OK"
-        autoClose={false}
-      />
-
-      {/* Error Modal */}
-      <ErrorModal
-        visible={errorModalVisible}
-        title="Error"
-        message={errorMessage}
-        onClose={handleErrorModalClose}
-        closeText="OK"
-        autoClose={false}
-      />
     </Modal>
   );
 }

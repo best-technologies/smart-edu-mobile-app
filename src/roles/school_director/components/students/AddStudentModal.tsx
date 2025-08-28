@@ -92,6 +92,12 @@ export default function AddStudentModal({
       return;
     }
 
+    // Validate class selection (now required)
+    if (!selectedClassId) {
+      onShowError('Please select a class for the student');
+      return;
+    }
+
     try {
       console.log('🔄 Starting student enrollment process...');
       setIsLoading(true);
@@ -347,7 +353,7 @@ export default function AddStudentModal({
               {/* Class Selection */}
               <View>
                 <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Assign to Class (Optional)
+                  Assign to Class <Text className="text-red-500">*</Text>
                 </Text>
                 {isLoadingClasses ? (
                   <View className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3">
@@ -365,7 +371,7 @@ export default function AddStudentModal({
                       className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
                     >
                       <View className="flex-1">
-                        <Text className="text-gray-900">
+                        <Text className={`${selectedClassId ? 'text-gray-900' : 'text-gray-500'}`}>
                           {selectedClassId 
                             ? (() => {
                                 const selectedClass = availableClasses.find(c => c.id === selectedClassId);
@@ -373,7 +379,7 @@ export default function AddStudentModal({
                                   ? selectedClass.name.charAt(0).toUpperCase() + selectedClass.name.slice(1).toLowerCase()
                                   : 'Select a class';
                               })()
-                            : 'No class assigned'
+                            : 'Select a class'
                           }
                         </Text>
                         {selectedClassId && availableClasses.find(c => c.id === selectedClassId)?.classTeacher && (
@@ -397,15 +403,6 @@ export default function AddStudentModal({
                           bounces={false}
                           keyboardShouldPersistTaps="handled"
                         >
-                          <TouchableOpacity
-                            onPress={() => {
-                              setSelectedClassId('');
-                              setShowClassDropdown(false);
-                            }}
-                            className="px-3 py-3 border-b border-gray-100"
-                          >
-                            <Text className="text-gray-900">No class assigned</Text>
-                          </TouchableOpacity>
                           {availableClasses.map((classItem) => (
                             <TouchableOpacity
                               key={classItem.id}
@@ -413,7 +410,7 @@ export default function AddStudentModal({
                                 setSelectedClassId(classItem.id);
                                 setShowClassDropdown(false);
                               }}
-                              className="px-3 py-3 border-b border-gray-100"
+                              className="px-3 py-3 border-b border-gray-100 last:border-b-0"
                             >
                               <Text className="text-gray-900 font-medium capitalize">
                                 {classItem.name.charAt(0).toUpperCase() + classItem.name.slice(1).toLowerCase()}

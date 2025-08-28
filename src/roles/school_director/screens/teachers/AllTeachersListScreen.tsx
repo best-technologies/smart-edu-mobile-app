@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SchoolDirectorStackParamList } from '../../SchoolDirectorNavigator';
 import { directorService } from '@/services/api/directorService';
@@ -59,6 +59,19 @@ export default function AllTeachersListScreen() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset modal states when screen is focused
+      setUpdateTeacherModalVisible(false);
+      setSelectedTeacher(null);
+      setSuccessModalVisible(false);
+      setErrorModalVisible(false);
+      setSuccessMessage('');
+      setErrorMessage('');
+    }, [])
+  );
 
   const fetchTeachers = useCallback(async (page: number = 1, search: string = '', isLoadMore: boolean = false) => {
     try {

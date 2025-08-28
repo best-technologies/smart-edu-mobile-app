@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity, Modal, Pressable, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SchoolDirectorStackParamList } from '../../SchoolDirectorNavigator';
 import { useDirectorTeachers, useRefreshDirectorTeachers } from '@/hooks/useDirectorTeachers';
@@ -24,6 +24,16 @@ export default function TeachersScreen() {
   const [enrollModalVisible, setEnrollModalVisible] = useState(false);
   const [updateTeacherModalVisible, setUpdateTeacherModalVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
+
+  // Reset modal state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset modal states when screen is focused
+      setEnrollModalVisible(false);
+      setUpdateTeacherModalVisible(false);
+      setSelectedTeacher(null);
+    }, [])
+  );
 
   const handleRefresh = () => {
     refreshMutation.mutate();
