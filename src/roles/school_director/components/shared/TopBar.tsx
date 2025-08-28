@@ -6,6 +6,20 @@ import { capitalize } from './utils';
 import { useUserProfileContext } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Helper function to format term name
+const formatTerm = (term: string) => {
+  switch (term?.toLowerCase()) {
+    case 'first':
+      return '1st Term';
+    case 'second':
+      return '2nd Term';
+    case 'third':
+      return '3rd Term';
+    default:
+      return term || 'N/A';
+  }
+};
+
 export function TopBar({ name, email, schoolId, avatarUri }: { name: string; email: string; schoolId?: string; avatarUri?: string }) {
   const { userProfile, isLoading } = useUserProfileContext();
   const { logout } = useAuth();
@@ -16,6 +30,21 @@ export function TopBar({ name, email, schoolId, avatarUri }: { name: string; ema
   const displaySchoolId = userProfile?.school_id || schoolId;
   const displayAvatar = userProfile?.display_picture || avatarUri;
   const schoolName = userProfile?.school?.name;
+  
+  // Check if user is a school director to show academic session info
+  const isSchoolDirector = userProfile?.role === 'school_director';
+  
+  // Debug logging
+  console.log('🔍 TopBar Debug:', {
+    userProfile: userProfile ? {
+      role: userProfile.role,
+      current_academic_session: userProfile.current_academic_session,
+      current_term: userProfile.current_term,
+      first_name: userProfile.first_name
+    } : null,
+    isSchoolDirector,
+    hasAcademicSession: !!userProfile?.current_academic_session
+  });
 
   const handleLogout = async () => {
     try {
@@ -42,6 +71,20 @@ export function TopBar({ name, email, schoolId, avatarUri }: { name: string; ema
               <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {schoolName}
               </Text>
+            )}
+            {isSchoolDirector && userProfile?.current_academic_session && (
+              <View className="flex-row items-center gap-2 mt-2">
+                <View className="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                    {userProfile.current_academic_session}
+                  </Text>
+                </View>
+                <View className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30">
+                  <Text className="text-xs font-medium text-green-700 dark:text-green-300">
+                    {formatTerm(userProfile.current_term || '')}
+                  </Text>
+                </View>
+              </View>
             )}
           </View>
         </View>

@@ -49,6 +49,9 @@ export interface User {
 // Extended User Profile (from /director/user/profile endpoint)
 export interface UserProfile extends User {
   school: School;
+  current_academic_session_id?: string;
+  current_academic_session?: string;
+  current_term?: string;
 }
 
 // Authentication Types

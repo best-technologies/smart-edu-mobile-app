@@ -8,6 +8,8 @@ import SchedulesScreen from './screens/SchedulesScreen';
 import SubjectsScreen from './screens/SubjectsScreen';
 import SubjectDetailScreen from './screens/SubjectDetailScreen';
 import VideoDemoScreen from './screens/VideoDemoScreen';
+import NotificationDetailScreen from './screens/notifications/NotificationDetailScreen';
+import NotificationsListScreen from './screens/notifications/NotificationsListScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -77,6 +79,8 @@ export default function TeacherTabs() {
       <Stack.Screen name="TeacherTabs" component={TeacherTabNavigator} />
       <Stack.Screen name="SubjectDetail" component={SubjectDetailScreen} />
       <Stack.Screen name="VideoDemo" component={VideoDemoScreen} />
+      <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
+      <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
     </Stack.Navigator>
   );
 }

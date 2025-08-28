@@ -4,6 +4,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatTeacherName } from '@/utils/textFormatter';
 
+// Helper function to format term name
+const formatTerm = (term: string) => {
+  switch (term?.toLowerCase()) {
+    case 'first':
+      return '1st Term';
+    case 'second':
+      return '2nd Term';
+    case 'third':
+      return '3rd Term';
+    default:
+      return term || 'N/A';
+  }
+};
+
 export function TopBar() {
   const { logout } = useAuth();
   const { userProfile, isLoading } = useUserProfile();
@@ -18,6 +32,9 @@ export function TopBar() {
 
   // Get the teacher's first name from profile, fallback to "Professor" if loading or not available
   const teacherName = userProfile?.first_name || (isLoading ? '...' : 'Professor');
+  
+  // Check if user is a school director to show academic session info
+  const isSchoolDirector = userProfile?.role === 'school_director';
 
   const handleLogout = async () => {
     try {
@@ -43,7 +60,21 @@ export function TopBar() {
             <Text className="text-sm text-gray-500 dark:text-gray-400">
               {userProfile?.email || 'Loading...'}
             </Text>
-            <Text className="text-xs text-gray-400 dark:text-gray-500">
+            {isSchoolDirector && userProfile?.current_academic_session && (
+              <View className="flex-row items-center gap-2 mt-1">
+                <View className="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                    {userProfile.current_academic_session}
+                  </Text>
+                </View>
+                <View className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30">
+                  <Text className="text-xs font-medium text-green-700 dark:text-green-300">
+                    {formatTerm(userProfile.current_term || '')}
+                  </Text>
+                </View>
+              </View>
+            )}
+            <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {formattedDate}
             </Text>
           </View>

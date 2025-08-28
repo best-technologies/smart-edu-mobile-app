@@ -11,25 +11,23 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
-        contentContainerClassName="gap-3"
+        contentContainerClassName="gap-6"
       >
       {actions.map((action) => (
         <TouchableOpacity
           key={action.id}
           onPress={action.onPress}
           activeOpacity={0.7}
-          className="min-w-[140px] px-4 py-3 rounded-xl border-2 items-center"
-          style={{ borderColor: `${action.color}30` }}
+          className="items-center"
         >
           <View 
-            className="h-10 w-10 items-center justify-center rounded-lg mb-2"
+            className="h-16 w-16 items-center justify-center rounded-full mb-2"
             style={{ backgroundColor: `${action.color}15` }}
           >
-            <Ionicons name={action.icon as any} size={20} color={action.color} />
+            <Ionicons name={action.icon as any} size={24} color={action.color} />
           </View>
           <Text 
-            className="text-sm font-semibold text-center"
-            style={{ color: action.color }}
+            className="text-sm font-semibold text-center text-gray-900 dark:text-gray-100"
           >
             {action.title}
           </Text>

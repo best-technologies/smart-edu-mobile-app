@@ -3,12 +3,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import TopBar from './components/shared/TopBar';
 import QuickActions from './components/dashboard/QuickActions';
-import QuickStats from './components/dashboard/QuickStats';
+import ManagedClasses from './components/dashboard/ManagedClasses';
+import SubjectsTeaching from './components/dashboard/SubjectsTeaching';
+import RecentNotifications from './components/dashboard/RecentNotifications';
 import UpcomingClasses from './components/dashboard/UpcomingClasses';
 import FloatingActionButton from './components/shared/FloatingActionButton';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useTeacherDashboard, useRefreshTeacherDashboard } from '@/hooks/useDirectorDashboard';
-import { QuickStat, DayClasses } from '@/mock/teacher';
+import { DayClasses } from '@/mock/teacher';
 import { formatClassName, formatSubjectName, formatRoomName, formatTime, formatDay } from '@/utils/textFormatter';
 
 export default function TeacherDashboardScreen() {
@@ -30,40 +32,44 @@ export default function TeacherDashboardScreen() {
   };
 
   // Transform API data to match component expectations
-  const quickStats: QuickStat[] = dashboardData ? [
-    {
-      id: 'students',
-      title: 'Total Students',
-      value: dashboardData.managed_class.students.total.toString(),
-      icon: 'people-outline',
-      color: '#8B5CF6',
-      trend: 'up' as const,
-    },
-    {
-      id: 'male-students',
-      title: 'Male Students',
-      value: dashboardData.managed_class.students.males.toString(),
-      icon: 'male-outline',
-      color: '#3B82F6',
-      trend: 'neutral' as const,
-    },
-    {
-      id: 'female-students',
-      title: 'Female Students',
-      value: dashboardData.managed_class.students.females.toString(),
-      icon: 'female-outline',
-      color: '#EC4899',
-      trend: 'neutral' as const,
-    },
-    {
-      id: 'managed-class',
-      title: 'Managed Class',
-      value: formatClassName(dashboardData.managed_class.name),
-      icon: 'school-outline',
-      color: '#10B981',
-      trend: 'neutral' as const,
-    },
-  ] : [];
+  const managedClasses = dashboardData ? [dashboardData.managed_class] : [];
+  
+  const subjectsTeaching = dashboardData ? dashboardData.subjects_teaching : [];
+  
+  // Use mock notifications if no notifications exist
+  const notifications = dashboardData ? (
+    dashboardData.recent_notifications.length > 0 
+      ? dashboardData.recent_notifications 
+      : [
+          {
+            id: 'mock-1',
+            title: 'Staff Meeting',
+            description: 'Monthly staff meeting scheduled for tomorrow at 10:00 AM in the conference room.',
+            type: 'all',
+            comingUpOn: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 'mock-2',
+            title: 'Exam Schedule',
+            description: 'Mid-term exams starting next week. Please prepare your students accordingly.',
+            type: 'teachers',
+            comingUpOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 'mock-3',
+            title: 'Parent-Teacher Conference',
+            description: 'Annual parent-teacher conference scheduled for next month.',
+            type: 'teachers',
+            comingUpOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        ]
+  ) : [];
 
   const upcomingClasses: DayClasses[] = dashboardData ? [
     {
@@ -189,7 +195,11 @@ export default function TeacherDashboardScreen() {
           <>
             <QuickActions actions={quickActions} />
             
-            <QuickStats stats={quickStats} />
+            <ManagedClasses classes={managedClasses} />
+            
+            <SubjectsTeaching subjects={subjectsTeaching} />
+            
+            <RecentNotifications notifications={notifications} />
             
             <UpcomingClasses classes={upcomingClasses} />
           </>

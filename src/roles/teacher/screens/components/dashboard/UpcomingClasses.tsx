@@ -8,14 +8,14 @@ export function UpcomingClasses({ classes }: { classes: DayClasses[] }) {
       {/* Header */}
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
-          Quick Classes
+          Class Schedules
         </Text>
         <TouchableOpacity 
           activeOpacity={0.7}
           className="flex-row items-center gap-1"
         >
           <Text className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-            View Full Class Schedule
+            View All
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#9333EA" />
         </TouchableOpacity>
