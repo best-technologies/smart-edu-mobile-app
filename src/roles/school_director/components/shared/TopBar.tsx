@@ -33,18 +33,6 @@ export function TopBar({ name, email, schoolId, avatarUri }: { name: string; ema
   
   // Check if user is a school director to show academic session info
   const isSchoolDirector = userProfile?.role === 'school_director';
-  
-  // Debug logging
-  console.log('🔍 TopBar Debug:', {
-    userProfile: userProfile ? {
-      role: userProfile.role,
-      current_academic_session: userProfile.current_academic_session,
-      current_term: userProfile.current_term,
-      first_name: userProfile.first_name
-    } : null,
-    isSchoolDirector,
-    hasAcademicSession: !!userProfile?.current_academic_session
-  });
 
   const handleLogout = async () => {
     try {

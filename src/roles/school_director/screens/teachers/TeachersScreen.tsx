@@ -12,20 +12,18 @@ import Section from '../../components/shared/Section';
 import TeacherStats from '../../components/teachers/TeacherStats';
 import TeacherCard from '../../components/teachers/TeacherCard';
 import EmptyState from '../../components/shared/EmptyState';
-import { CenteredLoader, SuccessModal, ErrorModal } from '@/components';
+import { CenteredLoader } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 import UpdateTeacherModal from '../../components/teachers/UpdateTeacherModal';
 
 export default function TeachersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
   const { data, isLoading, error, refetch } = useDirectorTeachers();
   const refreshMutation = useRefreshDirectorTeachers();
+  const { showSuccess, showError } = useToast();
   const [enrollModalVisible, setEnrollModalVisible] = useState(false);
   const [updateTeacherModalVisible, setUpdateTeacherModalVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
   const handleRefresh = () => {
     refreshMutation.mutate();
@@ -140,44 +138,9 @@ export default function TeachersScreen() {
           setEnrollModalVisible(false);
           refetch();
         }}
-        onShowSuccess={(message) => {
-          console.log('🎉 onShowSuccess called with message:', message);
-          setSuccessMessage(message);
-          setSuccessModalVisible(true);
-        }}
-        onShowError={(message) => {
-          console.log('💥 onShowError called with message:', message);
-          setErrorMessage(message);
-          setErrorModalVisible(true);
-        }}
       />
 
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Teacher Enrolled Successfully!"
-        message={successMessage}
-        onClose={() => {
-          setSuccessModalVisible(false);
-          setSuccessMessage('');
-        }}
-        confirmText="OK"
-        autoClose={true}
-        autoCloseDelay={5000}
-      />
 
-      {/* Error Modal */}
-      <ErrorModal
-        visible={errorModalVisible}
-        title="Error"
-        message={errorMessage}
-        onClose={() => {
-          setErrorModalVisible(false);
-          setErrorMessage('');
-        }}
-        closeText="OK"
-        autoClose={false}
-      />
 
       {/* Update Teacher Modal */}
       <UpdateTeacherModal
@@ -193,12 +156,10 @@ export default function TeachersScreen() {
           refetch();
         }}
         onShowSuccess={(message) => {
-          setSuccessMessage(message);
-          setSuccessModalVisible(true);
+          showSuccess('Teacher Updated', message);
         }}
         onShowError={(message) => {
-          setErrorMessage(message);
-          setErrorModalVisible(true);
+          showError('Update Failed', message);
         }}
       />
     </SafeAreaView>
@@ -210,11 +171,10 @@ interface EnrollTeacherModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onShowSuccess: (message: string) => void;
-  onShowError: (message: string) => void;
 }
 
-function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShowError }: EnrollTeacherModalProps) {
+function EnrollTeacherModal({ visible, onClose, onSuccess }: EnrollTeacherModalProps) {
+  const { showSuccess, showError } = useToast();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -224,6 +184,15 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
   const [isLoading, setIsLoading] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  
+  // Classes and Subjects state
+  const [classes, setClasses] = useState<Array<{ id: string; name: string; hasClassTeacher: boolean }>>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [showClassesDropdown, setShowClassesDropdown] = useState(false);
+  const [showSubjectsDropdown, setShowSubjectsDropdown] = useState(false);
 
 
 
@@ -231,20 +200,20 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
     
     // Validate required fields
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !phoneNumber.trim()) {
-      onShowError('Please fill in all required fields');
+      showError('Validation Error', 'Please fill in all required fields');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      onShowError('Please enter a valid email address');
+      showError('Validation Error', 'Please enter a valid email address');
       return;
     }
 
     // Validate phone number (basic validation)
     if (phoneNumber.trim().length < 10) {
-      onShowError('Please enter a valid phone number');
+      showError('Validation Error', 'Please enter a valid phone number');
       return;
     }
 
@@ -259,6 +228,8 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
         phone_number: phoneNumber.trim(),
         gender: gender,
         status: status,
+        classesManaging: selectedClasses,
+        subjectsTeaching: selectedSubjects,
       };
 
       const response = await directorService.enrollTeacher(payload);
@@ -269,10 +240,9 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
 
       if (response.success === true) {
         const password = response.data?.generatedPassword || 'N/A';
-        const successMessage = `Teacher enrolled successfully!\n\nGenerated password: ${password}\n\nPlease share this password with the teacher securely.`;
+        const successMessage = `Teacher enrolled successfully!`;
         console.log('✅ Success message:', successMessage);
-        console.log('✅ Setting success modal visible to true');
-        onShowSuccess(successMessage);
+        showSuccess('Teacher Enrolled', successMessage);
         
         // Reset form
         setFirstName('');
@@ -287,8 +257,8 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
         // Close modal and refresh data
         onSuccess();
       } else {
-        console.log('❌ Enrollment failed, showing error modal');
-        onShowError(response.message || 'Failed to enroll teacher');
+        console.log('❌ Enrollment failed, showing error toast');
+        showError('Enrollment Failed', response.message || 'Failed to enroll teacher');
       }
     } catch (error) {
       console.error('❌ Error enrolling teacher:', error);
@@ -303,11 +273,11 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
         console.log('📧 API Error message:', error.message);
         console.log('📧 API Error statusCode:', error.statusCode);
         console.log('📧 API Error data:', error.data);
-        onShowError(error.message || 'Failed to enroll teacher');
+        showError('Enrollment Failed', error.message || 'Failed to enroll teacher');
       } else {
         const errorMsg = error instanceof Error ? error.message : 'Failed to enroll teacher';
         console.log('📧 Generic error message:', errorMsg);
-        onShowError(errorMsg);
+        showError('Enrollment Failed', errorMsg);
       }
     } finally {
       console.log('🏁 Enrollment process finished, setting loading to false');
@@ -325,17 +295,52 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
       setStatus('active');
       setShowGenderDropdown(false);
       setShowStatusDropdown(false);
+      setSelectedClasses([]);
+      setSelectedSubjects([]);
+      setShowClassesDropdown(false);
+      setShowSubjectsDropdown(false);
       onClose();
     }
   };
+
+  // Fetch classes and subjects when modal opens
+  useEffect(() => {
+    if (visible) {
+      fetchClassesAndSubjects();
+    }
+  }, [visible]);
 
   // Close dropdowns when modal visibility changes
   useEffect(() => {
     if (!visible) {
       setShowGenderDropdown(false);
       setShowStatusDropdown(false);
+      setShowClassesDropdown(false);
+      setShowSubjectsDropdown(false);
     }
   }, [visible]);
+
+  const fetchClassesAndSubjects = async () => {
+    try {
+      setIsLoadingData(true);
+      const response = await directorService.fetchClassesAndSubjects();
+      
+      if (response.success && response.data) {
+        setClasses(response.data.classes || []);
+        setSubjects(response.data.subjects || []);
+        console.log('✅ Fetched classes and subjects:', {
+          classes: response.data.classes?.length || 0,
+          subjects: response.data.subjects?.length || 0
+        });
+      } else {
+        console.error('❌ Failed to fetch classes and subjects:', response.message);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching classes and subjects:', error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   return (
     <>
@@ -384,7 +389,7 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
             {/* Form */}
             <View className="space-y-4">
               {/* Overlay to close dropdowns when clicking outside */}
-              {(showGenderDropdown || showStatusDropdown) && (
+              {(showGenderDropdown || showStatusDropdown || showClassesDropdown || showSubjectsDropdown) && (
                 <Pressable
                   style={{
                     position: 'absolute',
@@ -397,6 +402,8 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
                   onPress={() => {
                     setShowGenderDropdown(false);
                     setShowStatusDropdown(false);
+                    setShowClassesDropdown(false);
+                    setShowSubjectsDropdown(false);
                   }}
                 />
               )}
@@ -556,6 +563,148 @@ function EnrollTeacherModal({ visible, onClose, onSuccess, onShowSuccess, onShow
                     </View>
                   )}
                 </View>
+              </View>
+
+              {/* Classes Assignment */}
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  Classes to Manage (Optional)
+                </Text>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowClassesDropdown(!showClassesDropdown)}
+                    disabled={isLoadingData}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900">
+                      {selectedClasses.length > 0 
+                        ? `${selectedClasses.length} class${selectedClasses.length > 1 ? 'es' : ''} selected`
+                        : isLoadingData 
+                          ? 'Loading classes...' 
+                          : 'Select classes to manage'
+                      }
+                    </Text>
+                    <Ionicons 
+                      name={showClassesDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showClassesDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 z-10 shadow-lg max-h-40">
+                      <ScrollView showsVerticalScrollIndicator={false}>
+                        {classes.map((cls) => (
+                          <TouchableOpacity
+                            key={cls.id}
+                            onPress={() => {
+                              if (selectedClasses.includes(cls.id)) {
+                                setSelectedClasses(selectedClasses.filter(id => id !== cls.id));
+                              } else {
+                                setSelectedClasses([...selectedClasses, cls.id]);
+                              }
+                            }}
+                            className="px-3 py-3 border-b border-gray-100 flex-row items-center justify-between"
+                          >
+                            <Text className="text-gray-900">{cls.name}</Text>
+                            {selectedClasses.includes(cls.id) && (
+                              <Ionicons name="checkmark" size={16} color="#10B981" />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+                {selectedClasses.length > 0 && (
+                  <View className="mt-2 flex-row flex-wrap gap-2">
+                    {selectedClasses.map((classId) => {
+                      const cls = classes.find(c => c.id === classId);
+                      return (
+                        <View key={classId} className="bg-blue-100 px-2 py-1 rounded-full flex-row items-center">
+                          <Text className="text-blue-700 text-xs">{cls?.name}</Text>
+                          <TouchableOpacity
+                            onPress={() => setSelectedClasses(selectedClasses.filter(id => id !== classId))}
+                            className="ml-1"
+                          >
+                            <Ionicons name="close" size={12} color="#1D4ED8" />
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+
+              {/* Subjects Assignment */}
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  Subjects to Teach (Optional)
+                </Text>
+                <View className="relative">
+                  <TouchableOpacity
+                    onPress={() => setShowSubjectsDropdown(!showSubjectsDropdown)}
+                    disabled={isLoadingData}
+                    className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-3 flex-row items-center justify-between"
+                  >
+                    <Text className="text-gray-900">
+                      {selectedSubjects.length > 0 
+                        ? `${selectedSubjects.length} subject${selectedSubjects.length > 1 ? 's' : ''} selected`
+                        : isLoadingData 
+                          ? 'Loading subjects...' 
+                          : 'Select subjects to teach'
+                      }
+                    </Text>
+                    <Ionicons 
+                      name={showSubjectsDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showSubjectsDropdown && (
+                    <View className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 z-10 shadow-lg max-h-40">
+                      <ScrollView showsVerticalScrollIndicator={false}>
+                        {subjects.map((subject) => (
+                          <TouchableOpacity
+                            key={subject.id}
+                            onPress={() => {
+                              if (selectedSubjects.includes(subject.id)) {
+                                setSelectedSubjects(selectedSubjects.filter(id => id !== subject.id));
+                              } else {
+                                setSelectedSubjects([...selectedSubjects, subject.id]);
+                              }
+                            }}
+                            className="px-3 py-3 border-b border-gray-100 flex-row items-center justify-between"
+                          >
+                            <Text className="text-gray-900">{subject.name}</Text>
+                            {selectedSubjects.includes(subject.id) && (
+                              <Ionicons name="checkmark" size={16} color="#10B981" />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+                {selectedSubjects.length > 0 && (
+                  <View className="mt-2 flex-row flex-wrap gap-2">
+                    {selectedSubjects.map((subjectId) => {
+                      const subject = subjects.find(s => s.id === subjectId);
+                      return (
+                        <View key={subjectId} className="bg-green-100 px-2 py-1 rounded-full flex-row items-center">
+                          <Text className="text-green-700 text-xs">{subject?.name}</Text>
+                          <TouchableOpacity
+                            onPress={() => setSelectedSubjects(selectedSubjects.filter(id => id !== subjectId))}
+                            className="ml-1"
+                          >
+                            <Ionicons name="close" size={12} color="#059669" />
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
             </View>
 
