@@ -199,9 +199,10 @@ export default function TeacherDashboardScreen() {
             
             <SubjectsTeaching subjects={subjectsTeaching} />
             
+            <UpcomingClasses classes={upcomingClasses} />
+            
             <RecentNotifications notifications={notifications} />
             
-            <UpcomingClasses classes={upcomingClasses} />
           </>
         ) : (
           <View className="flex-1 items-center justify-center py-8">
