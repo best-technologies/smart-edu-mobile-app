@@ -20,7 +20,19 @@ const formatTerm = (term: string) => {
   }
 };
 
-export function TopBar({ name, email, schoolId, avatarUri }: { name: string; email: string; schoolId?: string; avatarUri?: string }) {
+export function TopBar({ 
+  name, 
+  email, 
+  schoolId, 
+  avatarUri,
+  onNotificationPress 
+}: { 
+  name: string; 
+  email: string; 
+  schoolId?: string; 
+  avatarUri?: string;
+  onNotificationPress?: () => void;
+}) {
   const { userProfile, isLoading } = useUserProfileContext();
   const { logout } = useAuth();
   
@@ -77,7 +89,18 @@ export function TopBar({ name, email, schoolId, avatarUri }: { name: string; ema
           </View>
         </View>
         <View className="flex-row items-center gap-3">
-          <IconButton icon="notifications-outline" accessibilityLabel="Notifications" />
+          <TouchableOpacity
+            onPress={onNotificationPress}
+            activeOpacity={0.7}
+            className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 relative"
+            accessibilityLabel="Notifications"
+          >
+            <Ionicons name="notifications-outline" size={20} color="#3b82f6" />
+            {/* Notification Badge */}
+            <View className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full items-center justify-center">
+              <Text className="text-white text-xs font-bold">3</Text>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleLogout}
             activeOpacity={0.7}

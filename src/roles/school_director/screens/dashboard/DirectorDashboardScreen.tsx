@@ -1,5 +1,6 @@
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import TopBar from '../../components/shared/TopBar';
 import Section from '../../components/shared/Section';
 import EmptyState from '../../components/shared/EmptyState';
@@ -9,6 +10,7 @@ import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDi
 import { CenteredLoader } from '@/components';
 
 export default function DirectorDashboardScreen() {
+  const navigation = useNavigation();
   const { data, isLoading, error, refetch } = useDirectorDashboard();
   const refreshMutation = useRefreshDirectorDashboard();
 
@@ -68,6 +70,7 @@ export default function DirectorDashboardScreen() {
           email={data?.basic_details?.email ?? 'director@school.edu'}
           schoolId={data?.basic_details?.school_id}
           avatarUri={undefined}
+          onNotificationPress={() => (navigation as any).navigate('NotificationsList')}
         />
 
       <Section title="Overview">
