@@ -6,8 +6,10 @@ export const getNotificationIcon = (type: string) => {
       return 'school-outline';
     case 'students':
       return 'people-outline';
-    case 'directors':
+    case 'school_director':
       return 'business-outline';
+    case 'admin':
+      return 'shield-outline';
     default:
       return 'notifications-outline';
   }
@@ -21,14 +23,37 @@ export const getNotificationColor = (type: string) => {
       return '#10B981';
     case 'students':
       return '#F59E0B';
-    case 'directors':
+    case 'school_director':
       return '#8B5CF6';
+    case 'admin':
+      return '#EF4444';
     default:
       return '#6B7280';
   }
 };
 
 export const formatNotificationDate = (dateString: string) => {
+  if (!dateString) return 'No date';
+  
+  // Handle the new format: "Sep 15, 2024, 10:00 AM"
+  if (dateString.includes(',')) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'Past';
+    } else if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Tomorrow';
+    } else {
+      return `In ${diffDays} days`;
+    }
+  }
+  
+  // Handle ISO format as fallback
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = date.getTime() - now.getTime();
@@ -46,6 +71,14 @@ export const formatNotificationDate = (dateString: string) => {
 };
 
 export const formatFullDate = (dateString: string) => {
+  if (!dateString) return 'No date';
+  
+  // Handle the new format: "Sep 15, 2024, 10:00 AM"
+  if (dateString.includes(',')) {
+    return dateString; // Return as is since it's already formatted
+  }
+  
+  // Handle ISO format as fallback
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -58,6 +91,27 @@ export const formatFullDate = (dateString: string) => {
 };
 
 export const getTimeLabel = (dateString: string) => {
+  if (!dateString) return 'No date';
+  
+  // Handle the new format: "Sep 15, 2024, 10:00 AM"
+  if (dateString.includes(',')) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'Past Event';
+    } else if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Tomorrow';
+    } else {
+      return `In ${diffDays} days`;
+    }
+  }
+  
+  // Handle ISO format as fallback
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = date.getTime() - now.getTime();

@@ -26,7 +26,7 @@ const notificationTypes = [
   { value: 'all', label: 'All Staff', icon: 'megaphone-outline' },
   { value: 'teachers', label: 'Teachers Only', icon: 'school-outline' },
   { value: 'students', label: 'Students Only', icon: 'people-outline' },
-  { value: 'directors', label: 'Directors Only', icon: 'business-outline' },
+  { value: 'school_director', label: 'Directors Only', icon: 'business-outline' },
 ];
 
 export default function CreateNotificationModal({
@@ -50,11 +50,22 @@ export default function CreateNotificationModal({
       return;
     }
 
+    // Format date for API: "Sep 15, 2024, 10:00 AM"
+    const formattedDate = selectedDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }) + ', ' + selectedDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
     onSubmit({
       title: title.trim(),
       description: description.trim(),
       type: selectedType,
-      comingUpOn: selectedDate.toISOString(),
+      comingUpOn: formattedDate,
     });
 
     // Reset form

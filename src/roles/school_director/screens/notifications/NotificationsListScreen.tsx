@@ -1,128 +1,85 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { NotificationCard, Notification, CreateNotificationModal } from '../../components/notifications';
+import { useNotifications } from '@/hooks/useNotifications';
+import { CenteredLoader } from '@/components';
 
 export default function NotificationsListScreen() {
   const navigation = useNavigation();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 'mock-1',
-      title: 'Staff Meeting',
-      description: 'Monthly staff meeting scheduled for tomorrow at 10:00 AM in the conference room.',
-      type: 'all',
-      comingUpOn: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-2',
-      title: 'Board Meeting',
-      description: 'Quarterly board meeting to discuss school performance and upcoming initiatives.',
-      type: 'directors',
-      comingUpOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-3',
-      title: 'Parent-Teacher Conference',
-      description: 'Annual parent-teacher conference scheduled for next month.',
-      type: 'all',
-      comingUpOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-4',
-      title: 'School Holiday',
-      description: 'School will be closed for the upcoming holiday break.',
-      type: 'all',
-      comingUpOn: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-5',
-      title: 'Budget Review',
-      description: 'Monthly budget review meeting with the finance committee.',
-      type: 'directors',
-      comingUpOn: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-6',
-      title: 'New Teacher Orientation',
-      description: 'Orientation session for newly hired teachers next week.',
-      type: 'directors',
-      comingUpOn: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-  ]);
+  
+  const {
+    notifications,
+    stats,
+    pagination,
+    selectedFilter,
+    isLoading,
+    isCreating,
+    error,
+    createNotification,
+    changeFilter,
+    loadMore,
+    refresh,
+  } = useNotifications();
 
   const handleNotificationPress = (notification: Notification) => {
     (navigation as any).navigate('NotificationDetail', { notification });
   };
 
-  const handleCreateNotification = (newNotification: {
+  const handleCreateNotification = async (newNotification: {
     title: string;
     description: string;
     type: string;
     comingUpOn: string;
   }) => {
-    const notification: Notification = {
-      id: `new-${Date.now()}`,
-      title: newNotification.title,
-      description: newNotification.description,
-      type: newNotification.type,
-      comingUpOn: newNotification.comingUpOn,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setNotifications(prev => [notification, ...prev]);
-    setShowCreateModal(false);
-    Alert.alert('Success', 'Notification created successfully!');
+    try {
+      await createNotification(newNotification);
+      setShowCreateModal(false);
+    } catch (error) {
+      // Error is already handled by the hook
+    }
   };
-
-  // Filter notifications based on selected filter
-  const filteredNotifications = notifications.filter(notification => {
-    if (selectedFilter === 'all') return true;
-    return notification.type === selectedFilter;
-  });
 
   const filterOptions = [
     { 
       value: 'all', 
       label: 'All', 
       icon: 'apps-outline',
-      count: notifications.length
+      count: stats.all
     },
     { 
       value: 'teachers', 
       label: 'Teachers', 
       icon: 'school-outline',
-      count: notifications.filter(n => n.type === 'teachers').length
+      count: stats.teachers
     },
     { 
       value: 'students', 
       label: 'Students', 
       icon: 'people-outline',
-      count: notifications.filter(n => n.type === 'students').length
+      count: stats.students
     },
     { 
-      value: 'directors', 
+      value: 'school_director', 
       label: 'Directors', 
       icon: 'business-outline',
-      count: notifications.filter(n => n.type === 'directors').length
+      count: stats.school_director
     },
   ];
+
+  // Show loading state
+  if (isLoading && notifications.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center">
+          <CenteredLoader visible={true} text="Loading notifications..." />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -136,6 +93,13 @@ export default function NotificationsListScreen() {
         className="flex-1" 
         contentContainerClassName="px-6 py-6"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refresh}
+            tintColor="#3b82f6"
+          />
+        }
       >
         {/* Header */}
         <View className="mb-6">
@@ -153,7 +117,7 @@ export default function NotificationsListScreen() {
             </TouchableOpacity>
           </View>
           <Text className="text-sm text-gray-500 dark:text-gray-400">
-            {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+            {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
           </Text>
         </View>
 
@@ -168,7 +132,7 @@ export default function NotificationsListScreen() {
               {filterOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
-                  onPress={() => setSelectedFilter(option.value)}
+                  onPress={() => changeFilter(option.value)}
                   className={`flex-row items-center px-4 py-2 rounded-xl border ${
                     selectedFilter === option.value
                       ? 'bg-blue-600 border-blue-600'
@@ -218,7 +182,7 @@ export default function NotificationsListScreen() {
 
         {/* Notifications List */}
         <View className="space-y-3">
-          {filteredNotifications.map((notification) => (
+          {notifications.map((notification: Notification) => (
             <NotificationCard
               key={notification.id}
               notification={notification}
@@ -229,7 +193,7 @@ export default function NotificationsListScreen() {
         </View>
 
         {/* Empty State */}
-        {filteredNotifications.length === 0 && (
+        {notifications.length === 0 && (
           <View className="flex-1 items-center justify-center py-12">
             <Ionicons name="notifications-off-outline" size={64} color="#9CA3AF" />
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">

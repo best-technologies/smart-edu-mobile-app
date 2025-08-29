@@ -1,5 +1,7 @@
 export interface Notification {
   id: string;
+  school_id: string;
+  academic_session_id: string;
   title: string;
   description: string;
   type: string;
