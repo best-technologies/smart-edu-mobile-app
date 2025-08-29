@@ -11,6 +11,7 @@ import { UserProfileProvider } from '@/contexts/UserProfileContext';
 import { QueryProvider } from '@/contexts/QueryProvider';
 import { ToastContainer } from '@/components';
 import './utils/reanimatedConfig'; // Disable Reanimated warnings
+import { pushNotificationService } from './services/pushNotificationService';
 
 
 // Keep the native splash screen visible for a moment so it's noticeable
@@ -20,7 +21,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 
 function AppContent() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const { isInitialized } = useAuth();
+  const { isInitialized, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const showThenHide = async () => {
@@ -34,6 +35,21 @@ function AppContent() {
     };
     showThenHide();
   }, []);
+
+  // Initialize push notifications for authenticated users
+  useEffect(() => {
+    const initPushNotifications = async () => {
+      try {
+        await pushNotificationService.registerForPushNotifications();
+      } catch (error) {
+        console.error('Failed to initialize push notifications:', error);
+      }
+    };
+
+    if (isInitialized && isAuthenticated) {
+      initPushNotifications();
+    }
+  }, [isInitialized, isAuthenticated]);
 
   const handleSplashFinish = () => {
     setIsSplashVisible(false);

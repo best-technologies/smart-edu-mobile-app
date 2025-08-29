@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -50,22 +51,12 @@ export default function CreateNotificationModal({
       return;
     }
 
-    // Format date for API: "Sep 15, 2024, 10:00 AM"
-    const formattedDate = selectedDate.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }) + ', ' + selectedDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-
     onSubmit({
       title: title.trim(),
       description: description.trim(),
       type: selectedType,
-      comingUpOn: formattedDate,
+      // Send ISO 8601 to backend (required)
+      comingUpOn: selectedDate.toISOString(),
     });
 
     // Reset form
@@ -244,14 +235,20 @@ export default function CreateNotificationModal({
           <DateTimePicker
             value={selectedDate}
             mode="date"
-            display="default"
+            // Use spinner on iOS to ensure visibility in modal, default dialog on Android
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={(event, date) => {
-              setShowDatePicker(false);
+              // On iOS, event.type can be 'set' or 'dismissed' only in Android; close in both cases
+              if (Platform.OS === 'android') {
+                setShowDatePicker(false);
+              }
               if (date) {
                 setSelectedDate(date);
               }
             }}
+            onTouchCancel={() => setShowDatePicker(false)}
             minimumDate={new Date()}
+            themeVariant="light"
           />
         )}
       </View>

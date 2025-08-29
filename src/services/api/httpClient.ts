@@ -56,8 +56,9 @@ export class HttpClient {
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseURL}${endpoint}`;
-      // const url = `${API_CONFIG.BASE_URL}${endpoint}`;
       console.log(`🌐 ${method} ${url}`);
+      // const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+      // console.log(`🌐 ${method} ${url}`);
       
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ export class HttpClient {
       // });
 
       const response = await fetch(url, requestConfig);
-      console.log('📥 Response status:', response.status);
+      // console.log('📥 Response status:', response.status);
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');

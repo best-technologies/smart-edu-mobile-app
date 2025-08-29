@@ -38,7 +38,7 @@ export const useUserProfile = (): UseUserProfileReturn => {
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 Fetching user profile...');
+      // console.log('🔄 Fetching user profile...');
       const response = await ApiService.user.getProfile();
       
       if (response.success && response.data) {

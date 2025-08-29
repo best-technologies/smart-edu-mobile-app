@@ -33,7 +33,23 @@
     },
     "plugins": [
       "expo-video",
-      "expo-audio"
-    ]
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/accessstudy-logo.png",
+          "color": "#ffffff",
+          "sounds": [
+            "./assets/notification-1.mp3"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "59ec328f-95c2-495f-aa41-77a19b614f5d"
+      }
+    },
+    "owner": "maximussz"
   }
 }

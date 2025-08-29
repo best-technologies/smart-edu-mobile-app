@@ -4,6 +4,7 @@ import { User } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { getRouteForRole } from '@/utils/roleMapper';
+import { pushNotificationService } from '@/services/pushNotificationService';
 
 // Auth State Interface
 interface AuthState {
@@ -196,6 +197,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             type: 'LOGIN_SUCCESS',
             payload: { user: loginData.user, requiresOTP: false },
           });
+
+          // Register device for push notifications after successful login
+          try {
+            await pushNotificationService.registerForPushNotifications();
+          } catch (e) {
+            console.log('Push registration failed (non-blocking):', e);
+          }
         } else {
           // OTP verification required - response.data is the user object directly
           const otpData = response.data as any;
@@ -282,6 +290,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           type: 'OTP_VERIFICATION_SUCCESS',
           payload: { user: loginData.user },
         });
+        // Register device for push notifications after OTP success
+        try {
+          await pushNotificationService.registerForPushNotifications();
+        } catch (e) {
+          console.log('Push registration failed (non-blocking):', e);
+        }
         // Navigation will be handled by the component using useAuthNavigation
       } else {
         console.log('❌ OTP verification failed:', response.message);
@@ -309,6 +323,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
+      // Attempt to unregister device token server-side before logging out
+      try {
+        const token = pushNotificationService.getPushToken();
+        if (token) {
+          await fetch('/api/v1/push-notifications/unregister-device', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await (await import('@/services/api/tokenManager')).TokenManager.getAccessToken()}`,
+            },
+            body: JSON.stringify({ token }),
+          });
+        }
+      } catch (e) {
+        console.log('Unregister device failed (non-blocking):', e);
+      }
+
       await ApiService.auth.logout();
       
       // Show success toast

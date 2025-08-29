@@ -65,7 +65,7 @@ export interface FetchNotificationsParams {
 }
 
 class NotificationService {
-  private baseUrl = '/api/v1/director/notifications';
+  private baseUrl = '/director/notifications';
   private httpClient: HttpClient;
 
   constructor() {
