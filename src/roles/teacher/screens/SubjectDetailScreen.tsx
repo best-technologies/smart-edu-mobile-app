@@ -177,7 +177,6 @@ export default function SubjectDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      <TopBar />
       
       <ScrollView className="flex-1" contentContainerClassName="pb-20">
         {/* Course Header */}

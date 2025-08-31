@@ -1,7 +1,24 @@
 // API Configuration
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
+const extra: any = (Constants as any)?.expoConfig?.extra ?? {};
+const EXTRA_API_BASE_URL: string | undefined = extra?.apiBaseUrl;
+
+function resolveBaseUrl(): string {
+  // Development: use local emulator/simulator hosts
+  if (__DEV__) {
+    const iosSim = 'http://localhost:1000/api/v1';
+    const androidEmu = 'http://10.0.2.2:1000/api/v1';
+    return Platform.OS === 'android' ? androidEmu : iosSim;
+  }
+
+  // Production/preview: prefer value from app.json "extra.apiBaseUrl", else fallback to staging
+  return EXTRA_API_BASE_URL || 'https://smart-edu-hub.onrender.com/api/v1';
+}
+
 export const API_CONFIG = {
-  // BASE_URL: 'http://localhost:1000/api/v1',
-  BASE_URL: 'https://f3506149c2df.ngrok-free.app/api/v1',
+  BASE_URL: resolveBaseUrl(),
   TIMEOUT: 10000, // 10 seconds
 } as const;
 

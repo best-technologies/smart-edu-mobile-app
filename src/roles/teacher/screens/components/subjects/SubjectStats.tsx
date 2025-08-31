@@ -1,54 +1,78 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SubjectStats as SubjectStatsType } from './types';
 
 interface SubjectStatsProps {
-  stats: {
-    totalSubjects: number;
-    totalVideos: number;
-    totalStudents: number;
-    totalMaterials: number;
+  stats: SubjectStatsType;
+  academicSession?: {
+    academic_year: string;
+    term: string;
   };
 }
 
-export function SubjectStats({ stats }: SubjectStatsProps) {
+export function SubjectStats({ stats, academicSession }: SubjectStatsProps) {
   return (
     <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
-      <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Subject Overview
-      </Text>
+      <View className="flex-row items-center justify-between mb-3">
+        <View>
+          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            Subject Overview
+          </Text>
+          {academicSession && (
+            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {academicSession.academic_year} • {academicSession.term.charAt(0).toUpperCase() + academicSession.term.slice(1)} Term
+            </Text>
+          )}
+        </View>
+        <View className="h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
+          <Ionicons name="book" size={20} color="white" />
+        </View>
+      </View>
       
       <View className="flex-row gap-3">
-        <View className="flex-1 items-center">
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 mb-2">
-            <Ionicons name="book-outline" size={18} color="currentColor" />
+        <View className="flex-1 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="h-6 w-6 items-center justify-center rounded-lg bg-purple-500">
+              <Ionicons name="book-outline" size={14} color="white" />
+            </View>
+            <Ionicons name="trending-up" size={14} color="#8b5cf6" />
           </View>
-          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalSubjects}</Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">Subjects</Text>
+          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalSubjects}</Text>
+          <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">Subjects</Text>
         </View>
 
-        <View className="flex-1 items-center">
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
-            <Ionicons name="play-circle-outline" size={18} color="currentColor" />
+        <View className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="h-6 w-6 items-center justify-center rounded-lg bg-blue-500">
+              <Ionicons name="play-circle-outline" size={14} color="white" />
+            </View>
+            <Ionicons name="trending-up" size={14} color="#3b82f6" />
           </View>
-          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalVideos}</Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">Videos</Text>
+          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalVideos}</Text>
+          <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">Videos</Text>
         </View>
 
-        <View className="flex-1 items-center">
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 mb-2">
-            <Ionicons name="people-outline" size={18} color="currentColor" />
+        <View className="flex-1 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="h-6 w-6 items-center justify-center rounded-lg bg-green-500">
+              <Ionicons name="document-outline" size={14} color="white" />
+            </View>
+            <Ionicons name="trending-up" size={14} color="#10b981" />
           </View>
-          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalStudents}</Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">Students</Text>
+          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalMaterials}</Text>
+          <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">Materials</Text>
         </View>
 
-        <View className="flex-1 items-center">
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 mb-2">
-            <Ionicons name="document-outline" size={18} color="currentColor" />
+        <View className="flex-1 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="h-6 w-6 items-center justify-center rounded-lg bg-orange-500">
+              <Ionicons name="people-outline" size={14} color="white" />
+            </View>
+            <Ionicons name="trending-up" size={14} color="#f97316" />
           </View>
-          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalMaterials}</Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">Materials</Text>
+          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalClasses}</Text>
+          <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium">Classes</Text>
         </View>
       </View>
     </View>

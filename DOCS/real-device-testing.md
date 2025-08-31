@@ -77,8 +77,28 @@ Call this once during app initialization.
   - Android: Upload to Play Console → Internal/Closed testing track → invite testers
 
 ### 6) Updating While Users Test
-- Small JS-only updates: use EAS Update (optional) to push over-the-air JS updates without rebuilding
+- Small JS-only updates: use EAS Update to push over-the-air JS updates without rebuilding
 - Native/plugin/config changes: rebuild with EAS
+
+#### Ship UI Fixes Fast with EAS Update
+1) Commit your change
+2) Publish update to a branch (e.g., production):
+```bash
+eas update --branch production --message "UI fix"
+```
+3) Users relaunch the app → update loads automatically, provided the runtime versions match (by default, runtime = SDK version)
+
+Optional (app.json) – control update timing:
+```json
+{
+  "expo": {
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
+  }
+}
+```
 
 ### 7) Common Notes
 - Expo Go cannot display your custom notification icon/sound; use a dev client or production build
