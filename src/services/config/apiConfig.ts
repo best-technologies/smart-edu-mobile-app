@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     SUBJECTS_DASHBOARD: '/teachers/subjects-dashboard',
     SUBJECT_DETAILS: '/teachers/subjects',
     CREATE_TOPIC: '/teachers/topics',
+    REORDER_TOPIC: '/teachers/topics/reorder',
     STUDENTS: '/teacher/students',
     SCHEDULES: '/teacher/schedules',
     STUDENT_TAB: '/teachers/student-tab',

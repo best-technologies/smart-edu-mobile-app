@@ -84,6 +84,18 @@ export class TeacherService {
       topicData
     );
   }
+
+  async reorderTopic(
+    subjectId: string,
+    topicId: string,
+    newPosition: number
+  ): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(
+      `${API_ENDPOINTS.TEACHER.REORDER_TOPIC}/${subjectId}/${topicId}`,
+      'PATCH',
+      { newPosition }
+    );
+  }
 }
 
 export class DirectorService {

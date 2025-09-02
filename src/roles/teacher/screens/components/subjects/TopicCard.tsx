@@ -6,12 +6,13 @@ import { capitalizeWords } from '@/utils/textFormatter';
 
 interface TopicCardProps {
   topic: Topic;
-  onAddVideo: () => void;
-  onAddMaterial: () => void;
-  onEditInstructions: () => void;
+  onAddVideo: (topic: Topic) => void;
+  onAddMaterial: (topic: Topic) => void;
+  onEditInstructions: (topic: Topic) => void;
+  onLongPress?: () => void;
 }
 
-export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions }: TopicCardProps) {
+export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions, onLongPress }: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const getFileIcon = (type: string) => {
@@ -43,32 +44,46 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
   return (
     <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       {/* Topic Header */}
-      <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.8}
-        className="p-4"
-      >
+              <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
+          activeOpacity={0.8}
+          className="p-4"
+        >
         <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
+          <View className="flex-row items-center gap-3 flex-1">
             <View className="h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40">
               <Text className="text-sm font-bold text-purple-600 dark:text-purple-400">
-                {topic.order}
+                {topic.order || '?'}
               </Text>
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {capitalizeWords(topic.title)}
+                {topic.title ? capitalizeWords(topic.title) : 'Untitled Topic'}
               </Text>
               <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {capitalizeWords(topic.description)}
+                {topic.description ? capitalizeWords(topic.description) : 'No description available'}
               </Text>
             </View>
           </View>
-          <Ionicons 
-            name={expanded ? 'chevron-up' : 'chevron-down'} 
-            size={20} 
-            color="#6b7280" 
-          />
+          <View className="flex-row items-center gap-2 flex-shrink-0">
+            <Ionicons 
+              name={expanded ? 'chevron-up' : 'chevron-down'} 
+              size={20} 
+              color="#6b7280" 
+            />
+            <TouchableOpacity
+              onLongPress={onLongPress}
+              activeOpacity={0.7}
+              className="h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+              delayLongPress={300}
+            >
+              <Ionicons 
+                name="reorder-three" 
+                size={16} 
+                color="#6b7280" 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
 
@@ -78,10 +93,10 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
           <View className="p-4 border-b border-gray-200 dark:border-gray-700">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Videos ({topic.videos.length})
+                Videos ({topic.videos?.length || 0})
               </Text>
               <TouchableOpacity
-                onPress={onAddVideo}
+                onPress={() => onAddVideo(topic)}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-lg"
               >
@@ -92,46 +107,50 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
               </TouchableOpacity>
             </View>
 
-            {topic.videos.length > 0 ? (
+            {topic.videos && topic.videos.length > 0 ? (
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingRight: 16 }}
               >
-                {topic.videos.map((video, index) => (
-                  <View 
-                    key={video.id} 
-                    className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm ${
-                      index === 0 ? 'ml-0' : 'ml-3'
-                    }`}
-                  >
-                    <View className="relative">
-                      <Image 
-                        source={{ uri: video.thumbnail }} 
-                        className="w-full h-24"
-                        resizeMode="cover"
-                      />
-                      <View className="absolute inset-0 items-center justify-center bg-black/20">
-                        <View className="h-8 w-8 items-center justify-center rounded-full bg-white/90">
-                          <Ionicons name="play" size={16} color="#000" />
+                {topic.videos?.map((video, index) => {
+                  if (!video || !video.id) return null;
+                  
+                  return (
+                    <View 
+                      key={video.id} 
+                      className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm ${
+                        index === 0 ? 'ml-0' : 'ml-3'
+                      }`}
+                    >
+                      <View className="relative">
+                        <Image 
+                          source={{ uri: video.thumbnail }} 
+                          className="w-full h-24"
+                          resizeMode="cover"
+                        />
+                        <View className="absolute inset-0 items-center justify-center bg-black/20">
+                          <View className="h-8 w-8 items-center justify-center rounded-full bg-white/90">
+                            <Ionicons name="play" size={16} color="#000" />
+                          </View>
+                        </View>
+                      </View>
+                      <View className="p-3">
+                        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
+                          {video.title ? capitalizeWords(video.title) : 'Untitled Video'}
+                        </Text>
+                        <View className="flex-row items-center justify-between">
+                          <Text className="text-xs text-gray-500 dark:text-gray-400">
+                            {video.duration}
+                          </Text>
+                          <Text className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(video.uploadedAt).toLocaleDateString()}
+                          </Text>
                         </View>
                       </View>
                     </View>
-                    <View className="p-3">
-                      <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
-                        {capitalizeWords(video.title)}
-                      </Text>
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-xs text-gray-500 dark:text-gray-400">
-                          {video.duration}
-                        </Text>
-                        <Text className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(video.uploadedAt).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
               </ScrollView>
             ) : (
               <View className="items-center py-6">
@@ -145,10 +164,10 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
           <View className="p-4 border-b border-gray-200 dark:border-gray-700">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Materials ({topic.materials.length})
+                Materials ({topic.materials?.length || 0})
               </Text>
               <TouchableOpacity
-                onPress={onAddMaterial}
+                onPress={() => onAddMaterial(topic)}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-1 bg-green-100 dark:bg-green-900/40 px-3 py-1 rounded-lg"
               >
@@ -159,7 +178,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
               </TouchableOpacity>
             </View>
 
-            {topic.materials.length > 0 ? (
+            {topic.materials && topic.materials.length > 0 ? (
               <View className="gap-2">
                 {topic.materials.map((material) => (
                   <View key={material.id} className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -170,7 +189,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                     />
                     <View className="flex-1">
                       <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {capitalizeWords(material.title)}
+                        {material.title ? capitalizeWords(material.title) : 'Untitled Material'}
                       </Text>
                       <Text className="text-xs text-gray-500 dark:text-gray-400">
                         {material.size} • {new Date(material.uploadedAt).toLocaleDateString()}
@@ -197,7 +216,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                 Instructions
               </Text>
               <TouchableOpacity
-                onPress={onEditInstructions}
+                onPress={() => onEditInstructions(topic)}
                 activeOpacity={0.7}
                 className="flex-row items-center gap-1 bg-orange-100 dark:bg-orange-900/40 px-3 py-1 rounded-lg"
               >
@@ -211,7 +230,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
             {topic.instructions ? (
               <View className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Text className="text-sm text-gray-700 dark:text-gray-300">
-                  {capitalizeWords(topic.instructions)}
+                  {topic.instructions ? capitalizeWords(topic.instructions) : 'No instructions available'}
                 </Text>
               </View>
             ) : (
