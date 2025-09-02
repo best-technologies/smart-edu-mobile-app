@@ -25,13 +25,64 @@ export class TeacherService {
     return this.httpClient.makeRequest(API_ENDPOINTS.TEACHER.SCHEDULES);
   }
 
-  async getStudentTab(page?: number): Promise<StudentTabResponse> {
+  async getStudentTab(page?: number): Promise<ApiResponse<StudentTabResponse['data']>> {
     const url = page ? `${API_ENDPOINTS.TEACHER.STUDENT_TAB}?page=${page}` : API_ENDPOINTS.TEACHER.STUDENT_TAB;
     return this.httpClient.makeRequest<StudentTabResponse['data']>(url);
   }
 
-  async getScheduleTab(): Promise<TeacherScheduleResponse> {
+  async getScheduleTab(): Promise<ApiResponse<TeacherScheduleResponse['data']>> {
     return this.httpClient.makeRequest<TeacherScheduleResponse['data']>(API_ENDPOINTS.TEACHER.SCHEDULES_TAB);
+  }
+
+  async getSubjectDetails(
+    subjectId: string, 
+    page: number = 1, 
+    limit: number = 10, 
+    search?: string,
+    filters?: {
+      status?: 'all' | 'active' | 'inactive' | 'draft';
+      type?: 'all' | 'videos' | 'materials';
+      orderBy?: 'order' | 'title' | 'createdAt';
+      orderDirection?: 'asc' | 'desc';
+    }
+  ): Promise<ApiResponse<any>> {
+    let url = `${API_ENDPOINTS.TEACHER.SUBJECT_DETAILS}/${subjectId}/comprehensive?page=${page}&limit=${limit}`;
+    
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    
+    if (filters?.status && filters.status !== 'all') {
+      url += `&status=${filters.status}`;
+    }
+    
+    if (filters?.type && filters.type !== 'all') {
+      url += `&type=${filters.type}`;
+    }
+    
+    if (filters?.orderBy) {
+      url += `&orderBy=${filters.orderBy}`;
+    }
+    
+    if (filters?.orderDirection) {
+      url += `&orderDirection=${filters.orderDirection}`;
+    }
+    
+    return this.httpClient.makeRequest(url);
+  }
+
+  async createTopic(topicData: {
+    title: string;
+    description: string;
+    instructions?: string;
+    subject_id: string;
+    is_active?: boolean;
+  }): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(
+      API_ENDPOINTS.TEACHER.CREATE_TOPIC,
+      'POST',
+      topicData
+    );
   }
 }
 

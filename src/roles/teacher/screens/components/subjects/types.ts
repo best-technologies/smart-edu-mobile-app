@@ -90,3 +90,91 @@ export interface SubjectsResponse {
   data: SubjectsDashboardData;
   statusCode: number;
 }
+
+// Subject Details API Types
+export interface Video {
+  id: string;
+  title: string;
+  duration: string;
+  thumbnail: string;
+  url: string;
+  uploadedAt: string;
+  size: string;
+  views: number;
+  status: 'published' | 'draft' | 'archived';
+}
+
+export interface Material {
+  id: string;
+  title: string;
+  type: 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'image' | 'other';
+  size: string;
+  url: string;
+  uploadedAt: string;
+  downloads: number;
+  status: 'published' | 'draft' | 'archived';
+}
+
+export interface Topic {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  status: 'active' | 'inactive' | 'draft';
+  videos: Video[];
+  materials: Material[];
+  instructions: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubjectDetails {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail: string;
+  code: string;
+  color: string;
+  status: 'active' | 'inactive';
+  totalTopics: number;
+  totalVideos: number;
+  totalMaterials: number;
+  totalStudents: number;
+  progress: number;
+  classes: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubjectDetailsFilters {
+  search?: string;
+  status?: 'all' | 'active' | 'inactive' | 'draft';
+  type?: 'all' | 'videos' | 'materials';
+  orderBy?: 'order' | 'title' | 'createdAt';
+  orderDirection?: 'asc' | 'desc';
+}
+
+export interface SubjectDetailsStats {
+  totalTopics: number;
+  totalVideos: number;
+  totalMaterials: number;
+  totalStudents: number;
+  completedTopics: number;
+  inProgressTopics: number;
+  notStartedTopics: number;
+}
+
+export interface SubjectDetailsData {
+  subject: SubjectDetails;
+  topics: Topic[];
+  pagination: SubjectPagination;
+  filters: SubjectDetailsFilters;
+  stats: SubjectDetailsStats;
+}
+
+export interface SubjectDetailsResponse {
+  success: boolean;
+  message: string;
+  data: SubjectDetailsData;
+  statusCode: number;
+}

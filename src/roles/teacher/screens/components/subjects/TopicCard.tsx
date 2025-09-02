@@ -1,34 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-interface Video {
-  id: string;
-  title: string;
-  duration: string;
-  thumbnail: string;
-  url: string;
-  uploadedAt: string;
-}
-
-interface Material {
-  id: string;
-  title: string;
-  type: 'pdf' | 'doc' | 'ppt' | 'other';
-  size: string;
-  url: string;
-  uploadedAt: string;
-}
-
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  videos: Video[];
-  materials: Material[];
-  instructions: string;
-  order: number;
-}
+import { Topic, Video, Material } from './types';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface TopicCardProps {
   topic: Topic;
@@ -43,8 +17,12 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
   const getFileIcon = (type: string) => {
     switch (type) {
       case 'pdf': return 'document-text-outline';
+      case 'docx': return 'document-outline';
       case 'doc': return 'document-outline';
       case 'ppt': return 'easel-outline';
+      case 'pptx': return 'easel-outline';
+      case 'xlsx': return 'document-outline';
+      case 'image': return 'image-outline';
       default: return 'document-outline';
     }
   };
@@ -52,8 +30,12 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
   const getFileColor = (type: string) => {
     switch (type) {
       case 'pdf': return '#ef4444';
+      case 'docx': return '#3b82f6';
       case 'doc': return '#3b82f6';
       case 'ppt': return '#f59e0b';
+      case 'pptx': return '#f59e0b';
+      case 'xlsx': return '#10b981';
+      case 'image': return '#8b5cf6';
       default: return '#6b7280';
     }
   };
@@ -75,10 +57,10 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {topic.title}
+                {capitalizeWords(topic.title)}
               </Text>
               <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {topic.description}
+                {capitalizeWords(topic.description)}
               </Text>
             </View>
           </View>
@@ -137,7 +119,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                     </View>
                     <View className="p-3">
                       <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
-                        {video.title}
+                        {capitalizeWords(video.title)}
                       </Text>
                       <View className="flex-row items-center justify-between">
                         <Text className="text-xs text-gray-500 dark:text-gray-400">
@@ -188,7 +170,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                     />
                     <View className="flex-1">
                       <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {material.title}
+                        {capitalizeWords(material.title)}
                       </Text>
                       <Text className="text-xs text-gray-500 dark:text-gray-400">
                         {material.size} • {new Date(material.uploadedAt).toLocaleDateString()}
@@ -229,7 +211,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
             {topic.instructions ? (
               <View className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Text className="text-sm text-gray-700 dark:text-gray-300">
-                  {topic.instructions}
+                  {capitalizeWords(topic.instructions)}
                 </Text>
               </View>
             ) : (
