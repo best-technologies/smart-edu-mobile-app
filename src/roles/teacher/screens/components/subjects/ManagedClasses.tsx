@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ManagedClass } from './types';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface ManagedClassesProps {
   classes: ManagedClass[];
@@ -38,7 +39,7 @@ export function ManagedClasses({ classes, onClassPress }: ManagedClassesProps) {
             className="px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
           >
             <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-              {cls.name}
+              {capitalizeWords(cls.name)}
             </Text>
           </TouchableOpacity>
         ))}

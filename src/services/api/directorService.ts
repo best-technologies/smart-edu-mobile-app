@@ -839,6 +839,22 @@ class DirectorService {
         females: number;
       };
     };
+    subjects_teaching: Array<{
+      id: string;
+      name: string;
+      code: string;
+      color: string;
+      description: string;
+    }>;
+    recent_notifications: Array<{
+      id: string;
+      title: string;
+      description: string;
+      type: string;
+      comingUpOn: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
     class_schedules: {
       today: {
         day: string;
@@ -918,6 +934,22 @@ class DirectorService {
             females: number;
           };
         };
+        subjects_teaching: Array<{
+          id: string;
+          name: string;
+          code: string;
+          color: string;
+          description: string;
+        }>;
+        recent_notifications: Array<{
+          id: string;
+          title: string;
+          description: string;
+          type: string;
+          comingUpOn: string;
+          createdAt: string;
+          updatedAt: string;
+        }>;
         class_schedules: {
           today: {
             day: string;

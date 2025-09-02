@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SubjectsResponse, Subject, SubjectPagination } from '@/roles/teacher/screens/components/subjects/types';
 import { HttpClient } from '@/services/api/httpClient';
+import { API_ENDPOINTS } from '@/services/config/apiConfig';
 
 interface UseTeacherSubjectsReturn {
   subjects: Subject[];
@@ -42,20 +43,36 @@ export function useTeacherSubjects(): UseTeacherSubjectsReturn {
       setIsLoading(true);
       setError(null);
 
-      const response = await httpClient.makeRequest<SubjectsResponse>('/teachers/subjects-dashboard', 'GET');
+      console.log('🔍 Making API request to:', API_ENDPOINTS.TEACHER.SUBJECTS_DASHBOARD);
+      const response = await httpClient.makeRequest<SubjectsResponse>(API_ENDPOINTS.TEACHER.SUBJECTS_DASHBOARD, 'GET');
+      
+      // console.log('🔍 Full API response:', JSON.stringify(response, null, 2));
+      // console.log('🔍 Response.data:', response.data);
+      // console.log('🔍 Response.data.data:', response.data?.data);
+      // console.log('🔍 Response.data.subjects:', (response.data as any)?.subjects);
+      // console.log('🔍 Response.data.managedClasses:', (response.data as any)?.managedClasses);
       
       if (!response.data) {
         throw new Error('No data received from server');
       }
 
-      const { data } = response.data;
+      // Handle different possible response structures
+      let subjectsData: any;
       
-      setSubjects(data.subjects || []);
-      setManagedClasses(data.managedClasses || []);
-      setTeachingSubjects(data.teachingSubjects || []);
-      setStats(data.stats || {});
-      setAcademicSession(data.academicSession || {});
-      setPagination(data.pagination || null);
+      if (response.data.data && typeof response.data.data === 'object') {
+        subjectsData = response.data.data;
+      } else if ((response.data as any).subjects !== undefined) {
+        subjectsData = response.data;
+      } else {
+        subjectsData = response.data;
+      }
+      
+      setSubjects(subjectsData.subjects || []);
+      setManagedClasses(subjectsData.managedClasses || []);
+      setTeachingSubjects(subjectsData.teachingSubjects || []);
+      setStats(subjectsData.stats || {});
+      setAcademicSession(subjectsData.academicSession || {});
+      setPagination(subjectsData.pagination || null);
 
     } catch (err) {
       console.error('Error fetching teacher subjects:', err);

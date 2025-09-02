@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Student } from '@/mock';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface StudentCardProps {
   student: Student;
@@ -112,12 +113,12 @@ export function StudentCard({ student, isSelected = false, onSelect }: StudentCa
           <View className="mt-2">
             <View className="flex-row items-center gap-1 mb-1">
               <Ionicons name="school-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">Class {student.current_class}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-300">Class {capitalizeWords(student.current_class)}</Text>
             </View>
             <View className="flex-row items-center gap-1">
               <Ionicons name="calendar-outline" size={14} color="#6b7280" />
               <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>
-                {student.next_class === 'No classes' ? 'No upcoming classes' : student.next_class}
+                {student.next_class === 'No classes' ? 'No upcoming classes' : capitalizeWords(student.next_class)}
               </Text>
             </View>
           </View>

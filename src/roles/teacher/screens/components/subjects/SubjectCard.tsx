@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Subject } from './types';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface SubjectCardProps {
   subject: Subject;
@@ -79,10 +80,10 @@ export function SubjectCard({ subject, onPress, onEdit, onManageContent }: Subje
         {/* Content */}
         <View className="p-4">
           <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={1}>
-            {subject.name}
+            {capitalizeWords(subject.name)}
           </Text>
           <Text className="text-sm text-gray-500 dark:text-gray-400 mb-3" numberOfLines={2}>
-            {subject.description}
+            {capitalizeWords(subject.description)}
           </Text>
 
           {/* Classes Taking Subject */}
@@ -102,7 +103,7 @@ export function SubjectCard({ subject, onPress, onEdit, onManageContent }: Subje
                       className="text-xs font-medium"
                       style={{ color: subject.color }}
                     >
-                      {cls.name}
+                      {capitalizeWords(cls.name)}
                     </Text>
                   </View>
                 ))}

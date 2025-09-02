@@ -1,5 +1,6 @@
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface Subject {
   id: string;
@@ -39,7 +40,7 @@ export function SubjectsTeaching({ subjects }: SubjectsTeachingProps) {
               </View>
               <View className="flex-1">
                 <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {subject.name}
+                  {capitalizeWords(subject.name)}
                 </Text>
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
                   {subject.code}
@@ -48,7 +49,7 @@ export function SubjectsTeaching({ subjects }: SubjectsTeachingProps) {
             </View>
             
             <Text className="text-xs text-gray-500 dark:text-gray-400 leading-4">
-              {subject.description}
+              {capitalizeWords(subject.description)}
             </Text>
           </TouchableOpacity>
         ))}

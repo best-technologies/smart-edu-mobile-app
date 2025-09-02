@@ -4,37 +4,23 @@
 
 /**
  * Capitalizes the first letter of each word in a string
- * @param text - The input text to format
- * @returns Formatted text with first letter of each word capitalized
- * 
- * @example
- * capitalizeWords("english language") // "English Language"
- * capitalizeWords("mathematics jss2") // "Mathematics Jss2"
- * capitalizeWords("PHYSICS") // "Physics"
- * capitalizeWords("") // ""
+ * Example: "english language" -> "English Language"
  */
 export function capitalizeWords(text: string): string {
-  if (!text || typeof text !== 'string') return '';
+  if (!text) return text;
   
   return text
-    .toLowerCase()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
 
 /**
- * Capitalizes the first letter of a string only
- * @param text - The input text to format
- * @returns Formatted text with first letter capitalized
- * 
- * @example
- * capitalizeFirst("hello world") // "Hello world"
- * capitalizeFirst("") // ""
+ * Capitalizes the first letter of a string
+ * Example: "english" -> "English"
  */
 export function capitalizeFirst(text: string): string {
-  if (!text || typeof text !== 'string') return '';
-  
+  if (!text) return text;
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
 

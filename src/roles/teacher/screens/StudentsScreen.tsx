@@ -10,6 +10,7 @@ import StudentStats from './components/students/StudentStats';
 import SearchBar from './components/students/SearchBar';
 import FilterChips from './components/students/FilterChips';
 import FloatingActionButton from './components/shared/FloatingActionButton';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 export default function StudentsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,10 +200,10 @@ export default function StudentsScreen() {
                       style={{ borderLeftColor: subject.color, borderLeftWidth: 4 }}
                     >
                       <Text className="text-sm font-semibold text-green-700 dark:text-green-300">
-                        {subject.name}
+                        {capitalizeWords(subject.name)}
                       </Text>
                       <Text className="text-xs text-green-600 dark:text-green-400">
-                        {subject.code} • {subject.assigned_class.name}
+                        {subject.code} • {capitalizeWords(subject.assigned_class.name)}
                       </Text>
                     </View>
                   ))}

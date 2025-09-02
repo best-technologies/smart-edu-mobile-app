@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 // Predefined color palette for subjects
 const SUBJECT_COLORS = [
@@ -222,7 +223,7 @@ export function TeacherTimetableGrid({
                         }}
                       >
                         <Text className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={1}>
-                          {scheduleItem.subject.name}
+                          {capitalizeWords(scheduleItem.subject.name)}
                         </Text>
                         <Text className="text-xs text-gray-600 dark:text-gray-300 mb-1" numberOfLines={1}>
                           {scheduleItem.subject.code}

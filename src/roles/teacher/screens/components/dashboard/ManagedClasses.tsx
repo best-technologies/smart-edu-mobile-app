@@ -1,5 +1,6 @@
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface ManagedClass {
   id: string;
@@ -37,7 +38,7 @@ export function ManagedClasses({ classes }: ManagedClassesProps) {
                 <Ionicons name="school-outline" size={20} color="#3B82F6" />
               </View>
               <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {classItem.name}
+                {capitalizeWords(classItem.name)}
               </Text>
             </View>
             

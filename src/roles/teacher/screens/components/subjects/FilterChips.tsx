@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ManagedClass } from './types';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface FilterChipsProps {
   classes: ManagedClass[];
@@ -64,7 +65,7 @@ export function FilterChips({ classes, selectedClassId, onClassFilter }: FilterC
                   : 'text-gray-700 dark:text-gray-300'
               }`}
             >
-              {cls.name}
+              {capitalizeWords(cls.name)}
             </Text>
           </TouchableOpacity>
         ))}

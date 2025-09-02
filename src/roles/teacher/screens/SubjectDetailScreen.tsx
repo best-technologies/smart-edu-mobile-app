@@ -8,6 +8,7 @@ import TopicCard from './components/subjects/TopicCard';
 import VideoUploadModal from './components/subjects/VideoUploadModal';
 import MaterialUploadModal from './components/subjects/MaterialUploadModal';
 import InstructionModal from './components/subjects/InstructionModal';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 const { width } = Dimensions.get('window');
 
@@ -192,10 +193,10 @@ export default function SubjectDetailScreen() {
             />
             <View className="flex-1">
               <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {subject.name}
+                {capitalizeWords(subject.name)}
               </Text>
               <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {subject.description}
+                {capitalizeWords(subject.description)}
               </Text>
               <View className="flex-row items-center gap-4 mt-2">
                 <View className="flex-row items-center gap-1">
