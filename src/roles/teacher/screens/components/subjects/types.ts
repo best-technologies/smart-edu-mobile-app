@@ -104,6 +104,107 @@ export interface Video {
   status: 'published' | 'draft' | 'archived';
 }
 
+// New API response types for topic content
+export interface TopicContentVideo {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  thumbnail: {
+    secure_url: string;
+    public_id: string;
+  };
+  duration: string;
+  size: string;
+  views: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentMaterial {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  size: string;
+  downloads: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentAssignment {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  status: string;
+  maxScore: number;
+  timeLimit: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentQuiz {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  totalQuestions: number;
+  passingScore: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentLiveClass {
+  id: string;
+  title: string;
+  description: string;
+  scheduledAt: string;
+  duration: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentLibraryResource {
+  id: string;
+  title: string;
+  description: string;
+  resourceType: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicContentSummary {
+  totalVideos: number;
+  totalMaterials: number;
+  totalAssignments: number;
+  totalQuizzes: number;
+  totalLiveClasses: number;
+  totalLibraryResources: number;
+  totalContent: number;
+}
+
+export interface TopicContentResponse {
+  topicId: string;
+  topicTitle: string;
+  topicDescription: string;
+  topicOrder: number;
+  contentSummary: TopicContentSummary;
+  videos: TopicContentVideo[];
+  materials: TopicContentMaterial[];
+  assignments: TopicContentAssignment[];
+  quizzes: TopicContentQuiz[];
+  liveClasses: TopicContentLiveClass[];
+  libraryResources: TopicContentLibraryResource[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Material {
   id: string;
   title: string;

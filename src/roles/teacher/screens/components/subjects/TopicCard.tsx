@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Topic, Video, Material } from './types';
 import { capitalizeWords } from '@/utils/textFormatter';
+import { TopicContentTabs } from './TopicContentTabs';
 
 interface TopicCardProps {
   topic: Topic;
@@ -89,128 +90,8 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
 
       {expanded && (
         <View className="border-t border-gray-200 dark:border-gray-700">
-          {/* Videos Section */}
+          {/* Instructions Section - Always visible */}
           <View className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Videos ({topic.videos?.length || 0})
-              </Text>
-              <TouchableOpacity
-                onPress={() => onAddVideo(topic)}
-                activeOpacity={0.7}
-                className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-lg"
-              >
-                <Ionicons name="add" size={14} color="#3b82f6" />
-                <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  Add Video
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {topic.videos && topic.videos.length > 0 ? (
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                {topic.videos?.map((video, index) => {
-                  if (!video || !video.id) return null;
-                  
-                  return (
-                    <View 
-                      key={video.id} 
-                      className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm ${
-                        index === 0 ? 'ml-0' : 'ml-3'
-                      }`}
-                    >
-                      <View className="relative">
-                        <Image 
-                          source={{ uri: video.thumbnail }} 
-                          className="w-full h-24"
-                          resizeMode="cover"
-                        />
-                        <View className="absolute inset-0 items-center justify-center bg-black/20">
-                          <View className="h-8 w-8 items-center justify-center rounded-full bg-white/90">
-                            <Ionicons name="play" size={16} color="#000" />
-                          </View>
-                        </View>
-                      </View>
-                      <View className="p-3">
-                        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
-                          {video.title ? capitalizeWords(video.title) : 'Untitled Video'}
-                        </Text>
-                        <View className="flex-row items-center justify-between">
-                          <Text className="text-xs text-gray-500 dark:text-gray-400">
-                            {video.duration}
-                          </Text>
-                          <Text className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(video.uploadedAt).toLocaleDateString()}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            ) : (
-              <View className="items-center py-6">
-                <Ionicons name="play-circle-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 dark:text-gray-400 mt-2">No videos yet</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Materials Section */}
-          <View className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Materials ({topic.materials?.length || 0})
-              </Text>
-              <TouchableOpacity
-                onPress={() => onAddMaterial(topic)}
-                activeOpacity={0.7}
-                className="flex-row items-center gap-1 bg-green-100 dark:bg-green-900/40 px-3 py-1 rounded-lg"
-              >
-                <Ionicons name="add" size={14} color="#10b981" />
-                <Text className="text-sm font-medium text-green-600 dark:text-green-400">
-                  Add Material
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {topic.materials && topic.materials.length > 0 ? (
-              <View className="gap-2">
-                {topic.materials.map((material) => (
-                  <View key={material.id} className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Ionicons 
-                      name={getFileIcon(material.type) as any} 
-                      size={20} 
-                      color={getFileColor(material.type)} 
-                    />
-                    <View className="flex-1">
-                      <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {material.title ? capitalizeWords(material.title) : 'Untitled Material'}
-                      </Text>
-                      <Text className="text-xs text-gray-500 dark:text-gray-400">
-                        {material.size} • {new Date(material.uploadedAt).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    <TouchableOpacity activeOpacity={0.7}>
-                      <Ionicons name="download-outline" size={16} color="#6b7280" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View className="items-center py-6">
-                <Ionicons name="document-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 dark:text-gray-400 mt-2">No materials yet</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Instructions Section */}
-          <View className="p-4">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 Instructions
@@ -234,11 +115,28 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                 </Text>
               </View>
             ) : (
-              <View className="items-center py-6">
-                <Ionicons name="create-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 dark:text-gray-400 mt-2">No instructions yet</Text>
+              <View className="items-center py-4">
+                <Ionicons name="create-outline" size={32} color="#9ca3af" />
+                <Text className="text-gray-500 dark:text-gray-400 text-center text-sm">No instructions yet</Text>
               </View>
             )}
+          </View>
+
+          {/* Topic Content Tabs */}
+          <View className="p-4">
+            <TopicContentTabs
+              topicId={topic.id}
+              onAddVideo={() => onAddVideo(topic)}
+              onAddMaterial={() => onAddMaterial(topic)}
+              onAddAssignment={() => {
+                // TODO: Implement add assignment functionality
+                console.log('Add assignment for topic:', topic.id);
+              }}
+              onAddQuiz={() => {
+                // TODO: Implement add quiz functionality
+                console.log('Add quiz for topic:', topic.id);
+              }}
+            />
           </View>
         </View>
       )}

@@ -96,6 +96,12 @@ export class TeacherService {
       { newPosition }
     );
   }
+
+  async getTopicContent(topicId: string): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(
+      `${API_ENDPOINTS.TEACHER.TOPIC_CONTENT}/${topicId}/content`
+    );
+  }
 }
 
 export class DirectorService {

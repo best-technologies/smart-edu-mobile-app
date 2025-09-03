@@ -321,6 +321,7 @@ export default function SubjectDetailScreen() {
       <VideoUploadModal
         visible={showVideoModal}
         topic={selectedTopic}
+        subjectId={displaySubject?.id || subject?.id || ''}
         onClose={() => {
           setShowVideoModal(false);
           setSelectedTopic(null);
