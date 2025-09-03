@@ -11,6 +11,8 @@ const { height: screenHeight } = Dimensions.get('window');
 interface SimpleDraggableListProps {
   topics: Topic[];
   subjectId: string;
+  subjectName?: string;
+  subjectCode?: string;
   onAddVideo: (topic: Topic) => void;
   onAddMaterial: (topic: Topic) => void;
   onEditInstructions: (topic: Topic) => void;
@@ -22,6 +24,8 @@ interface SimpleDraggableListProps {
 export function SimpleDraggableList({
   topics,
   subjectId,
+  subjectName,
+  subjectCode,
   onAddVideo,
   onAddMaterial,
   onEditInstructions,
@@ -397,10 +401,13 @@ export function SimpleDraggableList({
                >
                  <TopicCard
                    topic={topic}
+                   subjectName={subjectName}
+                   subjectCode={subjectCode}
                    onAddVideo={onAddVideo}
                    onAddMaterial={onAddMaterial}
                    onEditInstructions={onEditInstructions}
                    onLongPress={() => startDrag(index)}
+                   onRefresh={onRefresh}
                  />
                </View>
                

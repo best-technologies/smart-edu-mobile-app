@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Image, Dimensions, Alert, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useSubjectDetails } from '@/hooks/useSubjectDetails';
 import { SubjectDetailsFilters, Topic, Video, Material } from './components/subjects/types';
 import { useToast } from '@/contexts/ToastContext';
 import { TeacherService } from '@/services/api/roleServices';
+import { useQueryClient } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
 
@@ -71,6 +72,15 @@ export default function SubjectDetailScreen() {
     limit: 10,
     enabled: !!subject?.id,
   });
+
+  const queryClient = useQueryClient();
+
+  // Refresh specific topic content
+  const refreshTopicContent = useCallback(() => {
+    // Invalidate the subject details query to refresh topic content
+    queryClient.invalidateQueries({ queryKey: ['subjectDetails', subject?.id] });
+    refetch();
+  }, [queryClient, subject?.id, refetch]);
 
   // Use API data if available, fallback to route params
   const displaySubject = apiSubject || subject;
@@ -297,11 +307,13 @@ export default function SubjectDetailScreen() {
           <SimpleDraggableList
             topics={localTopics}
             subjectId={displaySubject?.id || subject?.id || ''}
+            subjectName={displaySubject?.name || subject?.name || 'Subject'}
+            subjectCode={apiSubject?.code || 'SUB'}
             onAddVideo={handleAddVideo}
             onAddMaterial={handleAddMaterial}
             onEditInstructions={handleEditInstructions}
             onTopicsReorder={handleTopicsReorder}
-            onRefresh={refetch}
+            onRefresh={refreshTopicContent}
             onScroll={(event) => {
               // Handle scroll events from drag operations
               if (event?.type === 'drag_start') {

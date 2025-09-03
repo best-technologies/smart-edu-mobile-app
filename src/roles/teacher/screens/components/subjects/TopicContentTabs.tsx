@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { capitalizeWords } from '@/utils/textFormatter';
+import { useQuery } from '@tanstack/react-query';
 import { 
-  TopicContentResponse, 
-  TopicContentVideo, 
-  TopicContentMaterial, 
-  TopicContentAssignment, 
+  Topic,
+  TopicContentResponse,
+  TopicContentVideo,
+  TopicContentMaterial,
+  TopicContentAssignment,
   TopicContentQuiz,
   TopicContentLiveClass,
   TopicContentLibraryResource
@@ -14,84 +17,136 @@ import {
 import { ApiService } from '@/services/api';
 
 interface TopicContentTabsProps {
-  topicId: string;
+  topic: Topic;
+  topicTitle?: string;
+  topicDescription?: string;
+  topicInstructions?: string;
+  subjectName?: string;
+  subjectCode?: string;
   onAddVideo: () => void;
   onAddMaterial: () => void;
   onAddAssignment: () => void;
   onAddQuiz: () => void;
+  onRefresh?: () => void;
 }
 
-type TabType = 'videos' | 'materials' | 'assignments' | 'others';
-
 export function TopicContentTabs({ 
-  topicId, 
+  topic,
+  topicTitle,
+  topicDescription,
+  topicInstructions,
+  subjectName,
+  subjectCode,
   onAddVideo, 
   onAddMaterial, 
   onAddAssignment, 
-  onAddQuiz 
+  onAddQuiz,
+  onRefresh
 }: TopicContentTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('videos');
-  const [content, setContent] = useState<TopicContentResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation();
+  const [activeTab, setActiveTab] = useState<'videos' | 'materials' | 'assignments' | 'others'>('videos');
 
-  const tabs: { key: TabType; label: string; icon: string; count: number }[] = [
+  // Fetch topic content using React Query for proper caching
+  const {
+    data: content,
+    isLoading,
+    error,
+    refetch,
+    isFetching
+  } = useQuery({
+    queryKey: ['topicContent', topic.id],
+    queryFn: () => ApiService.teacher.getTopicContent(topic.id),
+    enabled: !!topic.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Use the fetched content data
+  const videos = content?.data?.videos || [];
+  const materials = content?.data?.materials || [];
+  const assignments = content?.data?.assignments || [];
+  const quizzes = content?.data?.quizzes || [];
+  const liveClasses = content?.data?.liveClasses || [];
+  const libraryResources = content?.data?.libraryResources || [];
+
+  const tabs: { key: typeof activeTab; label: string; icon: string; count: number }[] = [
     { 
       key: 'videos', 
       label: 'Videos', 
       icon: 'play-circle-outline',
-      count: content?.contentSummary.totalVideos || 0
+      count: content?.data?.contentSummary?.totalVideos || videos.length
     },
     { 
       key: 'materials', 
       label: 'Materials', 
       icon: 'document-outline',
-      count: content?.contentSummary.totalMaterials || 0
+      count: content?.data?.contentSummary?.totalMaterials || materials.length
     },
     { 
       key: 'assignments', 
       label: 'Assignments', 
       icon: 'clipboard-outline',
-      count: content?.contentSummary.totalAssignments || 0
+      count: content?.data?.contentSummary?.totalAssignments || assignments.length
     },
     { 
       key: 'others', 
       label: 'Others', 
       icon: 'ellipsis-horizontal-outline',
-      count: (content?.contentSummary.totalQuizzes || 0) + 
-              (content?.contentSummary.totalLiveClasses || 0) + 
-              (content?.contentSummary.totalLibraryResources || 0)
+      count: (content?.data?.contentSummary?.totalQuizzes || quizzes.length) + 
+              (content?.data?.contentSummary?.totalLiveClasses || liveClasses.length) + 
+              (content?.data?.contentSummary?.totalLibraryResources || libraryResources.length)
     }
   ];
 
-  useEffect(() => {
-    fetchTopicContent();
-  }, [topicId]);
-
-  const fetchTopicContent = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await ApiService.teacher.getTopicContent(topicId);
-      
-      if (response.success && response.data) {
-        console.log('Topic content fetched successfully:', response.data);
-        console.log('Videos data:', response.data.videos);
-        if (response.data.videos && response.data.videos.length > 0) {
-          console.log('First video thumbnail:', response.data.videos[0].thumbnail);
-        }
-        setContent(response.data);
-      } else {
-        setError(response.message || 'Failed to fetch topic content');
-      }
-    } catch (err) {
-      setError('Network error occurred');
-      console.error('Error fetching topic content:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleVideoPress = (video: TopicContentVideo) => {
+    // Navigate to video player screen
+    (navigation as any).navigate('VideoDemo', { 
+      videoUri: video.url,
+      videoTitle: video.title,
+      videoDescription: video.description,
+      topicTitle: topicTitle || 'Untitled Topic',
+      topicDescription: topicDescription || 'No description available',
+      topicInstructions: topicInstructions || 'Watch this video carefully and take notes on the key concepts. Pay attention to the examples shown and practice the problems discussed in the video.',
+      subjectName: subjectName || 'Subject',
+      subjectCode: subjectCode || 'SUB'
+    });
   };
+
+  // Handle refresh - use React Query refetch
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View className="items-center justify-center py-12">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-gray-500 dark:text-gray-400 mt-3 text-center">
+          Loading topic content...
+        </Text>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View className="items-center justify-center py-12">
+        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+        <Text className="text-red-500 dark:text-red-400 mt-2 text-center">
+          Failed to load topic content
+        </Text>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          activeOpacity={0.7}
+          className="mt-3 bg-blue-600 py-2 px-4 rounded-lg"
+        >
+          <Text className="text-white font-medium">Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const renderTabButton = (tab: typeof tabs[0]) => (
     <TouchableOpacity
@@ -130,35 +185,53 @@ export function TopicContentTabs({
     <View className="space-y-3">
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Videos ({content?.videos.length || 0})
+          Videos ({videos.length})
         </Text>
-        <TouchableOpacity
-          onPress={onAddVideo}
-          activeOpacity={0.7}
-          className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-2 rounded-lg"
-        >
-          <Ionicons name="add" size={14} color="#3b82f6" />
-          <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">
-            Add Video
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-2">
+          <TouchableOpacity
+            onPress={handleRefresh}
+            activeOpacity={0.7}
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            <Ionicons name="refresh" size={16} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onAddVideo}
+            activeOpacity={0.7}
+            className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-2 rounded-lg"
+          >
+            <Ionicons name="add" size={14} color="#3b82f6" />
+            <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">
+              Add Video
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {content?.videos && content.videos.length > 0 ? (
+      {videos.length > 0 ? (
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 16 }}
         >
-          {content.videos.map((video, index) => {
-            console.log(`Video ${index} thumbnail:`, video.thumbnail);
+          {videos
+            .sort((a: TopicContentVideo, b: TopicContentVideo) => (a.order || 0) - (b.order || 0))
+            .map((video: TopicContentVideo, index: number) => {
             return (
-              <View 
-                key={video.id} 
-                className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm ${
+              <TouchableOpacity
+                key={video.id}
+                onPress={() => handleVideoPress(video)}
+                activeOpacity={0.8}
+                className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative ${
                   index === 0 ? 'ml-0' : 'ml-3'
                 }`}
               >
+                {/* Order Badge */}
+                <View className="absolute top-2 left-2 z-10 bg-blue-600 dark:bg-blue-500 rounded-full w-6 h-6 items-center justify-center">
+                  <Text className="text-xs font-bold text-white">
+                    {video.order || index + 1}
+                  </Text>
+                </View>
                 <View className="relative">
                   {video.thumbnail && (typeof video.thumbnail === 'string' || video.thumbnail?.secure_url) ? (
                     <Image 
@@ -176,9 +249,9 @@ export function TopicContentTabs({
                       <Ionicons name="videocam-outline" size={32} color="#9ca3af" />
                     </View>
                   )}
-                  <View className="absolute inset-0 items-center justify-center bg-black/20">
-                    <View className="h-8 w-8 items-center justify-center rounded-full bg-white/90">
-                      <Ionicons name="play" size={16} color="#000" />
+                  <View className="absolute inset-0 items-center justify-center bg-black/30">
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                      <Ionicons name="play" size={20} color="#000" />
                     </View>
                   </View>
                 </View>
@@ -197,8 +270,13 @@ export function TopicContentTabs({
                       {video.size}
                     </Text>
                   </View>
+                  <View className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <Text className="text-xs text-blue-600 dark:text-blue-400 text-center font-medium">
+                      Tap to watch
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
@@ -218,24 +296,41 @@ export function TopicContentTabs({
     <View className="space-y-3">
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Materials ({content?.materials.length || 0})
+          Materials ({materials.length})
         </Text>
-        <TouchableOpacity
-          onPress={onAddMaterial}
-          activeOpacity={0.7}
-          className="flex-row items-center gap-1 bg-green-100 dark:bg-green-900/40 px-3 py-2 rounded-lg"
-        >
-          <Ionicons name="add" size={14} color="#10b981" />
-          <Text className="text-sm font-medium text-green-600 dark:text-green-400">
-            Add Material
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-2">
+          <TouchableOpacity
+            onPress={handleRefresh}
+            activeOpacity={0.7}
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            <Ionicons name="refresh" size={16} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onAddMaterial}
+            activeOpacity={0.7}
+            className="flex-row items-center gap-1 bg-green-100 dark:bg-green-900/40 px-3 py-2 rounded-lg"
+          >
+            <Ionicons name="add" size={14} color="#10b981" />
+            <Text className="text-sm font-medium text-green-600 dark:text-green-400">
+              Add Material
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {content?.materials && content.materials.length > 0 ? (
+      {materials.length > 0 ? (
         <View className="space-y-3">
-          {content.materials.map((material) => (
-            <View key={material.id} className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          {materials
+            .sort((a: TopicContentMaterial, b: TopicContentMaterial) => (a.order || 0) - (b.order || 0))
+            .map((material: TopicContentMaterial, index: number) => (
+            <View key={material.id} className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
+              {/* Order Badge */}
+              <View className="bg-green-600 dark:bg-green-500 rounded-full w-6 h-6 items-center justify-center min-w-[24px]">
+                <Text className="text-xs font-bold text-white">
+                  {material.order || index + 1}
+                </Text>
+              </View>
               <Ionicons name="document-outline" size={20} color="#3b82f6" />
               <View className="flex-1">
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -245,7 +340,7 @@ export function TopicContentTabs({
                   {material.description}
                 </Text>
                 <Text className="text-xs text-gray-500 dark:text-gray-400">
-                  {material.size} • {new Date(material.createdAt).toLocaleDateString()}
+                  {material.size} • {material.createdAt ? new Date(material.createdAt).toLocaleDateString() : 'Unknown date'}
                 </Text>
               </View>
               <TouchableOpacity activeOpacity={0.7}>
@@ -270,7 +365,7 @@ export function TopicContentTabs({
     <View className="space-y-3">
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Assignments ({content?.assignments.length || 0})
+          Assignments ({assignments.length})
         </Text>
         <TouchableOpacity
           onPress={onAddAssignment}
@@ -284,11 +379,19 @@ export function TopicContentTabs({
         </TouchableOpacity>
       </View>
 
-      {content?.assignments && content.assignments.length > 0 ? (
+      {assignments.length > 0 ? (
         <View className="space-y-3">
-          {content.assignments.map((assignment) => (
-            <View key={assignment.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+          {assignments
+            .sort((a: TopicContentAssignment, b: TopicContentAssignment) => (a.order || 0) - (b.order || 0))
+            .map((assignment: TopicContentAssignment) => (
+            <View key={assignment.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
+              {/* Order Badge */}
+              <View className="absolute top-2 right-2 bg-orange-600 dark:bg-orange-500 rounded-full w-6 h-6 items-center justify-center">
+                <Text className="text-xs font-bold text-white">
+                  {assignment.order || 0}
+                </Text>
+              </View>
+              <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 pr-12">
                 {assignment.title ? capitalizeWords(assignment.title) : 'Untitled Assignment'}
               </Text>
               <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -296,7 +399,7 @@ export function TopicContentTabs({
               </Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-xs text-gray-500 dark:text-gray-400">
-                  Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                  Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}
                 </Text>
                 <Text className="text-xs text-gray-500 dark:text-gray-400">
                   Max Score: {assignment.maxScore}
@@ -323,7 +426,7 @@ export function TopicContentTabs({
       <View className="space-y-3">
         <View className="flex-row items-center justify-between">
           <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Quizzes ({content?.quizzes.length || 0})
+            Quizzes ({quizzes.length})
           </Text>
           <TouchableOpacity
             onPress={onAddQuiz}
@@ -337,9 +440,11 @@ export function TopicContentTabs({
           </TouchableOpacity>
         </View>
 
-        {content?.quizzes && content.quizzes.length > 0 ? (
+        {quizzes.length > 0 ? (
           <View className="space-y-2">
-            {content.quizzes.map((quiz) => (
+            {quizzes
+              .sort((a: TopicContentQuiz, b: TopicContentQuiz) => (a.order || 0) - (b.order || 0))
+              .map((quiz: TopicContentQuiz) => (
               <View key={quiz.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   {quiz.title ? capitalizeWords(quiz.title) : 'Untitled Quiz'}
@@ -372,12 +477,14 @@ export function TopicContentTabs({
       {/* Live Classes Section */}
       <View className="space-y-3">
         <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          Live Classes ({content?.liveClasses.length || 0})
+          Live Classes ({liveClasses.length})
         </Text>
 
-        {content?.liveClasses && content.liveClasses.length > 0 ? (
+        {liveClasses.length > 0 ? (
           <View className="space-y-2">
-            {content.liveClasses.map((liveClass) => (
+            {liveClasses
+              .sort((a: TopicContentLiveClass, b: TopicContentLiveClass) => (a.order || 0) - (b.order || 0))
+              .map((liveClass: TopicContentLiveClass) => (
               <View key={liveClass.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   {liveClass.title ? capitalizeWords(liveClass.title) : 'Untitled Live Class'}
@@ -387,7 +494,7 @@ export function TopicContentTabs({
                 </Text>
                 <View className="flex-row items-center gap-4">
                   <Text className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(liveClass.scheduledAt).toLocaleDateString()}
+                    {liveClass.scheduledAt ? new Date(liveClass.scheduledAt).toLocaleDateString() : 'No date set'}
                   </Text>
                   <Text className="text-xs text-gray-500 dark:text-gray-400">
                     Duration: {liveClass.duration} min
@@ -407,12 +514,14 @@ export function TopicContentTabs({
       {/* Library Resources Section */}
       <View className="space-y-3">
         <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          Library Resources ({content?.libraryResources.length || 0})
+          Library Resources ({libraryResources.length})
         </Text>
 
-        {content?.libraryResources && content.libraryResources.length > 0 ? (
+        {libraryResources.length > 0 ? (
           <View className="space-y-2">
-            {content.libraryResources.map((resource) => (
+            {libraryResources
+              .sort((a: TopicContentLibraryResource, b: TopicContentLibraryResource) => (a.order || 0) - (b.order || 0))
+              .map((resource: TopicContentLibraryResource) => (
               <View key={resource.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   {resource.title ? capitalizeWords(resource.title) : 'Untitled Resource'}
@@ -425,7 +534,7 @@ export function TopicContentTabs({
                     Type: {resource.resourceType}
                   </Text>
                   <Text className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(resource.createdAt).toLocaleDateString()}
+                    {resource.createdAt ? new Date(resource.createdAt).toLocaleDateString() : 'Unknown date'}
                   </Text>
                 </View>
               </View>
@@ -455,35 +564,6 @@ export function TopicContentTabs({
         return null;
     }
   };
-
-  if (loading) {
-    return (
-      <View className="items-center justify-center py-12">
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text className="text-gray-500 dark:text-gray-400 mt-3 text-center">
-          Loading topic content...
-        </Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View className="items-center justify-center py-12">
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text className="text-red-500 dark:text-red-400 mt-2 text-center">
-          {error}
-        </Text>
-        <TouchableOpacity
-          onPress={fetchTopicContent}
-          activeOpacity={0.7}
-          className="mt-3 bg-blue-600 py-2 px-4 rounded-lg"
-        >
-          <Text className="text-white font-medium">Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
     <View className="space-y-4">

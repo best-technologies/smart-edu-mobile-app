@@ -7,13 +7,29 @@ import { TopicContentTabs } from './TopicContentTabs';
 
 interface TopicCardProps {
   topic: Topic;
+  subjectName?: string;
+  subjectCode?: string;
   onAddVideo: (topic: Topic) => void;
   onAddMaterial: (topic: Topic) => void;
   onEditInstructions: (topic: Topic) => void;
-  onLongPress?: () => void;
+  onLongPress: () => void;
+  onRefresh?: () => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
 }
 
-export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions, onLongPress }: TopicCardProps) {
+export default function TopicCard({ 
+  topic, 
+  subjectName,
+  subjectCode,
+  onAddVideo, 
+  onAddMaterial, 
+  onEditInstructions, 
+  onLongPress,
+  onRefresh,
+  isExpanded = false,
+  onToggleExpanded
+}: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const getFileIcon = (type: string) => {
@@ -125,7 +141,12 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
           {/* Topic Content Tabs */}
           <View className="p-4">
             <TopicContentTabs
-              topicId={topic.id}
+              topic={topic}
+              topicTitle={topic.title}
+              topicDescription={topic.description}
+              topicInstructions={topic.instructions}
+              subjectName={subjectName}
+              subjectCode={subjectCode}
               onAddVideo={() => onAddVideo(topic)}
               onAddMaterial={() => onAddMaterial(topic)}
               onAddAssignment={() => {
@@ -136,6 +157,7 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
                 // TODO: Implement add quiz functionality
                 console.log('Add quiz for topic:', topic.id);
               }}
+              onRefresh={onRefresh}
             />
           </View>
         </View>
@@ -143,5 +165,3 @@ export function TopicCard({ topic, onAddVideo, onAddMaterial, onEditInstructions
     </View>
   );
 }
-
-export default TopicCard;

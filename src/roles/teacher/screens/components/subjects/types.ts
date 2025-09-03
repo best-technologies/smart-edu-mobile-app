@@ -118,6 +118,7 @@ export interface TopicContentVideo {
   size: string;
   views: number;
   status: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -130,6 +131,7 @@ export interface TopicContentMaterial {
   size: string;
   downloads: number;
   status: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -142,6 +144,7 @@ export interface TopicContentAssignment {
   status: string;
   maxScore: number;
   timeLimit: number;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -154,6 +157,7 @@ export interface TopicContentQuiz {
   totalQuestions: number;
   passingScore: number;
   status: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -165,6 +169,7 @@ export interface TopicContentLiveClass {
   scheduledAt: string;
   duration: number;
   status: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -175,6 +180,7 @@ export interface TopicContentLibraryResource {
   description: string;
   resourceType: string;
   url: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
