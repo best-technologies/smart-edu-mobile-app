@@ -98,7 +98,7 @@ export function TopicContentTabs({
       key={tab.key}
       onPress={() => setActiveTab(tab.key)}
       activeOpacity={0.7}
-      className={`flex-1 py-3 px-2 rounded-lg flex-row items-center justify-center ${
+      className={`py-3 px-4 rounded-lg flex-row items-center justify-center min-w-fit ${
         activeTab === tab.key 
           ? 'bg-blue-100 dark:bg-blue-900/40' 
           : 'bg-gray-100 dark:bg-gray-800'
@@ -109,7 +109,7 @@ export function TopicContentTabs({
         size={16} 
         color={activeTab === tab.key ? '#3b82f6' : '#6b7280'} 
       />
-      <Text className={`ml-1 text-sm font-medium ${
+      <Text className={`ml-1 text-sm font-medium whitespace-nowrap ${
         activeTab === tab.key 
           ? 'text-blue-600 dark:text-blue-400' 
           : 'text-gray-600 dark:text-gray-400'
@@ -127,8 +127,8 @@ export function TopicContentTabs({
   );
 
   const renderVideosTab = () => (
-    <View className="space-y-4">
-      <View className="flex-row items-center justify-between">
+    <View className="space-y-3">
+      <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Videos ({content?.videos.length || 0})
         </Text>
@@ -203,8 +203,8 @@ export function TopicContentTabs({
           })}
         </ScrollView>
       ) : (
-        <View className="items-center py-8">
-          <Ionicons name="play-circle-outline" size={48} color="#9ca3af" />
+        <View className="items-center py-6">
+          <Ionicons name="play-circle-outline" size={40} color="#9ca3af" />
           <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">No videos available yet</Text>
           <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
             Start by adding your first video lesson
@@ -215,8 +215,8 @@ export function TopicContentTabs({
   );
 
   const renderMaterialsTab = () => (
-    <View className="space-y-4">
-      <View className="flex-row items-center justify-between">
+    <View className="space-y-3">
+      <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Materials ({content?.materials.length || 0})
         </Text>
@@ -255,8 +255,8 @@ export function TopicContentTabs({
           ))}
         </View>
       ) : (
-        <View className="items-center py-8">
-          <Ionicons name="document-outline" size={48} color="#9ca3af" />
+        <View className="items-center py-6">
+          <Ionicons name="document-outline" size={40} color="#9ca3af" />
           <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">No materials available yet</Text>
           <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
             Add study materials, PDFs, and other resources
@@ -267,8 +267,8 @@ export function TopicContentTabs({
   );
 
   const renderAssignmentsTab = () => (
-    <View className="space-y-4">
-      <View className="flex-row items-center justify-between">
+    <View className="space-y-3">
+      <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Assignments ({content?.assignments.length || 0})
         </Text>
@@ -306,8 +306,8 @@ export function TopicContentTabs({
           ))}
         </View>
       ) : (
-        <View className="items-center py-8">
-          <Ionicons name="clipboard-outline" size={48} color="#9ca3af" />
+        <View className="items-center py-6">
+          <Ionicons name="clipboard-outline" size={40} color="#9ca3af" />
           <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">No assignments available yet</Text>
           <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
             Create assignments to test student understanding
@@ -487,13 +487,21 @@ export function TopicContentTabs({
 
   return (
     <View className="space-y-4">
-      {/* Tab Navigation */}
-      <View className="flex-row gap-2">
-        {tabs.map(renderTabButton)}
-      </View>
+      {/* Tab Navigation - Horizontally Scrollable */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingRight: 16, paddingLeft: 4 }}
+        className="mb-4"
+        scrollEventThrottle={16}
+      >
+        <View className="flex-row gap-3">
+          {tabs.map(renderTabButton)}
+        </View>
+      </ScrollView>
 
       {/* Tab Content */}
-      <View className="min-h-[400px]">
+      <View className="pb-4">
         {renderTabContent()}
       </View>
     </View>

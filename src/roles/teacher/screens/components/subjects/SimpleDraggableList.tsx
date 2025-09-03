@@ -16,6 +16,7 @@ interface SimpleDraggableListProps {
   onEditInstructions: (topic: Topic) => void;
   onTopicsReorder: (newTopics: Topic[]) => void;
   onRefresh?: () => void;
+  onScroll?: (event: any) => void;
 }
 
 export function SimpleDraggableList({
@@ -25,7 +26,8 @@ export function SimpleDraggableList({
   onAddMaterial,
   onEditInstructions,
   onTopicsReorder,
-  onRefresh
+  onRefresh,
+  onScroll
 }: SimpleDraggableListProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isReordering, setIsReordering] = useState(false);
@@ -206,7 +208,12 @@ export function SimpleDraggableList({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         if (draggedIndex === null) return false;
-        return Math.abs(gestureState.dy) > 5;
+        
+        // Only capture pan if the gesture is primarily vertical and significant
+        const isVerticalGesture = Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        const isSignificantMovement = Math.abs(gestureState.dy) > 10;
+        
+        return isVerticalGesture && isSignificantMovement;
       },
       
       onPanResponderGrant: () => {
@@ -220,6 +227,12 @@ export function SimpleDraggableList({
             tension: 200,
             friction: 8,
           }).start();
+          
+          // Disable parent scroll during drag
+          if (onScroll) {
+            // This will help coordinate with parent scroll
+            onScroll({ type: 'drag_start' });
+          }
         }
       },
       
@@ -272,6 +285,11 @@ export function SimpleDraggableList({
         
         setDraggedIndex(null);
         setHoveredIndex(null);
+        
+        // Re-enable parent scroll after drag
+        if (onScroll) {
+          onScroll({ type: 'drag_end' });
+        }
       },
     }), [draggedIndex, hoveredIndex, pan, scale, topics]);
 
@@ -309,7 +327,15 @@ export function SimpleDraggableList({
   }
 
   return (
-    <View className="relative">
+    <View 
+      className="relative"
+      onLayout={(event) => {
+        // Notify parent of layout changes for better scroll coordination
+        if (onScroll) {
+          onScroll(event);
+        }
+      }}
+    >
       {/* Reorder Instructions */}
       <View className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <View className="flex-row items-center justify-between">

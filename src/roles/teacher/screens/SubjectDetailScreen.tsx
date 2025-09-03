@@ -43,6 +43,7 @@ export default function SubjectDetailScreen() {
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showCreateTopicModal, setShowCreateTopicModal] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // API data using the hook
   const {
@@ -282,9 +283,17 @@ export default function SubjectDetailScreen() {
         )}
       </View>
 
-      {/* Topics List - Separate from ScrollView */}
+      {/* Topics List - Scrollable Container */}
       {!isLoading && !error && localTopics.length > 0 ? (
-        <View className="flex-1 px-6">
+        <ScrollView 
+          className="flex-1 px-6"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          scrollEventThrottle={16}
+          nestedScrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
+          scrollEnabled={!isDragging}
+        >
           <SimpleDraggableList
             topics={localTopics}
             subjectId={displaySubject?.id || subject?.id || ''}
@@ -293,8 +302,16 @@ export default function SubjectDetailScreen() {
             onEditInstructions={handleEditInstructions}
             onTopicsReorder={handleTopicsReorder}
             onRefresh={refetch}
+            onScroll={(event) => {
+              // Handle scroll events from drag operations
+              if (event?.type === 'drag_start') {
+                setIsDragging(true);
+              } else if (event?.type === 'drag_end') {
+                setIsDragging(false);
+              }
+            }}
           />
-        </View>
+        </ScrollView>
       ) : !isLoading && !error ? (
         <View className="flex-1 px-6 py-4">
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
