@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -32,6 +32,263 @@ const mockData = {
     { id: 'pending', name: 'Pending' },
     { id: 'graded', name: 'Graded' },
   ],
+  submissions: [
+    {
+      id: '1',
+      type: 'Assignment',
+      student: {
+        name: 'John Doe',
+        avatar: null,
+        id: 'S001'
+      },
+      attached: {
+        type: 'document',
+        name: 'Math_Assignment_1.pdf',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: '2',
+      type: 'Quiz',
+      student: {
+        name: 'Jane Smith',
+        avatar: null,
+        id: 'S002'
+      },
+      attached: {
+        type: 'video',
+        name: 'Problem_Solving_Video.mp4',
+        url: '#'
+      },
+      status: 'graded',
+      score: 85,
+      submittedAt: '2024-01-14T14:20:00Z'
+    },
+    {
+      id: '3',
+      type: 'Class Work',
+      student: {
+        name: 'Mike Johnson',
+        avatar: null,
+        id: 'S003'
+      },
+      attached: {
+        type: 'image',
+        name: 'Handwritten_Notes.jpg',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-16T09:15:00Z'
+    },
+    {
+      id: '4',
+      type: 'Assignment',
+      student: {
+        name: 'Sarah Wilson',
+        avatar: null,
+        id: 'S004'
+      },
+      attached: {
+        type: 'link',
+        name: 'Online_Research_Link',
+        url: 'https://example.com'
+      },
+      status: 'graded',
+      score: 92,
+      submittedAt: '2024-01-13T16:45:00Z'
+    },
+    {
+      id: '5',
+      type: 'Exam',
+      student: {
+        name: 'David Brown',
+        avatar: null,
+        id: 'S005'
+      },
+      attached: {
+        type: 'document',
+        name: 'Final_Exam_Answers.pdf',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-17T11:00:00Z'
+    },
+    {
+      id: '6',
+      type: 'Assignment',
+      student: {
+        name: 'Emily Davis',
+        avatar: null,
+        id: 'S006'
+      },
+      attached: {
+        type: 'image',
+        name: 'Math_Problem_Solution.jpg',
+        url: '#'
+      },
+      status: 'graded',
+      score: 78,
+      submittedAt: '2024-01-16T15:30:00Z'
+    },
+    {
+      id: '7',
+      type: 'Quiz',
+      student: {
+        name: 'Michael Wilson',
+        avatar: null,
+        id: 'S007'
+      },
+      attached: {
+        type: 'video',
+        name: 'Science_Experiment_Demo.mp4',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-18T09:45:00Z'
+    },
+    {
+      id: '8',
+      type: 'Class Work',
+      student: {
+        name: 'Sarah Johnson',
+        avatar: null,
+        id: 'S008'
+      },
+      attached: {
+        type: 'document',
+        name: 'History_Essay.docx',
+        url: '#'
+      },
+      status: 'graded',
+      score: 95,
+      submittedAt: '2024-01-15T14:20:00Z'
+    },
+    {
+      id: '9',
+      type: 'Assignment',
+      student: {
+        name: 'James Miller',
+        avatar: null,
+        id: 'S009'
+      },
+      attached: {
+        type: 'link',
+        name: 'Research_Article_Link',
+        url: 'https://example.com/research'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-19T12:15:00Z'
+    },
+    {
+      id: '10',
+      type: 'Exam',
+      student: {
+        name: 'Lisa Anderson',
+        avatar: null,
+        id: 'S010'
+      },
+      attached: {
+        type: 'document',
+        name: 'Physics_Exam_Answers.pdf',
+        url: '#'
+      },
+      status: 'graded',
+      score: 88,
+      submittedAt: '2024-01-14T16:00:00Z'
+    },
+    {
+      id: '11',
+      type: 'Quiz',
+      student: {
+        name: 'Robert Taylor',
+        avatar: null,
+        id: 'S011'
+      },
+      attached: {
+        type: 'image',
+        name: 'Chemistry_Lab_Results.png',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-20T10:30:00Z'
+    },
+    {
+      id: '12',
+      type: 'Class Work',
+      student: {
+        name: 'Jennifer White',
+        avatar: null,
+        id: 'S012'
+      },
+      attached: {
+        type: 'video',
+        name: 'Literature_Presentation.mp4',
+        url: '#'
+      },
+      status: 'graded',
+      score: 92,
+      submittedAt: '2024-01-13T13:45:00Z'
+    },
+    {
+      id: '13',
+      type: 'Assignment',
+      student: {
+        name: 'Christopher Lee',
+        avatar: null,
+        id: 'S013'
+      },
+      attached: {
+        type: 'document',
+        name: 'Geography_Project_Report.pdf',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-21T11:20:00Z'
+    },
+    {
+      id: '14',
+      type: 'Exam',
+      student: {
+        name: 'Amanda Garcia',
+        avatar: null,
+        id: 'S014'
+      },
+      attached: {
+        type: 'link',
+        name: 'Online_Quiz_Submission',
+        url: 'https://example.com/quiz'
+      },
+      status: 'graded',
+      score: 76,
+      submittedAt: '2024-01-12T15:10:00Z'
+    },
+    {
+      id: '15',
+      type: 'Quiz',
+      student: {
+        name: 'Daniel Martinez',
+        avatar: null,
+        id: 'S015'
+      },
+      attached: {
+        type: 'image',
+        name: 'Biology_Diagram_Labeled.jpg',
+        url: '#'
+      },
+      status: 'pending',
+      score: null,
+      submittedAt: '2024-01-22T08:45:00Z'
+    }
+  ]
 };
 
 type SelectionState = {
@@ -49,6 +306,7 @@ export default function GradingScreen() {
     gradeType: null,
     status: 'all',
   });
+  const [selectedAssignment, setSelectedAssignment] = useState<string>('1');
 
   const handleSelection = (type: keyof SelectionState, value: string) => {
     setSelections(prev => {
@@ -69,6 +327,65 @@ export default function GradingScreen() {
   const isClassSelectable = selections.subject !== null;
   const isGradeTypeSelectable = selections.class !== null;
   const isStatusSelectable = selections.gradeType !== null;
+
+  // Get available assignment numbers based on grade type
+  const getAvailableAssignments = () => {
+    const gradeType = selections.gradeType;
+    if (gradeType === 'assignment') return ['1', '2', '3', '4', '5'];
+    if (gradeType === 'quiz') return ['1', '2', '3'];
+    if (gradeType === 'classwork') return ['1', '2', '3', '4'];
+    if (gradeType === 'exam') return ['1', '2'];
+    return ['1', '2', '3', '4', '5']; // default for 'all'
+  };
+
+  // Get filtered submissions based on selections
+  const getFilteredSubmissions = () => {
+    return mockData.submissions.filter(submission => {
+      const gradeTypeMatch = selections.gradeType === 'all' || 
+        submission.type.toLowerCase().replace(' ', '') === selections.gradeType;
+      const statusMatch = selections.status === 'all' || 
+        submission.status === selections.status;
+      return gradeTypeMatch && statusMatch;
+    });
+  };
+
+  const getAttachmentIcon = (type: string) => {
+    switch (type) {
+      case 'document': return 'document-text-outline';
+      case 'video': return 'videocam-outline';
+      case 'image': return 'image-outline';
+      case 'link': return 'link-outline';
+      default: return 'attach-outline';
+    }
+  };
+
+  const getAttachmentColor = (type: string) => {
+    switch (type) {
+      case 'document': return '#ef4444';
+      case 'video': return '#8b5cf6';
+      case 'image': return '#10b981';
+      case 'link': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return '#f59e0b';
+      case 'graded': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+  const handleViewSubmission = (submission: any) => {
+    console.log('View submission:', submission);
+    // Navigate to submission detail screen
+  };
+
+  const handleGradeSubmission = (submission: any) => {
+    console.log('Grade submission:', submission);
+    // Navigate to grading screen
+  };
 
   const HorizontalList = ({ 
     data, 
@@ -224,15 +541,156 @@ export default function GradingScreen() {
               title="Select Status"
             />
 
-            {/* Table Placeholder */}
+            {/* Submissions Table */}
             {isStatusSelectable && (
-              <View className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
-                <Text className="text-lg font-semibold text-gray-900 mb-4">Submissions Table</Text>
-                <View className="items-center py-8">
-                  <Ionicons name="tablet-outline" size={48} color="#9CA3AF" />
-                  <Text className="text-gray-500 mt-2">Table will be implemented here</Text>
-                  <Text className="text-sm text-gray-400 mt-1">Selected: {mockData.subjects.find(s => s.id === selections.subject)?.name} • {mockData.classes.find(c => c.id === selections.class)?.name} • {mockData.gradeTypes.find(g => g.id === selections.gradeType)?.name} • {mockData.statusTypes.find(s => s.id === selections.status)?.name}</Text>
+              <View className="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <View className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className="text-lg font-semibold text-gray-900">Submissions</Text>
+                      <Text className="text-sm text-gray-500 mt-1">
+                        {getFilteredSubmissions().length} submission{getFilteredSubmissions().length !== 1 ? 's' : ''} found
+                      </Text>
+                    </View>
+                    
+                    {/* Assignment Selector Dropdown */}
+                    {isStatusSelectable && (
+                      <View className="flex-row items-center">
+                        <Text className="text-sm text-gray-600 mr-2">Assignment:</Text>
+                        <View className="bg-white border border-gray-300 rounded-lg px-3 py-1">
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            <View className="flex-row">
+                              {getAvailableAssignments().map((assignmentNum) => (
+                                <TouchableOpacity
+                                  key={assignmentNum}
+                                  onPress={() => setSelectedAssignment(assignmentNum)}
+                                  className={`px-3 py-1 rounded-md mr-1 ${
+                                    selectedAssignment === assignmentNum
+                                      ? 'bg-blue-500'
+                                      : 'bg-gray-100'
+                                  }`}
+                                >
+                                  <Text className={`text-sm font-medium ${
+                                    selectedAssignment === assignmentNum
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                  }`}>
+                                    {assignmentNum}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          </ScrollView>
+                        </View>
+                      </View>
+                    )}
+                  </View>
                 </View>
+
+                {/* Horizontal Scrollable Table */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} className="flex-1">
+                  <View style={{ minWidth: 600 }}>
+                    {/* Table Header */}
+                    <View className="flex-row bg-gray-100 px-4 py-3 border-b border-gray-200 items-center">
+                      <View className="w-20">
+                        <Text className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Type</Text>
+                      </View>
+                      <View className="w-32 ml-4 items-center">
+                        <Ionicons name="person-outline" size={16} color="#6b7280" />
+                      </View>
+                      <View className="w-40 ml-4 items-center">
+                        <Ionicons name="attach-outline" size={16} color="#6b7280" />
+                      </View>
+                      <View className="w-20 ml-4 items-center">
+                        <Ionicons name="checkmark-circle-outline" size={16} color="#6b7280" />
+                      </View>
+                      <View className="w-16 ml-4 items-center">
+                        <Ionicons name="trophy-outline" size={16} color="#6b7280" />
+                      </View>
+                      <View className="w-20 ml-4 items-center">
+                        <Ionicons name="settings-outline" size={16} color="#6b7280" />
+                      </View>
+                    </View>
+
+                    {/* Table Rows - Fixed Height Container */}
+                    <View style={{ maxHeight: 400 }}>
+                      <ScrollView 
+                        showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled={true}
+                        bounces={true}
+                      >
+                        {getFilteredSubmissions().map((submission, index) => (
+                          <View key={submission.id} className={`flex-row px-4 py-3 border-b border-gray-100 items-center ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            {/* Type Column */}
+                            <View className="w-20 items-center">
+                              <Text className="text-xs font-medium text-gray-900">{submission.type}</Text>
+                            </View>
+
+                            {/* Student Column */}
+                            <View className="w-32 ml-4 flex-row items-center">
+                              <View className="w-6 h-6 bg-gray-300 rounded-full items-center justify-center mr-2">
+                                <Ionicons name="person-outline" size={12} color="#6b7280" />
+                              </View>
+                              <Text className="text-sm text-gray-900 flex-1" numberOfLines={1}>{submission.student.name}</Text>
+                            </View>
+
+                            {/* Attached Column */}
+                            <View className="w-40 ml-4 flex-row items-center">
+                              <Ionicons 
+                                name={getAttachmentIcon(submission.attached.type) as any} 
+                                size={16} 
+                                color={getAttachmentColor(submission.attached.type)} 
+                              />
+                              <Text className="text-sm text-gray-900 ml-2 flex-1" numberOfLines={1}>{submission.attached.name}</Text>
+                            </View>
+
+                            {/* Status Column */}
+                            <View className="w-20 ml-4 items-center">
+                              <Text className={`text-xs font-medium capitalize ${
+                                submission.status === 'pending' ? 'text-orange-600' : 'text-green-600'
+                              }`}>
+                                {submission.status}
+                              </Text>
+                            </View>
+
+                            {/* Score Column */}
+                            <View className="w-16 ml-4 items-center">
+                              {submission.score !== null ? (
+                                <Text className="text-sm font-semibold text-gray-900">{submission.score}%</Text>
+                              ) : (
+                                <Text className="text-sm text-gray-400">-</Text>
+                              )}
+                            </View>
+
+                            {/* Action Column */}
+                            <View className="w-20 ml-4 flex-row items-center justify-center">
+                              <TouchableOpacity
+                                onPress={() => handleViewSubmission(submission)}
+                                className="p-1 mr-1"
+                              >
+                                <Ionicons name="eye-outline" size={16} color="#6b7280" />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handleGradeSubmission(submission)}
+                                className="p-1"
+                              >
+                                <Ionicons name="create-outline" size={16} color="#3b82f6" />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+
+                    {getFilteredSubmissions().length === 0 && (
+                      <View className="items-center py-8">
+                        <Ionicons name="document-outline" size={48} color="#9CA3AF" />
+                        <Text className="text-gray-500 mt-2">No submissions found</Text>
+                        <Text className="text-sm text-gray-400 mt-1">Try adjusting your filters</Text>
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
               </View>
             )}
           </View>

@@ -11,6 +11,7 @@ import VideoDemoScreen from './screens/VideoDemoScreen';
 import NotificationDetailScreen from './screens/notifications/NotificationDetailScreen';
 import NotificationsListScreen from './screens/notifications/NotificationsListScreen';
 import GradingScreen from './screens/GradingScreen';
+import AIChatScreen from './screens/AIChatScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -76,12 +77,19 @@ function TeacherTabNavigator() {
 
 export default function TeacherTabs() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 300,
+      }}
+    >
       <Stack.Screen name="TeacherTabs" component={TeacherTabNavigator} />
       <Stack.Screen name="SubjectDetail" component={SubjectDetailScreen} />
       <Stack.Screen name="VideoDemo" component={VideoDemoScreen} />
       <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
       <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
+      <Stack.Screen name="AIChat" component={AIChatScreen} />
     </Stack.Navigator>
   );
 }

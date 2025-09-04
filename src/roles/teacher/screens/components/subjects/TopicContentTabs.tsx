@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { capitalizeWords } from '@/utils/textFormatter';
@@ -29,6 +29,69 @@ interface TopicContentTabsProps {
   onAddQuiz: () => void;
   onRefresh?: () => void;
 }
+
+// Animated AI Icon Component
+const AnimatedAIIcon = ({ onPress }: { onPress: () => void }) => {
+  const scaleAnim = new Animated.Value(1);
+  const opacityAnim = new Animated.Value(0.8);
+
+  useEffect(() => {
+    const createBreathingAnimation = () => {
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(scaleAnim, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0.8,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => createBreathingAnimation());
+    };
+
+    createBreathingAnimation();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        transform: [{ scale: scaleAnim }],
+        opacity: opacityAnim,
+      }}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        className="w-10 h-10 bg-white dark:bg-gray-100 rounded-full items-center justify-center shadow-lg border-2 border-purple-200 dark:border-purple-300"
+        style={{
+          shadowColor: '#8B5CF6',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.4,
+          shadowRadius: 6,
+          elevation: 10,
+        }}
+      >
+        <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export function TopicContentTabs({ 
   topic,
@@ -116,6 +179,16 @@ export function TopicContentTabs({
     // For now, just show an alert. Later this can open a material viewer or download
     console.log('Material pressed:', material);
     // You can implement material viewing/downloading logic here
+  };
+
+  const handleAIChatPress = (material: TopicContentMaterial) => {
+    // Navigate to AI Chat screen
+    console.log('AI Chat icon pressed for material:', material.title);
+    (navigation as any).navigate('AIChat', { 
+      materialTitle: material.title,
+      materialDescription: material.description,
+      materialUrl: material.url
+    });
   };
 
   const getFileTypeFromUrl = (url: string) => {
@@ -377,6 +450,11 @@ export function TopicContentTabs({
                   <Text className="text-xs font-bold text-white">
                     {material.order || index + 1}
                   </Text>
+                </View>
+
+                {/* AI Icon - Top Right */}
+                <View className="absolute top-2 right-2 z-20">
+                  <AnimatedAIIcon onPress={() => handleAIChatPress(material)} />
                 </View>
 
                 {/* Material Preview Area */}

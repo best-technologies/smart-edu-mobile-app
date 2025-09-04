@@ -84,8 +84,6 @@ class PushNotificationService {
     try {
       // Build absolute URL (relative URLs fail on device)
       const url = `${API_CONFIG.BASE_URL}/push-notifications/register-device`;
-      console.log('Register token with backend:', url);
-      // This endpoint should save the token to your database and associate it with the current user
       const res = await fetch(url, {
         method: 'POST',
         headers: {

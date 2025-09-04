@@ -55,7 +55,10 @@ export default function RootNavigator() {
 
   const handleNavigationReady = () => {
     console.log('🚀 NavigationContainer is ready');
-    setIsNavigationReady(true);
+    // Add a longer delay to ensure navigation context is fully initialized
+    setTimeout(() => {
+      setIsNavigationReady(true);
+    }, 200);
   };
 
   return (

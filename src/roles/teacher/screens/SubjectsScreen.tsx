@@ -8,6 +8,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type TeacherStackParamList = {
   TeacherTabs: undefined;
   SubjectDetail: { subject: Subject };
+  VideoDemo: {
+    videoUri: string;
+    videoTitle: string;
+    videoDescription: string;
+    topicTitle: string;
+    topicDescription: string;
+    topicInstructions: string;
+    subjectName: string;
+    subjectCode: string;
+  };
 };
 
 type TeacherNavigationProp = NativeStackNavigationProp<TeacherStackParamList>;
