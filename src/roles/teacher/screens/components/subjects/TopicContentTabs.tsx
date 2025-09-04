@@ -112,6 +112,41 @@ export function TopicContentTabs({
     });
   };
 
+  const handleMaterialPress = (material: TopicContentMaterial) => {
+    // For now, just show an alert. Later this can open a material viewer or download
+    console.log('Material pressed:', material);
+    // You can implement material viewing/downloading logic here
+  };
+
+  const getFileTypeFromUrl = (url: string) => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    return extension || 'unknown';
+  };
+
+  const getMaterialIcon = (url: string) => {
+    const fileType = getFileTypeFromUrl(url);
+    switch (fileType) {
+      case 'pdf': return 'document-text-outline';
+      case 'doc': 
+      case 'docx': return 'document-outline';
+      case 'ppt': 
+      case 'pptx': return 'easel-outline';
+      default: return 'document-outline';
+    }
+  };
+
+  const getMaterialColor = (url: string) => {
+    const fileType = getFileTypeFromUrl(url);
+    switch (fileType) {
+      case 'pdf': return '#ef4444';
+      case 'doc': 
+      case 'docx': return '#3b82f6';
+      case 'ppt': 
+      case 'pptx': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
+
   // Handle refresh - use React Query refetch
   const handleRefresh = () => {
     refetch();
@@ -320,35 +355,78 @@ export function TopicContentTabs({
       </View>
 
       {materials.length > 0 ? (
-        <View className="space-y-3">
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+        >
           {materials
             .sort((a: TopicContentMaterial, b: TopicContentMaterial) => (a.order || 0) - (b.order || 0))
-            .map((material: TopicContentMaterial, index: number) => (
-            <View key={material.id} className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
-              {/* Order Badge */}
-              <View className="bg-green-600 dark:bg-green-500 rounded-full w-6 h-6 items-center justify-center min-w-[24px]">
-                <Text className="text-xs font-bold text-white">
-                  {material.order || index + 1}
-                </Text>
-              </View>
-              <Ionicons name="document-outline" size={20} color="#3b82f6" />
-              <View className="flex-1">
-                <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {material.title ? capitalizeWords(material.title) : 'Untitled Material'}
-                </Text>
-                <Text className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {material.description}
-                </Text>
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
-                  {material.size} • {material.createdAt ? new Date(material.createdAt).toLocaleDateString() : 'Unknown date'}
-                </Text>
-              </View>
-              <TouchableOpacity activeOpacity={0.7}>
-                <Ionicons name="download-outline" size={16} color="#6b7280" />
+            .map((material: TopicContentMaterial, index: number) => {
+            return (
+              <TouchableOpacity
+                key={material.id}
+                onPress={() => handleMaterialPress(material)}
+                activeOpacity={0.8}
+                className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative ${
+                  index === 0 ? 'ml-0' : 'ml-3'
+                }`}
+              >
+                {/* Order Badge */}
+                <View className="absolute top-2 left-2 z-10 bg-green-600 dark:bg-green-500 rounded-full w-6 h-6 items-center justify-center">
+                  <Text className="text-xs font-bold text-white">
+                    {material.order || index + 1}
+                  </Text>
+                </View>
+
+                {/* Material Preview Area */}
+                <View className="h-24 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 items-center justify-center relative">
+                  <Ionicons 
+                    name={getMaterialIcon(material.url)} 
+                    size={32} 
+                    color={getMaterialColor(material.url)} 
+                  />
+                  <View className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 rounded-full px-2 py-1">
+                    <Text className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {getFileTypeFromUrl(material.url).toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Material Info */}
+                <View className="p-3">
+                  <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
+                    {material.title ? capitalizeWords(material.title) : 'Untitled Material'}
+                  </Text>
+                  <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2" numberOfLines={2}>
+                    {material.description || 'No description available'}
+                  </Text>
+                  
+                  {/* Material Stats */}
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons name="document-outline" size={12} color="#6b7280" />
+                      <Text className="text-xs text-gray-500 dark:text-gray-400">
+                        {material.size || 'Unknown size'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity 
+                      activeOpacity={0.7}
+                      className="p-1 rounded-full bg-gray-100 dark:bg-gray-700"
+                    >
+                      <Ionicons name="download-outline" size={14} color="#6b7280" />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Upload Date */}
+                  <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {material.createdAt ? new Date(material.createdAt).toLocaleDateString() : 'Unknown date'}
+                  </Text>
+                </View>
               </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+            );
+          })}
+        </ScrollView>
       ) : (
         <View className="items-center py-6">
           <Ionicons name="document-outline" size={40} color="#9ca3af" />

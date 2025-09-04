@@ -10,6 +10,7 @@ import SubjectDetailScreen from './screens/SubjectDetailScreen';
 import VideoDemoScreen from './screens/VideoDemoScreen';
 import NotificationDetailScreen from './screens/notifications/NotificationDetailScreen';
 import NotificationsListScreen from './screens/notifications/NotificationsListScreen';
+import GradingScreen from './screens/GradingScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -48,7 +49,7 @@ function TeacherTabNavigator() {
             Students: 'school-outline',
             Schedules: 'calendar-outline',
             Subjects: 'book-outline',
-            Grading: 'clipboard-outline',
+            Grades: 'clipboard-outline',
           };
           const name = map[route.name] ?? 'ellipse-outline';
           return <Ionicons name={name} size={20} color={color} />;
@@ -68,7 +69,7 @@ function TeacherTabNavigator() {
       <Tab.Screen name="Students" component={StudentsScreen} />
       <Tab.Screen name="Schedules" component={SchedulesScreen} />
       <Tab.Screen name="Subjects" component={SubjectsScreen} />
-      <Tab.Screen name="Grades" children={() => <Screen label="Grades" />} />
+      <Tab.Screen name="Grades" component={GradingScreen} />
     </Tab.Navigator>
   );
 }
