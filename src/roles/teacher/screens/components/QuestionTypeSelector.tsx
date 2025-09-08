@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  TextInput,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { QuestionType } from '@/services/types/cbtTypes';
@@ -12,8 +14,9 @@ import { QuestionType } from '@/services/types/cbtTypes';
 interface QuestionTypeSelectorProps {
   selectedType: QuestionType;
   onTypeSelect: (type: QuestionType) => void;
-  onAddQuestion: (type: QuestionType) => void;
+  onAddQuestion: (questionData: any) => void;
   isLoading: boolean;
+  isNew?: boolean;
 }
 
 const QUESTION_TYPES: Array<{
@@ -114,65 +117,164 @@ export default function QuestionTypeSelector({
   onTypeSelect,
   onAddQuestion,
   isLoading,
+  isNew = false,
 }: QuestionTypeSelectorProps) {
   const [showTypeModal, setShowTypeModal] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [options, setOptions] = useState([
+    { text: '', isCorrect: false },
+  ]);
 
   const selectedTypeInfo = QUESTION_TYPES.find(t => t.type === selectedType);
 
   const handleAddQuestion = () => {
-    onAddQuestion(selectedType);
+    const questionData = {
+      question_text: questionText,
+      question_type: selectedType,
+      order: 1,
+      points: 1,
+      is_required: true,
+      difficulty_level: 'MEDIUM' as const,
+      show_hint: false,
+      allow_multiple_attempts: false,
+      ...(selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE' ? {
+        options: options.map((opt, idx) => ({
+          option_text: opt.text,
+          order: idx + 1,
+          is_correct: opt.isCorrect,
+        }))
+      } : {}),
+    };
+
+    onAddQuestion(questionData);
     setShowTypeModal(false);
   };
 
   return (
-    <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-      {/* Current Selection */}
-      <View className="flex-row items-center justify-between mb-4">
-        <View className="flex-1">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Question Type
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowTypeModal(true)}
-            className="flex-row items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-600"
-            activeOpacity={0.7}
-          >
-            <View className="flex-row items-center gap-3">
-              <Ionicons 
-                name={selectedTypeInfo?.icon as any} 
-                size={20} 
-                color={selectedTypeInfo?.color} 
-              />
-              <View>
-                <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                  {selectedTypeInfo?.label}
-                </Text>
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedTypeInfo?.description}
-                </Text>
+    <View className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
+      {/* Drag Handle */}
+      <View className="flex-row items-start">
+        <View className="w-8 h-16 flex items-center justify-center">
+          <View className="flex-row flex-wrap w-3 h-4 gap-0.5">
+            {[...Array(6)].map((_, i) => (
+              <View key={i} className="w-1 h-1 bg-gray-400 rounded-full" />
+            ))}
+          </View>
+        </View>
+        
+        {/* Main Question Content */}
+        <View className="flex-1 pt-4 pr-4 pb-4">
+          {/* Question Title with Blue Left Border */}
+          <View className="border-l-4 border-blue-500 pl-4 mb-4">
+            <TextInput
+              value={questionText}
+              onChangeText={setQuestionText}
+              placeholder="Untitled Question"
+              className="text-lg font-normal text-gray-900 dark:text-gray-100 bg-transparent"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+            <View className="h-0.5 bg-purple-500 mt-2" />
+          </View>
+
+          {/* Question Type Selector */}
+          <View className="flex-row items-center justify-between mb-4 px-4">
+            <TouchableOpacity
+              onPress={() => setShowTypeModal(true)}
+              className="flex-row items-center gap-2"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="radio-button-on" size={20} color="#6b7280" />
+              <Text className="text-gray-700 dark:text-gray-300">
+                {selectedTypeInfo?.label}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#6b7280" />
+            </TouchableOpacity>
+            <TouchableOpacity className="p-1">
+              <Ionicons name="image-outline" size={20} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Options - Only show for multiple choice questions */}
+          {(selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE') && (
+            <View className="px-4 mb-4">
+              <View className="space-y-4">
+                {options.map((option, index) => (
+                  <View key={index} className="flex-row items-center gap-3 py-2">
+                    <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                    <TextInput
+                      value={option.text}
+                      onChangeText={(text) => {
+                        const newOptions = [...options];
+                        newOptions[index].text = text;
+                        setOptions(newOptions);
+                      }}
+                      placeholder={option.text === '' ? 'Enter option text' : `Option ${index + 1}`}
+                      className="flex-1 text-gray-700 dark:text-gray-300 bg-transparent py-2"
+                      placeholderTextColor="#9ca3af"
+                    />
+                    <TouchableOpacity 
+                      onPress={() => {
+                        if (options.length > 1) {
+                          const newOptions = options.filter((_, i) => i !== index);
+                          setOptions(newOptions);
+                        }
+                      }}
+                      className="p-2 ml-1"
+                    >
+                      <Ionicons name="close" size={20} color="#6b7280" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log('Add option pressed, current options:', options);
+                    setOptions([...options, { text: '', isCorrect: false }]);
+                  }}
+                  className="flex-row items-center gap-3 py-3"
+                  activeOpacity={0.7}
+                >
+                  <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                  <Text className="text-gray-500 dark:text-gray-400">
+                    Add option
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
-            <Ionicons name="chevron-down" size={20} color="#9ca3af" />
-          </TouchableOpacity>
+          )}
+
+          {/* Bottom Toolbar */}
+          <View className="px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-4">
+                <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
+                  <Switch
+                    value={false}
+                    trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
+                    thumbColor="#f3f4f6"
+                  />
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddQuestion}
+                disabled={isLoading}
+                className={`px-4 py-2 rounded-lg flex-row items-center ${
+                  isLoading ? 'bg-gray-400' : 'bg-purple-600'
+                }`}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add-circle" size={18} color="white" />
+                <Text className="text-white font-medium ml-2 text-sm">
+                  Add Question
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Add Question Button */}
-      <TouchableOpacity
-        onPress={handleAddQuestion}
-        disabled={isLoading}
-        className={`flex-row items-center justify-center py-3 px-4 rounded-lg ${
-          isLoading 
-            ? 'bg-gray-300' 
-            : 'bg-blue-600'
-        }`}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add-circle" size={20} color="white" />
-        <Text className="text-white font-semibold ml-2">
-          {isLoading ? 'Adding...' : 'Add Question'}
-        </Text>
-      </TouchableOpacity>
 
       {/* Question Type Modal */}
       <Modal
@@ -250,25 +352,6 @@ export default function QuestionTypeSelector({
               ))}
             </View>
           </ScrollView>
-
-          {/* Modal Footer */}
-          <View className="bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <TouchableOpacity
-              onPress={handleAddQuestion}
-              disabled={isLoading}
-              className={`flex-row items-center justify-center py-3 px-4 rounded-lg ${
-                isLoading 
-                  ? 'bg-gray-300' 
-                  : 'bg-blue-600'
-              }`}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add-circle" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">
-                {isLoading ? 'Adding...' : `Add ${selectedTypeInfo?.label} Question`}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </Modal>
     </View>

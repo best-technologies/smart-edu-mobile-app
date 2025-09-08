@@ -13,6 +13,7 @@ import NotificationsListScreen from './screens/notifications/NotificationsListSc
 import GradingScreen from './screens/GradingScreen';
 import AIChatScreen from './screens/AIChatScreen';
 import CBTCreationScreen from './screens/CBTCreationScreen';
+import CBTQuestionCreationScreen from './screens/CBTQuestionCreationScreen';
 import AssessmentsListScreen from './screens/AssessmentsListScreen';
 
 function Screen({ label }: { label: string }) {
@@ -94,6 +95,7 @@ export default function TeacherTabs() {
       <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
       <Stack.Screen name="CBTCreation" component={CBTCreationScreen} />
+      <Stack.Screen name="CBTQuestionCreation" component={CBTQuestionCreationScreen} />
     </Stack.Navigator>
   );
 }

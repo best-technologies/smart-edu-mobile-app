@@ -108,6 +108,28 @@ export class CBTService {
     return response.data;
   }
 
+  // New method for getting assessment questions with full response structure
+  async getAssessmentQuestions(assessmentId: string): Promise<{
+    assessment: any;
+    questions: CBTQuestion[];
+    total_questions: number;
+    total_points: number;
+  }> {
+    const response = await this.httpClient.makeRequest<{
+      assessment: any;
+      questions: CBTQuestion[];
+      total_questions: number;
+      total_points: number;
+    }>(
+      `/teachers/assessments/${assessmentId}/questions`,
+      'GET'
+    );
+    if (!response.data) {
+      throw new Error('No assessment questions data received from server');
+    }
+    return response.data;
+  }
+
   async updateQuestion(
     quizId: string, 
     questionId: string, 

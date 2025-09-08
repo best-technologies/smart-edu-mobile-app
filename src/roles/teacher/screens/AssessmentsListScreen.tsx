@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, A
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { useTeacherSubjects } from '@/hooks/useTeacherSubjects';
 import { CenteredLoader } from '@/components';
 import { cbtService } from '@/services/api/cbtService';
@@ -11,9 +12,11 @@ import { CBTQuiz, AssessmentsResponse } from '@/services/types/cbtTypes';
 const { width } = Dimensions.get('window');
 
 export default function AssessmentsListScreen() {
+  const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [selectedFilter, setSelectedFilter] = useState<string>('All');
   const limit = 10;
 
   const {
@@ -110,6 +113,50 @@ export default function AssessmentsListScreen() {
     console.log('Subject pressed:', subject.name);
     setSelectedSubjectId(subject.id);
     setPage(1); // Reset to first page when changing subjects
+    setSelectedFilter('All'); // Reset filter when changing subjects
+  };
+
+  const handleFilterChange = (filter: string) => {
+    console.log('Filter changed to:', filter);
+    setSelectedFilter(filter);
+    // No need to reset page since we're filtering client-side
+  };
+
+  const handleCreateAssessment = () => {
+    if (!selectedSubjectId) {
+      Alert.alert('No Subject Selected', 'Please select a subject first before creating an assessment.');
+      return;
+    }
+
+    const selectedSubject = subjects.find(subject => subject.id === selectedSubjectId);
+    if (!selectedSubject) {
+      Alert.alert('Subject Not Found', 'Selected subject not found. Please try again.');
+      return;
+    }
+
+    console.log('➕ Navigating to CBT Creation with subject:', selectedSubject.name);
+    navigation.navigate('CBTCreation', {
+      subjectId: selectedSubjectId,
+      subjectName: selectedSubject.name,
+    });
+  };
+
+  const handleViewAssessment = (assessment: CBTQuiz) => {
+    console.log('👁️ Navigating to question creation for assessment:', assessment.title);
+    navigation.navigate('CBTQuestionCreation', {
+      quizId: assessment.id,
+      quizTitle: assessment.title,
+      subjectId: assessment.subject_id,
+    });
+  };
+
+  const handleEditAssessment = (assessment: CBTQuiz) => {
+    console.log('✏️ Navigating to question creation for assessment:', assessment.title);
+    navigation.navigate('CBTQuestionCreation', {
+      quizId: assessment.id,
+      quizTitle: assessment.title,
+      subjectId: assessment.subject_id,
+    });
   };
 
   const handleDeleteAssessment = (assessment: CBTQuiz) => {
@@ -161,12 +208,26 @@ export default function AssessmentsListScreen() {
     return status;
   };
 
-  // Convert grouped assessments to flat array
+  // Convert grouped assessments to flat array and apply client-side filtering
   const allAssessments = assessmentsData?.assessments 
     ? Object.values(assessmentsData.assessments).flat()
     : [];
   const pagination = assessmentsData?.pagination;
-  const assessments = Array.isArray(allAssessments) ? allAssessments : [];
+  
+  // Apply client-side filtering
+  const filteredAssessments = Array.isArray(allAssessments) 
+    ? allAssessments.filter(assessment => {
+        if (selectedFilter === 'All') return true;
+        if (selectedFilter === 'OTHER') {
+          // Show assessments that are not in the main categories
+          const mainCategories = ['ASSIGNMENT', 'CBT', 'EXAM'];
+          return !mainCategories.includes(assessment.assessment_type);
+        }
+        return assessment.assessment_type === selectedFilter;
+      })
+    : [];
+  
+  const assessments = filteredAssessments;
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -266,10 +327,7 @@ export default function AssessmentsListScreen() {
                   Assessments
                 </Text>
                 <TouchableOpacity
-                  onPress={() => {
-                    console.log('➕ User requested to create assessment');
-                    // TODO: Navigate to create assessment
-                  }}
+                  onPress={handleCreateAssessment}
                   activeOpacity={0.7}
                   className="bg-green-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
                 >
@@ -277,6 +335,56 @@ export default function AssessmentsListScreen() {
                   <Text className="text-white font-semibold text-sm">Assessment</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Filter Tabs */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 4 }}
+                className="mb-4"
+              >
+                <View className="flex-row items-center gap-2">
+                  {(() => {
+                    const counts = assessmentsData?.counts || {} as any;
+                    const totalCount = Object.values(counts).reduce((sum: number, count: any) => sum + count, 0);
+                    
+                    const filterTabs = [
+                      { key: 'All', label: 'All', count: totalCount },
+                      { key: 'ASSIGNMENT', label: 'Assignment', count: counts.ASSIGNMENT || 0 },
+                      { key: 'CBT', label: 'CBT', count: counts.CBT || 0 },
+                      { key: 'EXAM', label: 'Exam', count: counts.EXAM || 0 },
+                      { 
+                        key: 'OTHER', 
+                        label: 'Other', 
+                        count: (counts.OTHER || 0) + (counts.FORMATIVE || 0) + (counts.SUMMATIVE || 0) + 
+                               (counts.DIAGNOSTIC || 0) + (counts.BENCHMARK || 0) + (counts.PRACTICE || 0) + 
+                               (counts.MOCK_EXAM || 0) + (counts.QUIZ || 0) + (counts.TEST || 0)
+                      }
+                    ];
+
+                    return filterTabs.map((tab) => (
+                      <TouchableOpacity
+                        key={tab.key}
+                        onPress={() => handleFilterChange(tab.key)}
+                        className={`px-3 py-2 rounded-full border ${
+                          selectedFilter === tab.key
+                            ? 'bg-blue-600 border-blue-600'
+                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                        }`}
+                        activeOpacity={0.7}
+                      >
+                        <Text className={`text-xs font-medium ${
+                          selectedFilter === tab.key
+                            ? 'text-white'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {tab.label} ({tab.count})
+                        </Text>
+                      </TouchableOpacity>
+                    ));
+                  })()}
+                </View>
+              </ScrollView>
               
               {/* Assessments Loading State */}
               {assessmentsLoading ? (
@@ -309,10 +417,7 @@ export default function AssessmentsListScreen() {
                     Create your first assessment to test your students' knowledge
                   </Text>
                   <TouchableOpacity
-                    onPress={() => {
-                      console.log('➕ User requested to create assessment');
-                      // TODO: Navigate to create assessment
-                    }}
+                    onPress={handleCreateAssessment}
                     activeOpacity={0.7}
                     className="bg-green-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
                   >
@@ -366,20 +471,14 @@ export default function AssessmentsListScreen() {
                         {/* Assessment Actions */}
                         <View className="flex-row items-center gap-1">
                           <TouchableOpacity
-                            onPress={() => {
-                              console.log('👁️ User wants to view assessment:', assessment.id);
-                              // TODO: Navigate to assessment details
-                            }}
+                            onPress={() => handleViewAssessment(assessment)}
                             className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
                             activeOpacity={0.7}
                           >
                             <Ionicons name="eye-outline" size={14} color="#3b82f6" />
                           </TouchableOpacity>
                           <TouchableOpacity
-                            onPress={() => {
-                              console.log('✏️ User wants to edit assessment:', assessment.id);
-                              // TODO: Navigate to edit assessment
-                            }}
+                            onPress={() => handleEditAssessment(assessment)}
                             className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                             activeOpacity={0.7}
                           >
@@ -472,8 +571,8 @@ export default function AssessmentsListScreen() {
                               <View key={index} className="bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
                                 <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
                                   {tag}
-                                </Text>
-                              </View>
+        </Text>
+      </View>
                             ))}
                             {assessment.tags.length > 3 && (
                               <Text className="text-xs text-gray-500 dark:text-gray-400">

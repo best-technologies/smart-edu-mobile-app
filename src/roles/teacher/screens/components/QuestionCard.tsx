@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CBTQuestion, CreateQuestionRequest, QuestionType } from '@/services/types/cbtTypes';
@@ -19,6 +20,7 @@ interface QuestionCardProps {
   onCancel: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onAddQuestion?: () => void;
   isLoading: boolean;
 }
 
@@ -46,6 +48,7 @@ export default function QuestionCard({
   onCancel,
   onDelete,
   onDuplicate,
+  onAddQuestion,
   isLoading,
 }: QuestionCardProps) {
   const [editedData, setEditedData] = useState<Partial<CreateQuestionRequest>>({
@@ -58,100 +61,203 @@ export default function QuestionCard({
     difficulty_level: question.difficulty_level,
   });
 
+  // Local state for managing options during editing
+  const [editOptions, setEditOptions] = useState<Array<{
+    option_text: string;
+    is_correct: boolean;
+    order: number;
+  }>>([]);
+
+  // Initialize options when editing starts
+  useEffect(() => {
+    if (isEditing) {
+      const initialOptions = question.options?.map(opt => ({
+        option_text: opt.option_text,
+        is_correct: opt.is_correct,
+        order: opt.order,
+      })) || [
+        { option_text: 'Option 1', is_correct: false, order: 1 },
+        { option_text: 'Option 2', is_correct: false, order: 2 },
+      ];
+      setEditOptions(initialOptions);
+    }
+  }, [isEditing, question.options]);
+
   const handleSave = () => {
     if (!editedData.question_text?.trim()) {
       Alert.alert('Validation Error', 'Question text is required');
       return;
     }
-    onSave(editedData);
+
+    const dataToSave = {
+      ...editedData,
+      ...(question.question_type === 'MULTIPLE_CHOICE_SINGLE' || question.question_type === 'MULTIPLE_CHOICE_MULTIPLE' ? {
+        options: editOptions
+      } : {})
+    };
+
+    onSave(dataToSave);
+  };
+
+  const addOption = () => {
+    setEditOptions([...editOptions, {
+      option_text: `Option ${editOptions.length + 1}`,
+      is_correct: false,
+      order: editOptions.length + 1,
+    }]);
+  };
+
+  const removeOption = (index: number) => {
+    if (editOptions.length > 2) {
+      setEditOptions(editOptions.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateOption = (index: number, field: string, value: any) => {
+    const newOptions = [...editOptions];
+    newOptions[index] = { ...newOptions[index], [field]: value };
+    setEditOptions(newOptions);
+  };
+
+  const toggleCorrectAnswer = (index: number) => {
+    const newOptions = [...editOptions];
+    if (question.question_type === 'MULTIPLE_CHOICE_SINGLE') {
+      // For single choice, only one can be correct
+      newOptions.forEach((opt, i) => {
+        opt.is_correct = i === index;
+      });
+    } else {
+      // For multiple choice, toggle the selected one
+      newOptions[index].is_correct = !newOptions[index].is_correct;
+    }
+    setEditOptions(newOptions);
+  };
+
+  const renderEditableOptions = () => {
+    return (
+      <View className="space-y-3">
+        {editOptions.map((option, optionIndex) => (
+          <View key={optionIndex} className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+            {/* Remove button - only show if more than 2 options */}
+            {editOptions.length > 2 && (
+              <TouchableOpacity 
+                onPress={() => removeOption(optionIndex)}
+                className="p-1"
+              >
+                <Ionicons name="close-circle" size={20} color="#ef4444" />
+              </TouchableOpacity>
+            )}
+            
+            {/* Correct answer selector */}
+            <TouchableOpacity
+              onPress={() => toggleCorrectAnswer(optionIndex)}
+              className="p-1"
+            >
+              {question.question_type === 'MULTIPLE_CHOICE_SINGLE' ? (
+                <View className={`w-4 h-4 rounded-full border-2 ${
+                  option.is_correct ? 'bg-green-500 border-green-500' : 'border-gray-400'
+                } items-center justify-center`}>
+                  {option.is_correct && <View className="w-2 h-2 bg-white rounded-full" />}
+                </View>
+              ) : (
+                <View className={`w-4 h-4 rounded border-2 ${
+                  option.is_correct ? 'bg-green-500 border-green-500' : 'border-gray-400'
+                } items-center justify-center`}>
+                  {option.is_correct && <Ionicons name="checkmark" size={12} color="white" />}
+                </View>
+              )}
+            </TouchableOpacity>
+            
+            {/* Option text input */}
+            <TextInput
+              value={option.option_text}
+              onChangeText={(text) => updateOption(optionIndex, 'option_text', text)}
+              placeholder={`Option ${optionIndex + 1}`}
+              className="flex-1 text-gray-900 dark:text-gray-100 bg-transparent"
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
+        ))}
+        
+        {/* Add option button */}
+        <TouchableOpacity
+          onPress={addOption}
+          className="flex-row items-center gap-3 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg"
+        >
+          <Ionicons name="add" size={20} color="#6b7280" />
+          <Text className="text-gray-500 dark:text-gray-400">Add option</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   const renderQuestionPreview = () => {
     return (
-      <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        {/* Question Header */}
-        <View className="flex-row items-start justify-between mb-4">
-          <View className="flex-1">
-            <View className="flex-row items-center gap-2 mb-2">
-              <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Question {index}
-              </Text>
-              <View className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
-                <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                  {QUESTION_TYPE_LABELS[question.question_type]}
-                </Text>
-              </View>
-              {question.is_required && (
-                <Text className="text-red-500 text-sm">*</Text>
-              )}
+      <TouchableOpacity 
+        onPress={onEdit}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4"
+      >
+        {/* Drag Handle */}
+        <View className="flex-row items-start">
+          <View className="w-8 h-16 flex items-center justify-center">
+            <View className="flex-row flex-wrap w-3 h-4 gap-0.5">
+              {[...Array(6)].map((_, i) => (
+                <View key={i} className="w-1 h-1 bg-gray-400 rounded-full" />
+              ))}
             </View>
-            <Text className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {question.question_text}
-            </Text>
-            {question.hint_text && question.show_hint && (
-              <Text className="text-sm text-gray-500 dark:text-gray-400 italic">
-                💡 {question.hint_text}
-              </Text>
-            )}
           </View>
           
-          {/* Question Actions */}
-          <View className="flex-row items-center gap-2">
-            <TouchableOpacity
-              onPress={onEdit}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="create-outline" size={18} color="#6b7280" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onDuplicate}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="copy-outline" size={18} color="#6b7280" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onDelete}
-              className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={18} color="#dc2626" />
-            </TouchableOpacity>
+          {/* Main Question Content */}
+          <View className="flex-1 pt-4 pr-4 pb-4">
+            {/* Question Title with Blue Left Border */}
+            <View className="border-l-4 border-blue-500 pl-4 mb-4">
+              <Text className="text-lg font-normal text-gray-900 dark:text-gray-100">
+                {question.question_text || 'Untitled Question New'}
+              </Text>
+              <View className="h-0.5 bg-purple-500 mt-2" />
+            </View>
+
+            {/* Question Type Selector */}
+            <View className="flex-row items-center gap-2 mb-4 px-4">
+              <Ionicons name="radio-button-on" size={20} color="#6b7280" />
+              <Text className="text-gray-700 dark:text-gray-300">
+                {QUESTION_TYPE_LABELS[question.question_type]}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#6b7280" />
+            </View>
+
+            {/* Options Preview (no close buttons in preview) */}
+            <View className="px-4 mb-4">
+              {renderQuestionTypePreview()}
+            </View>
+
+            {/* Bottom Toolbar */}
+            <View className="flex-row items-center justify-between px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity onPress={onDuplicate} className="p-2">
+                  <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={onDelete} className="p-2">
+                  <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                </TouchableOpacity>
+                <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
+                  <Switch
+                    value={question.is_required}
+                    onValueChange={(value) => setEditedData(prev => ({ ...prev, is_required: value }))}
+                    trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
+                    thumbColor={question.is_required ? '#ffffff' : '#f3f4f6'}
+                  />
+                </View>
+              </View>
+              <TouchableOpacity className="p-2">
+                <Ionicons name="ellipsis-vertical" size={18} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Question Preview */}
-        <View className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-          {renderQuestionTypePreview()}
-        </View>
-
-        {/* Question Details */}
-        <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-          <View className="flex-row items-center gap-4">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="star-outline" size={16} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-400">
-                {question.points} point{question.points !== 1 ? 's' : ''}
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="time-outline" size={16} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-400">
-                {question.difficulty_level}
-              </Text>
-            </View>
-          </View>
-          {question.explanation && (
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="information-circle-outline" size={16} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-400">
-                Has explanation
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -163,12 +269,8 @@ export default function QuestionCard({
           <View className="space-y-3">
             {question.options?.map((option, optionIndex) => (
               <View key={optionIndex} className="flex-row items-center gap-3">
-                <View className={`w-4 h-4 rounded-full border-2 ${
-                  question.question_type === 'MULTIPLE_CHOICE_SINGLE' 
-                    ? 'border-gray-300' 
-                    : 'border-gray-300'
-                }`} />
-                <Text className="text-gray-700 dark:text-gray-300 flex-1">
+                <View className={`w-4 h-4 rounded-full border-2 border-gray-300`} />
+                <Text className="flex-1 text-gray-700 dark:text-gray-300">
                   {option.option_text || `Option ${optionIndex + 1}`}
                 </Text>
                 {option.is_correct && (
@@ -176,6 +278,15 @@ export default function QuestionCard({
                 )}
               </View>
             ))}
+            <View className="flex-row items-center gap-3">
+              <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
+              <Text className="text-gray-500 dark:text-gray-400">
+                Add option
+              </Text>
+              <Text className="text-blue-600 dark:text-blue-400">
+                or add "Other"
+              </Text>
+            </View>
           </View>
         );
       
@@ -271,6 +382,16 @@ export default function QuestionCard({
             placeholderTextColor="#9ca3af"
           />
         </View>
+
+        {/* Options for multiple choice questions */}
+        {(question.question_type === 'MULTIPLE_CHOICE_SINGLE' || question.question_type === 'MULTIPLE_CHOICE_MULTIPLE') && (
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Options
+            </Text>
+            {renderEditableOptions()}
+          </View>
+        )}
 
         {/* Points */}
         <View className="mb-4">
