@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Image, Dimensions, Alert, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,6 +52,9 @@ export default function SubjectDetailScreen() {
   const [assessmentCounts, setAssessmentCounts] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Memoize subjectId to prevent unnecessary re-renders
+  const subjectId = useMemo(() => subject?.id || '', [subject?.id]);
+
   // API data using the hook
   const {
     data: subjectDetailsData,
@@ -73,10 +76,10 @@ export default function SubjectDetailScreen() {
     refetch,
     invalidateAndRefetch,
   } = useSubjectDetails({
-    subjectId: subject?.id || '',
+    subjectId,
     page: 1,
     limit: 10,
-    enabled: !!subject?.id,
+    enabled: !!subjectId,
   });
 
   const queryClient = useQueryClient();
@@ -186,12 +189,17 @@ export default function SubjectDetailScreen() {
   };
 
   const handleCBTSelect = (cbt: CBTQuiz) => {
-    // Navigate to CBT question creation or detail screen
-    navigation.navigate('CBTQuestionCreation' as never, {
-      quizId: cbt.id,
-      quizTitle: cbt.title,
-      subjectId: cbt.subject_id,
-    });
+    try {
+      // Navigate to CBT question creation or detail screen
+      navigation.navigate('CBTQuestionCreation' as never, {
+        quizId: cbt.id,
+        quizTitle: cbt.title,
+        subjectId: cbt.subject_id,
+      });
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback: just log the error instead of crashing
+    }
   };
 
   const handleAssessmentCountsChange = (counts: any) => {
@@ -526,7 +534,7 @@ export default function SubjectDetailScreen() {
         /* Assessments Tab */
         <View className="flex-1 px-6">
           <CBTList
-            subjectId={displaySubject?.id || subject?.id || ''}
+            subjectId={subjectId}
             onCBTSelect={handleCBTSelect}
             onCreateCBT={handleCreateCBT}
             assessmentTypeFilter={selectedAssessmentType}

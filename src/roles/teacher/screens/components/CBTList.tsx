@@ -11,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cbtService } from '@/services/api/cbtService';
 import { CBTQuiz, AssessmentsResponse } from '@/services/types/cbtTypes';
-import { useToast } from '@/contexts/ToastContext';
 
 interface CBTListProps {
   subjectId: string;
@@ -22,7 +21,6 @@ interface CBTListProps {
 }
 
 export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmentTypeFilter = 'All', onAssessmentCountsChange }: CBTListProps) {
-  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -34,8 +32,11 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
     error,
     refetch,
   } = useQuery({
-    queryKey: ['assessments', subjectId, page],
-    queryFn: () => cbtService.getAssessments(subjectId, page, limit),
+    queryKey: ['assessments', subjectId, page, assessmentTypeFilter],
+    queryFn: () => {
+      console.log('🔍 CBTList API call:', { subjectId, page, limit, assessmentTypeFilter });
+      return cbtService.getAssessments(subjectId, page, limit, assessmentTypeFilter);
+    },
     enabled: !!subjectId,
   });
 
@@ -50,11 +51,12 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
   const deleteCBTMutation = useMutation({
     mutationFn: (cbtId: string) => cbtService.deleteQuiz(cbtId),
     onSuccess: () => {
-      showSuccess('✅ CBT Deleted', 'Assessment has been deleted successfully!');
+      console.log('CBT Deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
     },
     onError: (error: any) => {
-      showError('❌ Failed to Delete CBT', error.message || 'Failed to delete assessment');
+      console.error('Delete CBT error:', error);
+      // Don't use showError to avoid navigation context issues
     },
   });
 
@@ -62,11 +64,12 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
   const publishCBTMutation = useMutation({
     mutationFn: (cbtId: string) => cbtService.publishQuiz(cbtId),
     onSuccess: () => {
-      showSuccess('✅ CBT Published', 'Assessment is now available to students!');
+      console.log('CBT Published successfully');
       queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
     },
     onError: (error: any) => {
-      showError('❌ Failed to Publish CBT', error.message || 'Failed to publish assessment');
+      console.error('Publish CBT error:', error);
+      // Don't use showError to avoid navigation context issues
     },
   });
 
@@ -119,12 +122,8 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
     : [];
   const pagination = assessmentsData?.pagination;
 
-  // Filter CBTs based on assessment type
-  const cbtQuizzes = Array.isArray(allCBTQuizzes) 
-    ? (assessmentTypeFilter === 'All' 
-        ? allCBTQuizzes 
-        : allCBTQuizzes.filter(cbt => cbt.assessment_type === assessmentTypeFilter))
-    : [];
+  // Use the assessments directly since filtering is now done on the server
+  const cbtQuizzes = Array.isArray(allCBTQuizzes) ? allCBTQuizzes : [];
 
   if (isLoading) {
     return (
@@ -161,19 +160,18 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
 
   if (cbtQuizzes.length === 0) {
     const isFiltered = assessmentTypeFilter !== 'All';
-    const hasData = Array.isArray(allCBTQuizzes) && allCBTQuizzes.length > 0;
     
     return (
       <View className="flex-1 items-center justify-center py-16">
         <Ionicons name="help-circle-outline" size={64} color="#9ca3af" />
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
-          {isFiltered && hasData 
+          {isFiltered 
             ? `No ${assessmentTypeFilter} Assessments` 
             : 'No Assessments Yet'
           }
         </Text>
         <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
-          {isFiltered && hasData
+          {isFiltered
             ? `No ${assessmentTypeFilter.toLowerCase()} assessments found. Try selecting a different type.`
             : 'Create your first assessment to test your students\' knowledge'
           }

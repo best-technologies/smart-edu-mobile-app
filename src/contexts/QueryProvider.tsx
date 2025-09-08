@@ -30,18 +30,10 @@ const queryClient = new QueryClient({
       refetchOnReconnect: true,
       // Prevent refetching on mount if data is fresh
       refetchOnMount: true,
-      // Add error handling
-      onError: (error) => {
-        console.error('Query error:', error);
-      },
     },
     mutations: {
       // Retry failed mutations once
       retry: 1,
-      // Add error handling for mutations
-      onError: (error) => {
-        console.error('Mutation error:', error);
-      },
     },
   },
 });

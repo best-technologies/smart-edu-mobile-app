@@ -172,15 +172,24 @@ export class CBTService {
   }
 
   // Get assessments with new response format (includes counts)
-  async getAssessments(subjectId: string, page: number = 1, limit: number = 10): Promise<AssessmentsResponse> {
+  async getAssessments(
+    subjectId: string, 
+    page: number = 1, 
+    limit: number = 10, 
+    assessmentType?: string
+  ): Promise<AssessmentsResponse> {
     try {
+      let url = `/teachers/assessments?subject_id=${subjectId}&page=${page}&limit=${limit}`;
+      
+      // Add assessment_type query parameter if provided and not 'All'
+      if (assessmentType && assessmentType !== 'All') {
+        url += `&assessment_type=${assessmentType}`;
+      }
+      
       const response = await this.httpClient.makeRequest<AssessmentsResponse>(
-        `/teachers/assessments?subject_id=${subjectId}&page=${page}&limit=${limit}`,
+        url,
         'GET'
       );
-      
-        console.log('🔍 Full response:', JSON.stringify(response, null, 2));
-        console.log('🔍 response.data:', response.data);
         
         if (!response.data) {
           console.log('❌ Missing data - response.data:', !!response.data);
