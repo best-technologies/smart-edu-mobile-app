@@ -1,6 +1,7 @@
 import { ScrollView, View, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import TopBar from './components/shared/TopBar';
 import QuickActions from './components/dashboard/QuickActions';
 import ManagedClasses from './components/dashboard/ManagedClasses';
@@ -14,6 +15,8 @@ import { DayClasses } from '@/mock/teacher';
 import { formatClassName, formatSubjectName, formatRoomName, formatTime, formatDay } from '@/utils/textFormatter';
 
 export default function TeacherDashboardScreen() {
+  const navigation = useNavigation<any>();
+  
   const {
     data: dashboardData,
     isLoading,
@@ -133,17 +136,10 @@ export default function TeacherDashboardScreen() {
     },
     {
       id: '3',
-      title: 'Schedule Class',
-      icon: 'calendar-outline',
-      color: '#8B5CF6',
-      onPress: () => console.log('Schedule Class'),
-    },
-    {
-      id: '4',
-      title: 'View Reports',
-      icon: 'bar-chart-outline',
-      color: '#F59E0B',
-      onPress: () => console.log('View Reports'),
+      title: 'Assessment',
+      icon: 'clipboard-outline',
+      color: '#EF4444',
+      onPress: () => navigation.navigate('AssessmentsList'),
     },
   ];
 

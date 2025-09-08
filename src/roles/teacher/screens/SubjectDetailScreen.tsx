@@ -48,7 +48,6 @@ export default function SubjectDetailScreen() {
   const [showCreateTopicModal, setShowCreateTopicModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'topics' | 'assessments'>('topics');
-  const [selectedAssessmentType, setSelectedAssessmentType] = useState<'All' | 'ASSIGNMENT' | 'CBT' | 'EXAM' | 'QUIZ'>('All');
   const [assessmentCounts, setAssessmentCounts] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -183,6 +182,13 @@ export default function SubjectDetailScreen() {
 
   const handleCreateCBT = () => {
     navigation.navigate('CBTCreation' as never, {
+      subjectId: displaySubject?.id || subject?.id,
+      subjectName: displaySubject?.name || subject?.name,
+    });
+  };
+
+  const handleViewAllAssessments = () => {
+    navigation.navigate('AssessmentsList' as never, {
       subjectId: displaySubject?.id || subject?.id,
       subjectName: displaySubject?.name || subject?.name,
     });
@@ -378,69 +384,17 @@ export default function SubjectDetailScreen() {
           </View>
         )}
 
-        {/* Assessment Type Mini-Tabs - Only for Assessments tab */}
+        {/* View All Assessments Button - Only for Assessments tab */}
         {activeTab === 'assessments' && (
           <View className="mb-4">
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 0 }}
+            <TouchableOpacity
+              onPress={handleViewAllAssessments}
+              activeOpacity={0.7}
+              className="bg-blue-600 px-4 py-3 rounded-lg flex-row items-center justify-center gap-2"
             >
-              <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1 min-w-full">
-                {[
-                  { key: 'All', label: 'All' },
-                  { key: 'ASSIGNMENT', label: 'Assignment' },
-                  { key: 'CBT', label: 'CBT' },
-                  { key: 'EXAM', label: 'Exam' },
-                  { key: 'QUIZ', label: 'Quiz' }
-                ].map(({ key, label }) => {
-                  const getCount = () => {
-                    if (key === 'All') {
-                      return assessmentCounts ? Object.values(assessmentCounts).reduce((sum: number, count: any) => sum + count, 0) : 0;
-                    }
-                    return assessmentCounts?.[key] || 0;
-                  };
-                  
-                  const count = getCount();
-                  
-                  return (
-                    <TouchableOpacity
-                      key={key}
-                      onPress={() => setSelectedAssessmentType(key as any)}
-                      className={`px-4 py-2.5 rounded-md mx-1 flex-row items-center gap-2 ${
-                        selectedAssessmentType === key 
-                          ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                          : 'bg-transparent'
-                      }`}
-                      activeOpacity={0.7}
-                    >
-                      <Text className={`text-sm font-medium ${
-                        selectedAssessmentType === key 
-                          ? 'text-gray-900 dark:text-gray-100' 
-                          : 'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {label}
-                      </Text>
-                      {count > 0 && (
-                        <View className={`px-2 py-1 rounded-full ${
-                          selectedAssessmentType === key 
-                            ? 'bg-blue-100 dark:bg-blue-900/50' 
-                            : 'bg-gray-200 dark:bg-gray-600'
-                        }`}>
-                          <Text className={`text-xs font-semibold ${
-                            selectedAssessmentType === key 
-                              ? 'text-blue-700 dark:text-blue-300' 
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
-                            {count}
-                          </Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
+              <Ionicons name="list-outline" size={18} color="white" />
+              <Text className="text-white font-semibold text-sm">View All Assessments</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -537,7 +491,6 @@ export default function SubjectDetailScreen() {
             subjectId={subjectId}
             onCBTSelect={handleCBTSelect}
             onCreateCBT={handleCreateCBT}
-            assessmentTypeFilter={selectedAssessmentType}
             onAssessmentCountsChange={handleAssessmentCountsChange}
           />
         </View>

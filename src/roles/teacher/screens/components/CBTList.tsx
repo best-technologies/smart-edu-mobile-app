@@ -16,60 +16,116 @@ interface CBTListProps {
   subjectId: string;
   onCBTSelect: (cbt: CBTQuiz) => void;
   onCreateCBT: () => void;
-  assessmentTypeFilter?: 'All' | 'ASSIGNMENT' | 'CBT' | 'EXAM' | 'QUIZ';
   onAssessmentCountsChange?: (counts: any) => void;
 }
 
-export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmentTypeFilter = 'All', onAssessmentCountsChange }: CBTListProps) {
+export default function CBTList({ 
+  subjectId, 
+  onCBTSelect, 
+  onCreateCBT, 
+  onAssessmentCountsChange 
+}: CBTListProps) {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  // Fetch Assessments
+  // Reset page when component mounts
+  useEffect(() => {
+    setPage(1);
+  }, []);
+
+  // Fetch Assessments with proper error handling
   const {
     data: assessmentsData,
     isLoading,
     error,
     refetch,
+    isFetching,
   } = useQuery({
-    queryKey: ['assessments', subjectId, page, assessmentTypeFilter],
-    queryFn: () => {
-      console.log('🔍 CBTList API call:', { subjectId, page, limit, assessmentTypeFilter });
-      return cbtService.getAssessments(subjectId, page, limit, assessmentTypeFilter);
+    queryKey: ['assessments', subjectId, page],
+    queryFn: async () => {
+      try {
+        console.log('🔍 CBTList API call:', { subjectId, page, limit });
+        const result = await cbtService.getAssessments(subjectId, page, limit);
+        console.log('✅ CBTList API response:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ CBTList API error:', error);
+        throw error;
+      }
     },
     enabled: !!subjectId,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
   });
 
   // Update assessment counts when data changes
   useEffect(() => {
     if (assessmentsData?.counts && onAssessmentCountsChange) {
+      console.log('📊 Updating assessment counts:', assessmentsData.counts);
       onAssessmentCountsChange(assessmentsData.counts);
     }
   }, [assessmentsData?.counts, onAssessmentCountsChange]);
 
-  // Delete CBT mutation
+  // Delete CBT mutation with better error handling
   const deleteCBTMutation = useMutation({
-    mutationFn: (cbtId: string) => cbtService.deleteQuiz(cbtId),
-    onSuccess: () => {
-      console.log('CBT Deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
+    mutationFn: async (cbtId: string) => {
+      console.log('🗑️ Deleting CBT:', cbtId);
+      return await cbtService.deleteQuiz(cbtId);
     },
-    onError: (error: any) => {
-      console.error('Delete CBT error:', error);
-      // Don't use showError to avoid navigation context issues
+    onSuccess: (data, cbtId) => {
+      console.log('✅ CBT deleted successfully:', cbtId);
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      
+      // Show success feedback using Alert instead of toast
+      Alert.alert(
+        'Success',
+        'Assessment deleted successfully',
+        [{ text: 'OK' }]
+      );
+    },
+    onError: (error: any, cbtId) => {
+      console.error('❌ Delete CBT error:', error, 'for CBT:', cbtId);
+      
+      // Show error feedback using Alert instead of toast
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to delete assessment. Please try again.',
+        [{ text: 'OK' }]
+      );
     },
   });
 
-  // Publish CBT mutation
+  // Publish CBT mutation with better error handling
   const publishCBTMutation = useMutation({
-    mutationFn: (cbtId: string) => cbtService.publishQuiz(cbtId),
-    onSuccess: () => {
-      console.log('CBT Published successfully');
-      queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
+    mutationFn: async (cbtId: string) => {
+      console.log('🚀 Publishing CBT:', cbtId);
+      return await cbtService.publishQuiz(cbtId);
     },
-    onError: (error: any) => {
-      console.error('Publish CBT error:', error);
-      // Don't use showError to avoid navigation context issues
+    onSuccess: (data, cbtId) => {
+      console.log('✅ CBT published successfully:', cbtId);
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ['assessments', subjectId] });
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      
+      // Show success feedback using Alert instead of toast
+      Alert.alert(
+        'Success',
+        'Assessment published successfully',
+        [{ text: 'OK' }]
+      );
+    },
+    onError: (error: any, cbtId) => {
+      console.error('❌ Publish CBT error:', error, 'for CBT:', cbtId);
+      
+      // Show error feedback using Alert instead of toast
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to publish assessment. Please try again.',
+        [{ text: 'OK' }]
+      );
     },
   });
 
@@ -82,7 +138,10 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => deleteCBTMutation.mutate(cbt.id)
+          onPress: () => {
+            console.log('🗑️ User confirmed deletion of CBT:', cbt.id);
+            deleteCBTMutation.mutate(cbt.id);
+          }
         },
       ]
     );
@@ -96,7 +155,10 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Publish', 
-          onPress: () => publishCBTMutation.mutate(cbt.id)
+          onPress: () => {
+            console.log('🚀 User confirmed publication of CBT:', cbt.id);
+            publishCBTMutation.mutate(cbt.id);
+          }
         },
       ]
     );
@@ -125,6 +187,15 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
   // Use the assessments directly since filtering is now done on the server
   const cbtQuizzes = Array.isArray(allCBTQuizzes) ? allCBTQuizzes : [];
 
+  console.log('📋 CBTList render:', {
+    subjectId,
+    page,
+    isLoading,
+    isFetching,
+    cbtQuizzesCount: cbtQuizzes.length,
+    hasError: !!error
+  });
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-16">
@@ -137,6 +208,7 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
   }
 
   if (error) {
+    console.error('❌ CBTList render error:', error);
     return (
       <View className="flex-1 items-center justify-center py-16">
         <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
@@ -147,7 +219,10 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
           {error.message || 'Unable to load assessments. Please check your connection and try again.'}
         </Text>
         <TouchableOpacity
-          onPress={() => refetch()}
+          onPress={() => {
+            console.log('🔄 User requested refetch');
+            refetch();
+          }}
           activeOpacity={0.7}
           className="bg-blue-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
         >
@@ -159,33 +234,26 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
   }
 
   if (cbtQuizzes.length === 0) {
-    const isFiltered = assessmentTypeFilter !== 'All';
-    
     return (
       <View className="flex-1 items-center justify-center py-16">
         <Ionicons name="help-circle-outline" size={64} color="#9ca3af" />
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
-          {isFiltered 
-            ? `No ${assessmentTypeFilter} Assessments` 
-            : 'No Assessments Yet'
-          }
+          No Assessments Yet
         </Text>
         <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
-          {isFiltered
-            ? `No ${assessmentTypeFilter.toLowerCase()} assessments found. Try selecting a different type.`
-            : 'Create your first assessment to test your students\' knowledge'
-          }
+          Create your first assessment to test your students' knowledge
         </Text>
-        {!isFiltered && (
-          <TouchableOpacity
-            onPress={onCreateCBT}
-            activeOpacity={0.7}
-            className="bg-green-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
-          >
-            <Ionicons name="add-circle" size={16} color="white" />
-            <Text className="text-white font-semibold">Create Assessment</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          onPress={() => {
+            console.log('➕ User requested to create CBT');
+            onCreateCBT();
+          }}
+          activeOpacity={0.7}
+          className="bg-green-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
+        >
+          <Ionicons name="add-circle" size={16} color="white" />
+          <Text className="text-white font-semibold">Create Assessment</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -197,8 +265,11 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
       contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
         <RefreshControl
-          refreshing={isLoading}
-          onRefresh={refetch}
+          refreshing={isFetching}
+          onRefresh={() => {
+            console.log('🔄 User initiated refresh');
+            refetch();
+          }}
           tintColor="#3b82f6"
         />
       }
@@ -250,14 +321,20 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
               {/* CBT Actions */}
               <View className="flex-row items-center gap-3">
                 <TouchableOpacity
-                  onPress={() => onCBTSelect(cbt)}
+                  onPress={() => {
+                    console.log('👁️ User wants to view CBT:', cbt.id);
+                    onCBTSelect(cbt);
+                  }}
                   className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
                   activeOpacity={0.7}
                 >
                   <Ionicons name="eye-outline" size={20} color="#3b82f6" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => onCBTSelect(cbt)}
+                  onPress={() => {
+                    console.log('✏️ User wants to edit CBT:', cbt.id);
+                    onCBTSelect(cbt);
+                  }}
                   className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                   activeOpacity={0.7}
                 >
@@ -267,8 +344,13 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
                   onPress={() => handleDeleteCBT(cbt)}
                   className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                   activeOpacity={0.7}
+                  disabled={deleteCBTMutation.isPending}
                 >
-                  <Ionicons name="trash-outline" size={20} color="#dc2626" />
+                  <Ionicons 
+                    name={deleteCBTMutation.isPending ? "hourglass-outline" : "trash-outline"} 
+                    size={20} 
+                    color="#dc2626" 
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -329,12 +411,19 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
                   <TouchableOpacity
                     onPress={() => handlePublishCBT(cbt)}
                     disabled={publishCBTMutation.isPending}
-                    className="px-4 py-2 bg-green-600 rounded-xl flex-row items-center gap-2"
+                    className="px-4 py-2 bg-green-600 rounded-xl flex-row items-center gap-2 opacity-100"
+                    style={{ 
+                      opacity: publishCBTMutation.isPending ? 0.6 : 1 
+                    }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="rocket-outline" size={16} color="white" />
+                    <Ionicons 
+                      name={publishCBTMutation.isPending ? "hourglass-outline" : "rocket-outline"} 
+                      size={16} 
+                      color="white" 
+                    />
                     <Text className="text-white text-sm font-semibold">
-                      Publish
+                      {publishCBTMutation.isPending ? 'Publishing...' : 'Publish'}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -369,7 +458,10 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
       {pagination && pagination.totalPages > 1 && (
         <View className="flex-row items-center justify-center gap-2 mt-6">
           <TouchableOpacity
-            onPress={() => setPage(page - 1)}
+            onPress={() => {
+              console.log('⬅️ User navigating to previous page:', page - 1);
+              setPage(page - 1);
+            }}
             disabled={page === 1}
             className={`px-4 py-2 rounded-lg ${
               page === 1 
@@ -392,7 +484,10 @@ export default function CBTList({ subjectId, onCBTSelect, onCreateCBT, assessmen
           </Text>
           
           <TouchableOpacity
-            onPress={() => setPage(page + 1)}
+            onPress={() => {
+              console.log('➡️ User navigating to next page:', page + 1);
+              setPage(page + 1);
+            }}
             disabled={page === pagination.totalPages}
             className={`px-4 py-2 rounded-lg ${
               page === pagination.totalPages 

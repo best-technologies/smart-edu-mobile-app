@@ -12,7 +12,6 @@ type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
  * This centralizes navigation logic and follows better architectural patterns
  */
 export function useAuthNavigation() {
-  const navigation = useNavigation<AuthNavigationProp>();
   const { isAuthenticated, user, requiresOTP } = useAuth();
   const navigationReadyRef = useRef(false);
   const initializationDelayRef = useRef(false);
@@ -25,6 +24,18 @@ export function useAuthNavigation() {
     isAuthenticated: false,
     requiresOTP: false,
   });
+
+  // Try to get navigation, but handle the case when it's not ready
+  let navigation: AuthNavigationProp | null = null;
+  try {
+    navigation = useNavigation<AuthNavigationProp>();
+  } catch (error) {
+    // Navigation context not ready yet, return early without doing anything
+    return {
+      shouldShowAuthScreens: true,
+      isFullyAuthenticated: false,
+    };
+  }
 
   // Check if navigation is ready and add initialization delay
   useEffect(() => {

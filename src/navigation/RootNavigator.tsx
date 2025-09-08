@@ -7,8 +7,7 @@ import SchoolDirectorNavigator from '@/roles/school_director/SchoolDirectorNavig
 import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentTabs from '@/roles/student/StudentTabs';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
-import { useAuthNavigation } from '@/hooks/useAuthNavigation';
-import React, { useState } from 'react';
+import React from 'react';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -38,35 +37,14 @@ const AppTheme: Theme = {
   },
 };
 
-// Component to handle auth navigation logic inside NavigationContainer
-function AuthNavigationHandler() {
-  // Only call the hook when navigation is ready
-  try {
-    useAuthNavigation();
-  } catch (error) {
-    // Ignore navigation context errors during initialization
-    console.log('Navigation not ready yet, skipping auth navigation');
-  }
-  return null;
-}
-
 export default function RootNavigator() {
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
-
-  const handleNavigationReady = () => {
-    console.log('🚀 NavigationContainer is ready');
-    // Add a longer delay to ensure navigation context is fully initialized
-    setTimeout(() => {
-      setIsNavigationReady(true);
-    }, 200);
-  };
-
   return (
     <NavigationContainer 
       theme={AppTheme}
-      onReady={handleNavigationReady}
+      onReady={() => {
+        console.log('🚀 NavigationContainer is ready');
+      }}
     >
-      {isNavigationReady && <AuthNavigationHandler />}
       <Stack.Navigator 
         initialRouteName="Login" 
         screenOptions={{ 

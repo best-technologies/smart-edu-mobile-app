@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
+import { navigationRef, navigate } from '@/navigation/RootNavigation';
 import { ApiService } from '@/services';
 import { User } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
@@ -127,6 +128,15 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
+  // Navigate to dashboard only when authenticated and navigation is ready
+  useEffect(() => {
+    if (state.isAuthenticated && navigationRef.isReady()) {
+      console.log('🚀 NavigationContainer is ready, navigating to dashboard...');
+      navigate('Dashboard');
+    } else if (state.isAuthenticated) {
+      console.log('⏳ NavigationContainer not ready, skipping navigation');
+    }
+  }, [state.isAuthenticated, navigationRef.isReady()]);
 
   // Initialize auth state on app start
   useEffect(() => {

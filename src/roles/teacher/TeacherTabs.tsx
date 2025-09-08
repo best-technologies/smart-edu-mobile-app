@@ -13,6 +13,7 @@ import NotificationsListScreen from './screens/notifications/NotificationsListSc
 import GradingScreen from './screens/GradingScreen';
 import AIChatScreen from './screens/AIChatScreen';
 import CBTCreationScreen from './screens/CBTCreationScreen';
+import AssessmentsListScreen from './screens/AssessmentsListScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -87,6 +88,7 @@ export default function TeacherTabs() {
     >
       <Stack.Screen name="TeacherTabs" component={TeacherTabNavigator} />
       <Stack.Screen name="SubjectDetail" component={SubjectDetailScreen} />
+      <Stack.Screen name="AssessmentsList" component={AssessmentsListScreen} />
       <Stack.Screen name="VideoDemo" component={VideoDemoScreen} />
       <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
       <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
