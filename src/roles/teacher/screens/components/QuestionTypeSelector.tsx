@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -124,16 +124,77 @@ export default function QuestionTypeSelector({
   const [options, setOptions] = useState([
     { text: '', isCorrect: false },
   ]);
+  const [isRequired, setIsRequired] = useState(true);
 
   const selectedTypeInfo = QUESTION_TYPES.find(t => t.type === selectedType);
 
+  // Initialize options based on question type
+  useEffect(() => {
+    if (selectedType === 'TRUE_FALSE') {
+      setOptions([
+        { text: 'True', isCorrect: false },
+        { text: 'False', isCorrect: false }
+      ]);
+    } else if (selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE') {
+      setOptions([
+        { text: '', isCorrect: false },
+      ]);
+    }
+  }, [selectedType]);
+
+  // Validation logic
+  const getValidationMessage = () => {
+    // 1. Question text must not be empty
+    if (!questionText.trim()) {
+      return 'Please enter a question';
+    }
+
+    // 2. For multiple choice questions
+    if (selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE') {
+      // Must have at least 2 options
+      if (options.length < 2) {
+        return 'Add at least 2 options';
+      }
+      
+      // All options must have text
+      const hasEmptyOptions = options.some(option => !option.text.trim());
+      if (hasEmptyOptions) {
+        return 'Fill in all option text';
+      }
+      
+      // At least one option must be selected as correct
+      const hasCorrectAnswer = options.some(option => option.isCorrect);
+      if (!hasCorrectAnswer) {
+        return 'Select the correct answer';
+      }
+    }
+
+    // 3. For TRUE_FALSE questions
+    if (selectedType === 'TRUE_FALSE') {
+      // At least one option must be selected
+      const hasSelectedAnswer = options.some(option => option.isCorrect);
+      if (!hasSelectedAnswer) {
+        return 'Select True or False';
+      }
+    }
+
+    return null; // No validation errors
+  };
+
+  const isFormValid = () => {
+    return getValidationMessage() === null;
+  };
+
   const handleAddQuestion = () => {
+    if (!isFormValid()) {
+      return; // Don't proceed if validation fails
+    }
     const questionData = {
       question_text: questionText,
       question_type: selectedType,
       order: 1,
       points: 1,
-      is_required: true,
+      is_required: isRequired,
       difficulty_level: 'MEDIUM' as const,
       show_hint: false,
       allow_multiple_attempts: false,
@@ -201,7 +262,28 @@ export default function QuestionTypeSelector({
               <View className="space-y-4">
                 {options.map((option, index) => (
                   <View key={index} className="flex-row items-center gap-3 py-2">
-                    <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newOptions = [...options];
+                        if (selectedType === 'MULTIPLE_CHOICE_SINGLE') {
+                          // For single choice, only one can be correct
+                          newOptions.forEach((opt, i) => {
+                            opt.isCorrect = i === index;
+                          });
+                        } else {
+                          // For multiple choice, toggle the selected one
+                          newOptions[index].isCorrect = !newOptions[index].isCorrect;
+                        }
+                        setOptions(newOptions);
+                      }}
+                      className="p-1"
+                    >
+                      <View className={`w-4 h-4 rounded-full border-2 ${
+                        option.isCorrect ? 'bg-purple-600 border-purple-600' : 'border-gray-300'
+                      } items-center justify-center`}>
+                        {option.isCorrect && <View className="w-2 h-2 bg-white rounded-full" />}
+                      </View>
+                    </TouchableOpacity>
                     <TextInput
                       value={option.text}
                       onChangeText={(text) => {
@@ -228,7 +310,6 @@ export default function QuestionTypeSelector({
                 ))}
                 <TouchableOpacity
                   onPress={() => {
-                    console.log('Add option pressed, current options:', options);
                     setOptions([...options, { text: '', isCorrect: false }]);
                   }}
                   className="flex-row items-center gap-3 py-3"
@@ -243,6 +324,66 @@ export default function QuestionTypeSelector({
             </View>
           )}
 
+          {/* TRUE_FALSE Options */}
+          {selectedType === 'TRUE_FALSE' && (
+            <View className="px-4 mb-4">
+              <View className="space-y-4">
+                <View className="flex-row items-center gap-3 py-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      const newOptions = [
+                        { text: 'True', isCorrect: true },
+                        { text: 'False', isCorrect: false }
+                      ];
+                      setOptions(newOptions);
+                    }}
+                    className="p-1"
+                  >
+                    <View className={`w-4 h-4 rounded-full border-2 ${
+                      options[0]?.isCorrect ? 'bg-purple-600 border-purple-600' : 'border-gray-300'
+                    } items-center justify-center`}>
+                      {options[0]?.isCorrect && <View className="w-2 h-2 bg-white rounded-full" />}
+                    </View>
+                  </TouchableOpacity>
+                  <Text className="flex-1 text-gray-700 dark:text-gray-300 py-2">True</Text>
+                </View>
+                <View className="flex-row items-center gap-3 py-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      const newOptions = [
+                        { text: 'True', isCorrect: false },
+                        { text: 'False', isCorrect: true }
+                      ];
+                      setOptions(newOptions);
+                    }}
+                    className="p-1"
+                  >
+                    <View className={`w-4 h-4 rounded-full border-2 ${
+                      options[1]?.isCorrect ? 'bg-purple-600 border-purple-600' : 'border-gray-300'
+                    } items-center justify-center`}>
+                      {options[1]?.isCorrect && <View className="w-2 h-2 bg-white rounded-full" />}
+                    </View>
+                  </TouchableOpacity>
+                  <Text className="flex-1 text-gray-700 dark:text-gray-300 py-2">False</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Validation Message */}
+          {!isFormValid() && (
+            <View className="px-4 mb-2">
+              <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <View className="flex-row items-center">
+                  <Ionicons name="alert-circle" size={16} color="#dc2626" />
+                  <Text className="text-red-600 dark:text-red-400 ml-2 text-sm font-medium">
+                    {getValidationMessage()}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Bottom Toolbar */}
           <View className="px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
             <View className="flex-row items-center justify-between">
@@ -251,17 +392,18 @@ export default function QuestionTypeSelector({
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
                   <Switch
-                    value={false}
+                    value={isRequired}
+                    onValueChange={setIsRequired}
                     trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
-                    thumbColor="#f3f4f6"
+                    thumbColor={isRequired ? '#ffffff' : '#f3f4f6'}
                   />
                 </View>
               </View>
               <TouchableOpacity
                 onPress={handleAddQuestion}
-                disabled={isLoading}
+                disabled={isLoading || !isFormValid()}
                 className={`px-4 py-2 rounded-lg flex-row items-center ${
-                  isLoading ? 'bg-gray-400' : 'bg-purple-600'
+                  isLoading || !isFormValid() ? 'bg-gray-400' : 'bg-purple-600'
                 }`}
                 activeOpacity={0.8}
               >
