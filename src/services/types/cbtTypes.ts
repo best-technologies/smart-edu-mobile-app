@@ -27,6 +27,8 @@ export interface CBTQuiz {
   description?: string;
   instructions?: string;
   subject_id: string;
+  topic_id?: string;
+  assessment_type: string; // CBT, EXAM, QUIZ, etc.
   school_id: string;
   academic_session_id: string;
   created_by: string;
@@ -47,12 +49,18 @@ export interface CBTQuiz {
   status: QuizStatus;
   is_published: boolean;
   published_at?: string; // ISO 8601
+  order?: number;
   tags: string[];
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
   subject?: {
     id: string;
     name: string;
+    code?: string;
+  };
+  topic?: {
+    id: string;
+    title: string;
   };
   createdBy?: {
     id: string;
@@ -120,12 +128,44 @@ export interface CBTCorrectAnswer {
   updatedAt: string;
 }
 
+// Assessment Counts Type
+export interface AssessmentCounts {
+  CBT: number;
+  EXAM: number;
+  ASSIGNMENT: number;
+  QUIZ: number;
+  MOCK_EXAM: number;
+  FORMATIVE: number;
+  SUMMATIVE: number;
+  DIAGNOSTIC: number;
+  BENCHMARK: number;
+  PRACTICE: number;
+  TEST: number;
+  OTHER: number;
+}
+
+// Assessments Response Type
+export interface AssessmentsResponse {
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  assessments: {
+    [key: string]: CBTQuiz[];
+  };
+  counts: AssessmentCounts;
+  total?: number;
+}
+
 // Request/Response Types
 export interface CreateQuizRequest {
   title: string;
   description?: string;
   instructions?: string;
   subject_id: string;
+  assessment_type: string; // CBT, EXAM, QUIZ, etc.
   duration?: number;
   max_attempts?: number;
   passing_score?: number;

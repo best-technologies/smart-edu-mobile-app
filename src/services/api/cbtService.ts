@@ -3,7 +3,8 @@ import {
   CBTQuiz, 
   CBTQuestion, 
   CreateQuizRequest, 
-  CreateQuestionRequest
+  CreateQuestionRequest,
+  AssessmentsResponse
 } from '../types/cbtTypes';
 import { ApiResponse } from '../types/apiTypes';
 
@@ -32,7 +33,7 @@ export class CBTService {
 
   async getQuiz(quizId: string): Promise<CBTQuiz> {
     const response = await this.httpClient.makeRequest<CBTQuiz>(
-      `${this.baseURL}/quizzes/${quizId}`,
+      `${this.baseURL}/${quizId}`,
       'GET'
     );
     if (!response.data) {
@@ -43,7 +44,7 @@ export class CBTService {
 
   async updateQuiz(quizId: string, quizData: Partial<CreateQuizRequest>): Promise<CBTQuiz> {
     const response = await this.httpClient.makeRequest<CBTQuiz>(
-      `${this.baseURL}/quizzes/${quizId}`,
+      `${this.baseURL}/${quizId}`,
       'PATCH',
       quizData
     );
@@ -55,14 +56,14 @@ export class CBTService {
 
   async deleteQuiz(quizId: string): Promise<void> {
     await this.httpClient.makeRequest(
-      `${this.baseURL}/quizzes/${quizId}`,
+      `${this.baseURL}/${quizId}`,
       'DELETE'
     );
   }
 
   async publishQuiz(quizId: string): Promise<CBTQuiz> {
     const response = await this.httpClient.makeRequest<CBTQuiz>(
-      `${this.baseURL}/quizzes/${quizId}/publish`,
+      `${this.baseURL}/${quizId}/publish`,
       'POST',
       {}
     );
@@ -74,7 +75,7 @@ export class CBTService {
 
   async getSubjectQuizzes(subjectId: string): Promise<CBTQuiz[]> {
     const response = await this.httpClient.makeRequest<CBTQuiz[]>(
-      `${this.baseURL}/quizzes/subject/${subjectId}`,
+      `${this.baseURL}/subject/${subjectId}`,
       'GET'
     );
     if (!response.data) {
@@ -86,7 +87,7 @@ export class CBTService {
   // Question Management
   async addQuestion(quizId: string, questionData: CreateQuestionRequest): Promise<CBTQuestion> {
     const response = await this.httpClient.makeRequest<CBTQuestion>(
-      `${this.baseURL}/quizzes/${quizId}/questions`,
+      `${this.baseURL}/${quizId}/questions`,
       'POST',
       questionData
     );
@@ -98,7 +99,7 @@ export class CBTService {
 
   async getQuizQuestions(quizId: string): Promise<CBTQuestion[]> {
     const response = await this.httpClient.makeRequest<CBTQuestion[]>(
-      `${this.baseURL}/quizzes/${quizId}/questions`,
+      `${this.baseURL}/${quizId}/questions`,
       'GET'
     );
     if (!response.data) {
@@ -113,7 +114,7 @@ export class CBTService {
     questionData: Partial<CreateQuestionRequest>
   ): Promise<CBTQuestion> {
     const response = await this.httpClient.makeRequest<CBTQuestion>(
-      `${this.baseURL}/quizzes/${quizId}/questions/${questionId}`,
+      `${this.baseURL}/${quizId}/questions/${questionId}`,
       'PATCH',
       questionData
     );
@@ -125,7 +126,7 @@ export class CBTService {
 
   async deleteQuestion(quizId: string, questionId: string): Promise<void> {
     await this.httpClient.makeRequest(
-      `${this.baseURL}/quizzes/${quizId}/questions/${questionId}`,
+      `${this.baseURL}/${quizId}/questions/${questionId}`,
       'DELETE'
     );
   }
@@ -133,13 +134,68 @@ export class CBTService {
   // Get all quizzes for a teacher
   async getTeacherQuizzes(): Promise<CBTQuiz[]> {
     const response = await this.httpClient.makeRequest<CBTQuiz[]>(
-      `${this.baseURL}/quizzes`,
+      `/teachers/assessments/cbt/`,
       'GET'
     );
     if (!response.data) {
       throw new Error('No quizzes data received from server');
     }
     return response.data;
+  }
+
+  // Get all quizzes with pagination
+  async getAllQuizzes(page: number = 1, limit: number = 10): Promise<{
+    quizzes: CBTQuiz[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const response = await this.httpClient.makeRequest<{
+      quizzes: CBTQuiz[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(
+      `/teachers/assessments/cbt/?page=${page}&limit=${limit}`,
+      'GET'
+    );
+    if (!response.data) {
+      throw new Error('No quizzes data received from server');
+    }
+    return response.data;
+  }
+
+  // Get assessments with new response format (includes counts)
+  async getAssessments(subjectId: string, page: number = 1, limit: number = 10): Promise<AssessmentsResponse> {
+    try {
+      const response = await this.httpClient.makeRequest<AssessmentsResponse>(
+        `/teachers/assessments?subject_id=${subjectId}&page=${page}&limit=${limit}`,
+        'GET'
+      );
+      
+        console.log('🔍 Full response:', JSON.stringify(response, null, 2));
+        console.log('🔍 response.data:', response.data);
+        
+        if (!response.data) {
+          console.log('❌ Missing data - response.data:', !!response.data);
+          throw new Error('No assessments data received from server');
+        }
+        return response.data;
+    } catch (error) {
+      console.error('Error fetching assessments:', error);
+      throw new Error('Failed to load assessments. Please try again.');
+    }
+  }
+
+  // Alias for getAssessments in case of naming issues
+  async getAssessment(subjectId: string, page: number = 1, limit: number = 10): Promise<AssessmentsResponse> {
+    return this.getAssessments(subjectId, page, limit);
   }
 }
 

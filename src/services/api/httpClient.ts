@@ -88,7 +88,6 @@ export class HttpClient {
       // });
 
       const response = await fetch(url, requestConfig);
-      // console.log('📥 Response status:', response.status);
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
@@ -98,7 +97,6 @@ export class HttpClient {
       }
 
       const responseData = await response.json();
-      // console.log('📥 Response data:', responseData);
 
       if (!response.ok) {
         throw new ApiError(response.status, responseData.message || 'Request failed', responseData);

@@ -9,12 +9,14 @@ import VideoUploadModal from './components/subjects/VideoUploadModal';
 import MaterialUploadModal from './components/subjects/MaterialUploadModal';
 import InstructionModal from './components/subjects/InstructionModal';
 import CreateTopicModal from './components/subjects/CreateTopicModal';
+import CBTList from './components/CBTList';
 import { capitalizeWords } from '@/utils/textFormatter';
 import { useSubjectDetails } from '@/hooks/useSubjectDetails';
 import { SubjectDetailsFilters, Topic, Video, Material } from './components/subjects/types';
 import { useToast } from '@/contexts/ToastContext';
 import { TeacherService } from '@/services/api/roleServices';
 import { useQueryClient } from '@tanstack/react-query';
+import { CBTQuiz } from '@/services/types/cbtTypes';
 
 const { width } = Dimensions.get('window');
 
@@ -45,6 +47,10 @@ export default function SubjectDetailScreen() {
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showCreateTopicModal, setShowCreateTopicModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeTab, setActiveTab] = useState<'topics' | 'assessments'>('topics');
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState<'All' | 'ASSIGNMENT' | 'CBT' | 'EXAM' | 'QUIZ'>('All');
+  const [assessmentCounts, setAssessmentCounts] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // API data using the hook
   const {
@@ -179,11 +185,46 @@ export default function SubjectDetailScreen() {
     });
   };
 
+  const handleCBTSelect = (cbt: CBTQuiz) => {
+    // Navigate to CBT question creation or detail screen
+    navigation.navigate('CBTQuestionCreation' as never, {
+      quizId: cbt.id,
+      quizTitle: cbt.title,
+      subjectId: cbt.subject_id,
+    });
+  };
+
+  const handleAssessmentCountsChange = (counts: any) => {
+    setAssessmentCounts(counts);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh both topics and assessments data
+      await Promise.all([
+        invalidateAndRefetch(),
+        // The CBTList component will handle its own refresh
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      
-      {/* Course Header - Fixed Position */}
-      <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+      <ScrollView 
+        className="flex-1"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+          />
+        }
+      >
+        {/* Course Header - Fixed Position */}
+        <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity onPress={handleBack} className="p-2">
             <Ionicons name="arrow-back" size={24} color="#6b7280" />
@@ -226,60 +267,177 @@ export default function SubjectDetailScreen() {
 
       {/* Topics Section - Fixed Position */}
       <View className="px-6 py-4 bg-gray-50 dark:bg-gray-900">
+        {/* Tab Navigation */}
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Course Topics
-          </Text>
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row bg-white dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
             <TouchableOpacity
-              onPress={handleCreateCBT}
+              onPress={() => setActiveTab('topics')}
+              className={`px-4 py-2 rounded-md flex-row items-center gap-2 ${
+                activeTab === 'topics' 
+                  ? 'bg-blue-600' 
+                  : 'bg-transparent'
+              }`}
               activeOpacity={0.7}
-              className="bg-green-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
             >
-              <Ionicons name="add-circle" size={16} color="white" />
-              <Text className="text-white font-semibold text-sm">Create CBT</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleAddTopic}
-              activeOpacity={0.7}
-              className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
-            >
-              <Ionicons name="add" size={16} color="white" />
-              <Text className="text-white font-semibold text-sm">Create Topic</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Search and Filters */}
-        <View className="mb-4">
-          <View className="flex-row items-center gap-3 mb-3">
-            <View className="flex-1 relative">
               <Ionicons 
-                name="search" 
-                size={20} 
-                color="#9ca3af" 
-                style={{ position: 'absolute', left: 12, top: 10, zIndex: 1 }}
+                name="folder-outline" 
+                size={16} 
+                color={activeTab === 'topics' ? 'white' : '#6b7280'} 
               />
-              <TextInput
-                placeholder="Search topics..."
-                value={currentSearch}
-                onChangeText={updateSearch}
-                className="bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-4 py-2 text-gray-900 dark:text-gray-100"
-                placeholderTextColor="#9ca3af"
-              />
-            </View>
+              <Text className={`font-medium ${
+                activeTab === 'topics' 
+                  ? 'text-white' 
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                Topics
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
-              onPress={clearFilters}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+              onPress={() => setActiveTab('assessments')}
+              className={`px-4 py-2 rounded-md flex-row items-center gap-2 ${
+                activeTab === 'assessments' 
+                  ? 'bg-blue-600' 
+                  : 'bg-transparent'
+              }`}
               activeOpacity={0.7}
             >
-              <Text className="text-gray-600 dark:text-gray-400 text-sm">Clear</Text>
+              <Ionicons 
+                name="help-circle-outline" 
+                size={16} 
+                color={activeTab === 'assessments' ? 'white' : '#6b7280'} 
+              />
+              <Text className={`font-medium ${
+                activeTab === 'assessments' 
+                  ? 'text-white' 
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                Assessments
+              </Text>
             </TouchableOpacity>
+          </View>
+          
+          {/* Action Buttons */}
+          <View className="flex-row items-center gap-2">
+            {activeTab === 'topics' ? (
+              <TouchableOpacity
+                onPress={handleAddTopic}
+                activeOpacity={0.7}
+                className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
+              >
+                <Ionicons name="add" size={16} color="white" />
+                <Text className="text-white font-semibold text-sm">Create Topic</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleCreateCBT}
+                activeOpacity={0.7}
+                className="bg-green-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
+              >
+                <Ionicons name="add-circle" size={16} color="white" />
+                <Text className="text-white font-semibold text-sm">Create CBT</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Loading State */}
-        {isLoading && (
+        {/* Search and Filters - Only for Topics tab */}
+        {activeTab === 'topics' && (
+          <View className="mb-4">
+            <View className="flex-row items-center gap-3 mb-3">
+              <View className="flex-1 relative">
+                <Ionicons 
+                  name="search" 
+                  size={20} 
+                  color="#9ca3af" 
+                  style={{ position: 'absolute', left: 12, top: 10, zIndex: 1 }}
+                />
+                <TextInput
+                  placeholder="Search topics..."
+                  value={currentSearch}
+                  onChangeText={updateSearch}
+                  className="bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-4 py-2 text-gray-900 dark:text-gray-100"
+                  placeholderTextColor="#9ca3af"
+                />
+              </View>
+              <TouchableOpacity
+                onPress={clearFilters}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-600 dark:text-gray-400 text-sm">Clear</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Assessment Type Mini-Tabs - Only for Assessments tab */}
+        {activeTab === 'assessments' && (
+          <View className="mb-4">
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 0 }}
+            >
+              <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1 min-w-full">
+                {[
+                  { key: 'All', label: 'All' },
+                  { key: 'ASSIGNMENT', label: 'Assignment' },
+                  { key: 'CBT', label: 'CBT' },
+                  { key: 'EXAM', label: 'Exam' },
+                  { key: 'QUIZ', label: 'Quiz' }
+                ].map(({ key, label }) => {
+                  const getCount = () => {
+                    if (key === 'All') {
+                      return assessmentCounts ? Object.values(assessmentCounts).reduce((sum: number, count: any) => sum + count, 0) : 0;
+                    }
+                    return assessmentCounts?.[key] || 0;
+                  };
+                  
+                  const count = getCount();
+                  
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      onPress={() => setSelectedAssessmentType(key as any)}
+                      className={`px-4 py-2.5 rounded-md mx-1 flex-row items-center gap-2 ${
+                        selectedAssessmentType === key 
+                          ? 'bg-white dark:bg-gray-700 shadow-sm' 
+                          : 'bg-transparent'
+                      }`}
+                      activeOpacity={0.7}
+                    >
+                      <Text className={`text-sm font-medium ${
+                        selectedAssessmentType === key 
+                          ? 'text-gray-900 dark:text-gray-100' 
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {label}
+                      </Text>
+                      {count > 0 && (
+                        <View className={`px-2 py-1 rounded-full ${
+                          selectedAssessmentType === key 
+                            ? 'bg-blue-100 dark:bg-blue-900/50' 
+                            : 'bg-gray-200 dark:bg-gray-600'
+                        }`}>
+                          <Text className={`text-xs font-semibold ${
+                            selectedAssessmentType === key 
+                              ? 'text-blue-700 dark:text-blue-300' 
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {count}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Loading State - Only for Topics tab */}
+        {activeTab === 'topics' && isLoading && (
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
             <View className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
@@ -288,8 +446,8 @@ export default function SubjectDetailScreen() {
           </View>
         )}
 
-        {/* Error State */}
-        {error && !isLoading && (
+        {/* Error State - Only for Topics tab */}
+        {activeTab === 'topics' && error && !isLoading && (
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
             <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
@@ -310,58 +468,72 @@ export default function SubjectDetailScreen() {
         )}
       </View>
 
-      {/* Topics List - Scrollable Container */}
-      {!isLoading && !error && localTopics.length > 0 ? (
-        <ScrollView 
-          className="flex-1 px-6"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          scrollEventThrottle={16}
-          nestedScrollEnabled={true}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={!isDragging}
-        >
-          <SimpleDraggableList
-            topics={localTopics}
-            subjectId={displaySubject?.id || subject?.id || ''}
-            subjectName={displaySubject?.name || subject?.name || 'Subject'}
-            subjectCode={apiSubject?.code || 'SUB'}
-            onAddVideo={handleAddVideo}
-            onAddMaterial={handleAddMaterial}
-            onEditInstructions={handleEditInstructions}
-            onTopicsReorder={handleTopicsReorder}
-            onRefresh={refreshTopicContent}
-            onScroll={(event) => {
-              // Handle scroll events from drag operations
-              if (event?.type === 'drag_start') {
-                setIsDragging(true);
-              } else if (event?.type === 'drag_end') {
-                setIsDragging(false);
-              }
-            }}
-          />
-        </ScrollView>
-      ) : !isLoading && !error ? (
-        <View className="flex-1 px-6 py-4">
-          <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
-            <Ionicons name="folder-outline" size={64} color="#9ca3af" />
-            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
-              No Topics Yet
-            </Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 mb-4">
-              Start by adding your first topic to organize your content
-            </Text>
-            <TouchableOpacity
-              onPress={handleAddTopic}
-              activeOpacity={0.7}
-              className="bg-purple-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
-            >
-              <Ionicons name="add" size={16} color="white" />
-              <Text className="text-white font-semibold">Create Your First Topic</Text>
-            </TouchableOpacity>
+      {/* Content Area - Conditional based on active tab */}
+      {activeTab === 'topics' ? (
+        /* Topics List - Scrollable Container */
+        !isLoading && !error && localTopics.length > 0 ? (
+          <ScrollView 
+            className="flex-1 px-6"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            scrollEventThrottle={16}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={!isDragging}
+          >
+            <SimpleDraggableList
+              topics={localTopics}
+              subjectId={displaySubject?.id || subject?.id || ''}
+              subjectName={displaySubject?.name || subject?.name || 'Subject'}
+              subjectCode={apiSubject?.code || 'SUB'}
+              onAddVideo={handleAddVideo}
+              onAddMaterial={handleAddMaterial}
+              onEditInstructions={handleEditInstructions}
+              onTopicsReorder={handleTopicsReorder}
+              onRefresh={refreshTopicContent}
+              onScroll={(event) => {
+                // Handle scroll events from drag operations
+                if (event?.type === 'drag_start') {
+                  setIsDragging(true);
+                } else if (event?.type === 'drag_end') {
+                  setIsDragging(false);
+                }
+              }}
+            />
+          </ScrollView>
+        ) : !isLoading && !error ? (
+          <View className="flex-1 px-6 py-4">
+            <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
+              <Ionicons name="folder-outline" size={64} color="#9ca3af" />
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
+                No Topics Yet
+              </Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 mb-4">
+                Start by adding your first topic to organize your content
+              </Text>
+              <TouchableOpacity
+                onPress={handleAddTopic}
+                activeOpacity={0.7}
+                className="bg-purple-600 px-6 py-3 rounded-lg flex-row items-center gap-2"
+              >
+                <Ionicons name="add" size={16} color="white" />
+                <Text className="text-white font-semibold">Create Your First Topic</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+        ) : null
+      ) : (
+        /* Assessments Tab */
+        <View className="flex-1 px-6">
+          <CBTList
+            subjectId={displaySubject?.id || subject?.id || ''}
+            onCBTSelect={handleCBTSelect}
+            onCreateCBT={handleCreateCBT}
+            assessmentTypeFilter={selectedAssessmentType}
+            onAssessmentCountsChange={handleAssessmentCountsChange}
+          />
         </View>
-      ) : null}
+      )}
 
       {/* Modals */}
       <VideoUploadModal
@@ -402,6 +574,7 @@ export default function SubjectDetailScreen() {
         subjectName={capitalizeWords(displaySubject?.name || '')}
         subjectId={displaySubject?.id || subject?.id || ''}
       />
+      </ScrollView>
     </SafeAreaView>
   );
 }

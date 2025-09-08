@@ -8,6 +8,7 @@ import {
   Alert,
   Switch,
   RefreshControl,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +50,7 @@ export default function CBTCreationScreen() {
     description: '',
     instructions: '',
     subject_id: subjectId || '',
+    assessment_type: 'CBT',
     duration: 30,
     max_attempts: 1,
     passing_score: 60,
@@ -67,7 +69,7 @@ export default function CBTCreationScreen() {
     time_limit: undefined,
   });
 
-
+  const [showAssessmentTypeDropdown, setShowAssessmentTypeDropdown] = useState(false);
 
   // Create quiz mutation
   const createQuizMutation = useMutation({
@@ -136,6 +138,11 @@ export default function CBTCreationScreen() {
       return;
     }
 
+    if (!formData.assessment_type) {
+      showError('Validation Error', 'Assessment type is required');
+      return;
+    }
+
     if (formData.duration && formData.duration < 1) {
       showError('Validation Error', 'Duration must be at least 1 minute');
       return;
@@ -181,7 +188,7 @@ export default function CBTCreationScreen() {
             </TouchableOpacity>
             <View>
               <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Create CBT Quiz
+                Create New Assessment
               </Text>
               {subjectName && (
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
@@ -193,25 +200,81 @@ export default function CBTCreationScreen() {
         </View>
       </View>
 
-      <ScrollView 
-        className="flex-1"
-        contentContainerClassName="p-4 pb-24"
-      >
+      <TouchableWithoutFeedback onPress={() => setShowAssessmentTypeDropdown(false)}>
+        <ScrollView 
+          className="flex-1"
+          contentContainerClassName="p-4 pb-24"
+          style={{ overflow: 'visible' }}
+        >
         {/* Basic Information */}
-        <View className="bg-white dark:bg-black rounded-xl p-4 mb-4 shadow-sm border border-gray-200 dark:border-gray-800">
+        <View className="bg-white dark:bg-black rounded-xl p-4 mb-4 shadow-sm border border-gray-200 dark:border-gray-800 overflow-visible">
           <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Basic Information
+            Assessment Information
           </Text>
+
+          {/* Assessment Type */}
+          <View className="mb-3 relative z-50">
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Assessment Type *
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowAssessmentTypeDropdown(!showAssessmentTypeDropdown)}
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 flex-row items-center justify-between"
+              activeOpacity={0.7}
+            >
+              <Text className="text-gray-900 dark:text-gray-100">
+                {formData.assessment_type}
+              </Text>
+              <Ionicons 
+                name={showAssessmentTypeDropdown ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color="#6b7280" 
+              />
+            </TouchableOpacity>
+            
+            {/* Dropdown Options */}
+            {showAssessmentTypeDropdown && (
+              <View className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                <View style={{ maxHeight: 200 }}>
+                  <ScrollView 
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {['CBT', 'EXAM', 'QUIZ', 'ASSIGNMENT', 'TEST'].map((type, index) => (
+                      <TouchableOpacity
+                        key={type}
+                        onPress={() => {
+                          handleInputChange('assessment_type', type);
+                          setShowAssessmentTypeDropdown(false);
+                        }}
+                        className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex-row items-center justify-between last:border-b-0 active:bg-gray-50 dark:active:bg-gray-700"
+                        activeOpacity={0.7}
+                      >
+                        <Text className="text-gray-900 dark:text-gray-100 font-medium">
+                          {type}
+                        </Text>
+                        {formData.assessment_type === type && (
+                          <Ionicons name="checkmark" size={20} color="#3b82f6" />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            )}
+          </View>
 
           {/* Quiz Title */}
           <View className="mb-3">
             <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Quiz Title *
+              Assessment Title *
             </Text>
             <TextInput
               value={formData.title}
               onChangeText={(text) => handleInputChange('title', text)}
-              placeholder="Enter quiz title"
+              placeholder="Enter assessment title"
               className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-gray-100"
               placeholderTextColor="#9ca3af"
             />
@@ -220,12 +283,12 @@ export default function CBTCreationScreen() {
           {/* Description */}
           <View className="mb-3">
             <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
+              Description *
             </Text>
             <TextInput
               value={formData.description}
               onChangeText={(text) => handleInputChange('description', text)}
-              placeholder="Enter quiz description"
+              placeholder="Enter assessment description"
               multiline
               numberOfLines={2}
               className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-gray-100"
@@ -248,6 +311,7 @@ export default function CBTCreationScreen() {
               placeholderTextColor="#9ca3af"
             />
           </View>
+
 
           {/* Tags */}
           <View className="mb-3">
@@ -274,7 +338,7 @@ export default function CBTCreationScreen() {
         {/* Quiz Settings */}
         <View className="bg-white dark:bg-black rounded-xl p-4 mb-4 shadow-sm border border-gray-200 dark:border-gray-800">
           <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Quiz Settings
+          Settings
           </Text>
 
           <View className="space-y-3">
@@ -570,7 +634,8 @@ export default function CBTCreationScreen() {
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
 
       {/* Loading Overlay */}
       {createQuizMutation.isPending && (
@@ -588,6 +653,7 @@ export default function CBTCreationScreen() {
           </View>
         </View>
       )}
+
 
     </SafeAreaView>
   );
