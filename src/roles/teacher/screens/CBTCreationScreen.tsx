@@ -26,6 +26,7 @@ type TeacherStackParamList = {
   VideoDemo: any;
   CBTCreation: { subjectId?: string; subjectName?: string };
   CBTQuizDetail: { quizId: string };
+  CBTQuestionCreation: { quizId: string; quizTitle: string; subjectId: string };
 };
 
 type TeacherNavigationProp = NativeStackNavigationProp<TeacherStackParamList>;
@@ -60,6 +61,10 @@ export default function CBTCreationScreen() {
     grading_type: 'AUTOMATIC',
     auto_submit: true,
     tags: [],
+    // Optional fields
+    start_date: undefined,
+    end_date: undefined,
+    time_limit: undefined,
   });
 
 
@@ -68,14 +73,46 @@ export default function CBTCreationScreen() {
   const createQuizMutation = useMutation({
     mutationFn: (quizData: CreateQuizRequest) => cbtService.createQuiz(quizData),
     onSuccess: (data) => {
-      showSuccess('Quiz Created Successfully!', 'Your CBT quiz has been created and is ready for questions.');
+      showSuccess(
+        '🎉 CBT Created Successfully!', 
+        `"${data.title}" has been created. Let's add some questions!`
+      );
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['cbt-quizzes'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-subjects'] });
-      navigation.goBack();
+      queryClient.invalidateQueries({ queryKey: ['cbt-quizzes', subjectId] });
+      // Navigate to question creation page
+      navigation.navigate('CBTQuestionCreation', { 
+        quizId: data.id, 
+        quizTitle: data.title,
+        subjectId: data.subject_id 
+      });
     },
     onError: (error: any) => {
-      showError('Failed to Create Quiz', error.message || 'Failed to create quiz');
+      console.error('CBT Creation Error:', error);
+      
+      let errorMessage = 'An unexpected error occurred';
+      let errorTitle = '❌ Failed to Create CBT';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.status === 0) {
+        errorTitle = '🌐 Connection Error';
+        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+      } else if (error?.status === 401) {
+        errorTitle = '🔐 Authentication Error';
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (error?.status === 403) {
+        errorTitle = '🚫 Permission Denied';
+        errorMessage = 'You do not have permission to create CBTs. Please contact your administrator.';
+      } else if (error?.status >= 500) {
+        errorTitle = '🔧 Server Error';
+        errorMessage = 'The server is experiencing issues. Please try again later.';
+      }
+      
+      showError(errorTitle, errorMessage);
     },
   });
 
@@ -90,26 +127,41 @@ export default function CBTCreationScreen() {
   const handleSubmit = () => {
     // Validation
     if (!formData.title.trim()) {
-      Alert.alert('Validation Error', 'Quiz title is required');
+      showError('Validation Error', 'Quiz title is required');
       return;
     }
 
     if (!formData.subject_id) {
-      Alert.alert('Validation Error', 'Subject ID is required');
+      showError('Validation Error', 'Subject ID is required');
       return;
     }
 
     if (formData.duration && formData.duration < 1) {
-      Alert.alert('Validation Error', 'Duration must be at least 1 minute');
+      showError('Validation Error', 'Duration must be at least 1 minute');
       return;
     }
 
     if (formData.passing_score && (formData.passing_score < 0 || formData.passing_score > 100)) {
-      Alert.alert('Validation Error', 'Passing score must be between 0 and 100');
+      showError('Validation Error', 'Passing score must be between 0 and 100');
       return;
     }
 
-    createQuizMutation.mutate(formData);
+    if (formData.total_points && formData.total_points < 1) {
+      showError('Validation Error', 'Total points must be at least 1');
+      return;
+    }
+
+    if (formData.max_attempts && formData.max_attempts < 1) {
+      showError('Validation Error', 'Max attempts must be at least 1');
+      return;
+    }
+
+    // Clean up the form data - remove undefined values
+    const cleanedFormData = Object.fromEntries(
+      Object.entries(formData).filter(([_, value]) => value !== undefined && value !== '')
+    ) as CreateQuizRequest;
+
+    createQuizMutation.mutate(cleanedFormData);
   };
 
 
@@ -195,6 +247,26 @@ export default function CBTCreationScreen() {
               className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-gray-100"
               placeholderTextColor="#9ca3af"
             />
+          </View>
+
+          {/* Tags */}
+          <View className="mb-3">
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tags (Optional)
+            </Text>
+            <TextInput
+              value={formData.tags?.join(', ') || ''}
+              onChangeText={(text) => {
+                const tags = text.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                handleInputChange('tags', tags);
+              }}
+              placeholder="e.g., mathematics, final-exam, comprehensive"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-gray-100"
+              placeholderTextColor="#9ca3af"
+            />
+            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Separate tags with commas
+            </Text>
           </View>
 
         </View>
@@ -483,7 +555,12 @@ export default function CBTCreationScreen() {
           activeOpacity={0.8}
         >
           {createQuizMutation.isPending ? (
-            <InlineSpinner size="small" color="white" />
+            <>
+              <InlineSpinner size="small" color="white" />
+              <Text className="text-white font-semibold text-base ml-2">
+                Creating Quiz...
+              </Text>
+            </>
           ) : (
             <>
               <Ionicons name="add-circle" size={18} color="white" />
@@ -495,6 +572,22 @@ export default function CBTCreationScreen() {
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Loading Overlay */}
+      {createQuizMutation.isPending && (
+        <View className="absolute inset-0 bg-black/20 flex items-center justify-center">
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-6 mx-6 shadow-lg">
+            <View className="flex-row items-center">
+              <InlineSpinner size="small" color="#3b82f6" />
+              <Text className="text-gray-900 dark:text-gray-100 font-medium ml-3">
+                Creating your quiz...
+              </Text>
+            </View>
+            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-2 text-center">
+              Please wait while we set up your CBT
+            </Text>
+          </View>
+        </View>
+      )}
 
     </SafeAreaView>
   );

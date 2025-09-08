@@ -20,7 +20,7 @@ export class CBTService {
   // Quiz Management
   async createQuiz(quizData: CreateQuizRequest): Promise<CBTQuiz> {
     const response = await this.httpClient.makeRequest<CBTQuiz>(
-      `${this.baseURL}/quizzes`,
+      `${this.baseURL}`,
       'POST',
       quizData
     );
