@@ -34,7 +34,7 @@ interface Subject {
 }
 
 export default function SubjectDetailScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute();
   const { subject }: { subject: Subject } = route.params as any;
   const { showSuccess, showError } = useToast();
@@ -172,6 +172,13 @@ export default function SubjectDetailScreen() {
     navigation.goBack();
   };
 
+  const handleCreateCBT = () => {
+    navigation.navigate('CBTCreation' as never, {
+      subjectId: displaySubject?.id || subject?.id,
+      subjectName: displaySubject?.name || subject?.name,
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       
@@ -223,14 +230,24 @@ export default function SubjectDetailScreen() {
           <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
             Course Topics
           </Text>
-          <TouchableOpacity
-            onPress={handleAddTopic}
-            activeOpacity={0.7}
-            className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
-          >
-            <Ionicons name="add" size={16} color="white" />
-            <Text className="text-white font-semibold text-sm">Create Topic</Text>
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              onPress={handleCreateCBT}
+              activeOpacity={0.7}
+              className="bg-green-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
+            >
+              <Ionicons name="add-circle" size={16} color="white" />
+              <Text className="text-white font-semibold text-sm">Create CBT</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAddTopic}
+              activeOpacity={0.7}
+              className="bg-purple-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
+            >
+              <Ionicons name="add" size={16} color="white" />
+              <Text className="text-white font-semibold text-sm">Create Topic</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search and Filters */}
@@ -360,6 +377,8 @@ export default function SubjectDetailScreen() {
       <MaterialUploadModal
         visible={showMaterialModal}
         topic={selectedTopic}
+        subjectId={displaySubject?.id || subject?.id || ''}
+        topicId={selectedTopic?.id || ''}
         onClose={() => {
           setShowMaterialModal(false);
           setSelectedTopic(null);

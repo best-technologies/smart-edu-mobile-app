@@ -18,6 +18,8 @@ type TeacherStackParamList = {
     subjectName: string;
     subjectCode: string;
   };
+  CBTCreation: { subjectId?: string; subjectName?: string };
+  CBTQuizDetail: { quizId: string };
 };
 
 type TeacherNavigationProp = NativeStackNavigationProp<TeacherStackParamList>;
@@ -75,6 +77,7 @@ export default function SubjectsScreen() {
     // TODO: Implement manage content functionality
     console.log('Manage content for:', subject.name);
   };
+
 
   const handleClassPress = (cls: ManagedClassType) => {
     // TODO: Navigate to class details or students list

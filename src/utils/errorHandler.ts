@@ -100,6 +100,13 @@ export class ErrorHandler {
 
     switch (status) {
       case 400:
+        if (message.includes('passwords do not match') || message.includes('password') || message.includes('email')) {
+          return {
+            title: 'Login Failed',
+            message: 'Your email or password is incorrect. Please check your credentials and try again.',
+            type: 'error'
+          };
+        }
         if (message.includes('invalid') || message.includes('validation')) {
           return {
             title: 'Invalid Information',
@@ -220,6 +227,15 @@ export class ErrorHandler {
     // Override with action-specific messages
     switch (action) {
       case 'login':
+        // Handle specific password mismatch error
+        if (error instanceof ApiError && error.message && error.message.toLowerCase().includes('passwords do not match')) {
+          return {
+            title: 'Login Failed',
+            message: 'Your email or password is incorrect. Please check your credentials and try again.',
+            type: 'error'
+          };
+        }
+        
         if (friendlyError.title === 'Authentication Failed') {
           return {
             title: 'Login Failed',

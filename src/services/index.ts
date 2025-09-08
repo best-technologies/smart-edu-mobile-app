@@ -1,5 +1,5 @@
 // API Service
-export { ApiService, authService, teacherService, directorService, studentService, userService } from './api';
+export { ApiService, authService, teacherService, directorService, studentService, userService, cbtService } from './api';
 export { API_ENDPOINTS, API_CONFIG } from './config/apiConfig';
 export { TokenManager } from './api/tokenManager';
 
