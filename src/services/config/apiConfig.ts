@@ -65,9 +65,9 @@ export const API_ENDPOINTS = {
     SCHEDULES: '/director/schedules',
   },
   STUDENT: {
-    DASHBOARD: '/student/dashboard',
-    SUBJECTS: '/student/subjects',
-    SCHEDULES: '/student/schedules',
+    DASHBOARD: '/students/dashboard',
+    SUBJECTS: '/students/subjects',
+    SCHEDULES: '/students/schedules',
   },
 } as const;
 

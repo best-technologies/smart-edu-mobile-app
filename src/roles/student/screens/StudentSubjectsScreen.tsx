@@ -15,60 +15,32 @@ import {
   SubjectPagination
 } from './components/subjects';
 import type { SubjectStats as SubjectStatsType } from './components/subjects/types';
-import { mockStudentDashboardData } from '@/mock/student';
+import { useStudentSubjects } from '@/hooks/useStudentSubjects';
+import { CenteredLoader } from '@/components';
 
 export default function StudentSubjectsScreen() {
   const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data - in real app, this would come from API
-  const mockSubjectsData = {
-    subjects: mockStudentDashboardData.data.subjects_enrolled.map(subject => ({
-      id: subject.id,
-      name: subject.name,
-      code: subject.code,
-      color: subject.color,
-      description: `Learn ${subject.name} with ${subject.teacher.name}`,
-      thumbnail: null,
-      timetableEntries: [],
-      classesTakingSubject: [{
-        id: mockStudentDashboardData.data.general_info.student_class.id,
-        name: mockStudentDashboardData.data.general_info.student_class.name
-      }],
-      contentCounts: {
-        totalVideos: Math.floor(Math.random() * 20) + 5,
-        totalMaterials: Math.floor(Math.random() * 15) + 3,
-        totalAssignments: Math.floor(Math.random() * 10) + 2
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    })),
-    stats: {
-      totalSubjects: mockStudentDashboardData.data.subjects_enrolled.length,
-      totalVideos: mockStudentDashboardData.data.subjects_enrolled.reduce((acc, sub) => acc + Math.floor(Math.random() * 20) + 5, 0),
-      totalMaterials: mockStudentDashboardData.data.subjects_enrolled.reduce((acc, sub) => acc + Math.floor(Math.random() * 15) + 3, 0),
-      totalAssignments: mockStudentDashboardData.data.subjects_enrolled.reduce((acc, sub) => acc + Math.floor(Math.random() * 10) + 2, 0)
-    },
-    academicSession: {
-      id: 'session_1',
-      academic_year: mockStudentDashboardData.data.general_info.current_session.academic_year,
-      term: mockStudentDashboardData.data.general_info.current_session.term
-    },
-    pagination: {
-      page: 1,
-      limit: 10,
-      total: mockStudentDashboardData.data.subjects_enrolled.length,
-      totalPages: 1,
-      hasNext: false,
-      hasPrev: false
-    }
-  };
+  const { data: subjectsData, isLoading, error, refetch } = useStudentSubjects();
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
 
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjectsData.subjects);
-  const [stats] = useState<SubjectStatsType>(mockSubjectsData.stats);
-  const [academicSession] = useState<AcademicSession>(mockSubjectsData.academicSession);
-  const [pagination] = useState<SubjectPagination>(mockSubjectsData.pagination);
+  // Update filtered subjects when data changes
+  React.useEffect(() => {
+    if (subjectsData?.subjects) {
+      if (searchQuery.trim() === '') {
+        setFilteredSubjects(subjectsData.subjects);
+      } else {
+        const filtered = subjectsData.subjects.filter(subject =>
+          subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          subject.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          subject.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredSubjects(filtered);
+      }
+    }
+  }, [subjectsData, searchQuery]);
 
   const handleSubjectPress = (subject: Subject) => {
     // TODO: Navigate to subject details (read-only)
@@ -77,27 +49,41 @@ export default function StudentSubjectsScreen() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (query.trim() === '') {
-      setSubjects(mockSubjectsData.subjects);
-    } else {
-      const filtered = mockSubjectsData.subjects.filter(subject =>
-        subject.name.toLowerCase().includes(query.toLowerCase()) ||
-        subject.code.toLowerCase().includes(query.toLowerCase()) ||
-        subject.description.toLowerCase().includes(query.toLowerCase())
-      );
-      setSubjects(filtered);
-    }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await refetch();
+    setRefreshing(false);
   };
 
-  const hasData = subjects.length > 0;
+  if (isLoading && !subjectsData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <CenteredLoader visible={true} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !subjectsData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-lg text-gray-600 dark:text-gray-400 text-center mb-4">
+            Failed to load subjects data
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="bg-blue-500 px-6 py-3 rounded-lg"
+          >
+            <Text className="text-white font-semibold">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const hasData = filteredSubjects.length > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -128,8 +114,8 @@ export default function StudentSubjectsScreen() {
             {/* Stats Section */}
             <View className="px-6 py-3">
               <SubjectStats 
-                stats={stats} 
-                academicSession={academicSession}
+                stats={subjectsData.stats} 
+                academicSession={subjectsData.academicSession}
               />
             </View>
 
@@ -145,7 +131,7 @@ export default function StudentSubjectsScreen() {
             {/* Subjects Count */}
             <View className="px-6 py-1 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
               <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {subjects.length} Subject{subjects.length !== 1 ? 's' : ''} found
+                {filteredSubjects.length} Subject{filteredSubjects.length !== 1 ? 's' : ''} found
                 {searchQuery && ` for "${searchQuery}"`}
               </Text>
             </View>
@@ -153,7 +139,7 @@ export default function StudentSubjectsScreen() {
             {/* Subjects Grid */}
             <View className="px-6 py-3">
               <View className="flex-row flex-wrap gap-3">
-                {subjects.map((subject: Subject) => (
+                {filteredSubjects.map((subject: Subject) => (
                   <View key={subject.id} style={{ width: '48%' }}>
                     <SubjectCard 
                       subject={subject}
@@ -164,10 +150,10 @@ export default function StudentSubjectsScreen() {
               </View>
 
               {/* Pagination */}
-              {pagination && pagination.totalPages > 1 && (
+              {subjectsData.pagination && subjectsData.pagination.totalPages > 1 && (
                 <View className="mt-6">
                   <Pagination 
-                    pagination={pagination}
+                    pagination={subjectsData.pagination}
                     onPageChange={(page) => console.log('Page changed:', page)}
                   />
                 </View>

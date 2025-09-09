@@ -15,9 +15,13 @@ interface RecentNotificationsProps {
   pendingAssessments?: number;
 }
 
-export default function RecentNotifications({ notifications, pendingAssessments }: RecentNotificationsProps) {
+export default function RecentNotifications({ notifications = [], pendingAssessments }: RecentNotificationsProps) {
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'No date';
+    
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -68,7 +72,7 @@ export default function RecentNotifications({ notifications, pendingAssessments 
     }
   };
 
-  if (notifications.length === 0) {
+  if (!notifications || notifications.length === 0) {
     return (
       <View className="mb-6">
         <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -119,7 +123,7 @@ export default function RecentNotifications({ notifications, pendingAssessments 
         showsHorizontalScrollIndicator={false} 
         contentContainerClassName="gap-3"
       >
-        {notifications.map((notification) => (
+        {notifications?.map((notification) => (
           <View
             key={notification.id}
             className="w-72 rounded-2xl bg-white dark:bg-black border border-gray-200 dark:border-gray-800 p-4"
@@ -158,13 +162,21 @@ export default function RecentNotifications({ notifications, pendingAssessments 
               <View className="flex-row items-center">
                 <Ionicons name="time-outline" size={14} color="#6B7280" />
                 <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                  {new Date(notification.comingUpOn).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {(() => {
+                    try {
+                      const date = new Date(notification.comingUpOn);
+                      if (isNaN(date.getTime())) return 'Invalid date';
+                      return date.toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                    } catch (error) {
+                      return 'Invalid date';
+                    }
+                  })()}
                 </Text>
               </View>
             )}

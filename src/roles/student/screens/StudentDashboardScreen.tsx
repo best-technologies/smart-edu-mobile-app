@@ -9,23 +9,47 @@ import {
   ClassSchedule, 
   RecentNotifications 
 } from './components/dashboard';
-import { mockStudentDashboardData } from '@/mock/student';
+import { useStudentDashboard } from '@/hooks/useStudentDashboard';
+import { CenteredLoader } from '@/components';
 import { useState } from 'react';
 
 export default function StudentDashboardScreen() {
   const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
   
-  // Using mock data for now
-  const dashboardData = mockStudentDashboardData.data;
+  const { data: dashboardData, isLoading, error, refetch } = useStudentDashboard();
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await refetch();
+    setRefreshing(false);
   };
+
+  if (isLoading && !dashboardData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <CenteredLoader visible={true} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-lg text-gray-600 dark:text-gray-400 text-center mb-4">
+            Failed to load dashboard data
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="bg-blue-500 px-6 py-3 rounded-lg"
+          >
+            <Text className="text-white font-semibold">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const quickActions = [
     {
@@ -33,35 +57,35 @@ export default function StudentDashboardScreen() {
       title: 'Assessments',
       icon: 'document-text-outline' as const,
       color: '#3B82F6',
-      onPress: () => console.log('Assessments'),
+      onPress: () => navigation.navigate('Tasks'),
     },
     {
       id: '2',
       title: 'Results',
       icon: 'stats-chart-outline' as const,
       color: '#F59E0B',
-      onPress: () => console.log('Results'),
+      onPress: () => navigation.navigate('Results'),
     },
     {
       id: '3',
       title: 'Subjects',
       icon: 'book-outline' as const,
       color: '#8B5CF6',
-      onPress: () => console.log('Subjects'),
+      onPress: () => navigation.navigate('Subjects'),
     },
     {
       id: '4',
       title: 'Schedules',
       icon: 'calendar-outline' as const,
       color: '#EC4899',
-      onPress: () => console.log('Schedules'),
+      onPress: () => navigation.navigate('Schedules'),
     },
     {
       id: '5',
       title: 'Tasks',
       icon: 'list-outline' as const,
       color: '#EF4444',
-      onPress: () => console.log('Tasks'),
+      onPress: () => navigation.navigate('Tasks'),
     },
   ];
 
@@ -70,7 +94,7 @@ export default function StudentDashboardScreen() {
       <TopBar 
         name={dashboardData.general_info.student.name}
         email={dashboardData.general_info.student.email}
-        displayPicture={dashboardData.general_info.student.display_picture}
+        displayPicture={dashboardData.general_info.student.display_picture?.secure_url || null}
         classInfo={{
           name: dashboardData.general_info.student_class.name,
           teacher: dashboardData.general_info.class_teacher.name

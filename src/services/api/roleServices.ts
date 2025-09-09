@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -139,12 +139,12 @@ export class StudentService {
     this.httpClient = new HttpClient();
   }
 
-  async getDashboard(): Promise<ApiResponse<any>> {
-    return this.httpClient.makeRequest(API_ENDPOINTS.STUDENT.DASHBOARD);
+  async getDashboard(): Promise<StudentDashboardResponse> {
+    return this.httpClient.makeRequest<StudentDashboardResponse['data']>(API_ENDPOINTS.STUDENT.DASHBOARD) as Promise<StudentDashboardResponse>;
   }
 
-  async getSubjects(): Promise<ApiResponse<any[]>> {
-    return this.httpClient.makeRequest(API_ENDPOINTS.STUDENT.SUBJECTS);
+  async getSubjects(): Promise<StudentSubjectsResponse> {
+    return this.httpClient.makeRequest<StudentSubjectsResponse['data']>(API_ENDPOINTS.STUDENT.SUBJECTS) as Promise<StudentSubjectsResponse>;
   }
 
   async getSchedules(): Promise<ApiResponse<any[]>> {

@@ -240,6 +240,190 @@ export interface TeacherScheduleResponse {
   statusCode: number;
 }
 
+// Student Dashboard Types
+export interface StudentDashboardGeneralInfo {
+  current_session: {
+    academic_year: string;
+    term: string;
+    start_date: string;
+    end_date: string;
+  };
+  student_class: {
+    id: string;
+    name: string;
+  };
+  class_teacher: {
+    id: string;
+    name: string;
+    display_picture: {
+      secure_url: string;
+      public_id: string;
+    } | null;
+  };
+  student: {
+    id: string;
+    name: string;
+    email: string;
+    display_picture: {
+      secure_url: string;
+      public_id: string;
+    } | null;
+  };
+  current_date: string;
+  current_time: string;
+}
+
+export interface StudentDashboardStats {
+  total_subjects: number;
+  pending_assessments: number;
+}
+
+export interface StudentDashboardSubject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  teacher: {
+    id: string;
+    name: string;
+    display_picture: {
+      secure_url: string;
+      public_id: string;
+    } | null;
+  };
+}
+
+export interface StudentDashboardScheduleItem {
+  subject: {
+    id: string;
+    name: string;
+    code: string;
+    color: string;
+  };
+  teacher: {
+    id: string;
+    name: string;
+  };
+  time: {
+    from: string;
+    to: string;
+    label: string;
+  };
+  room: string;
+}
+
+export interface StudentDashboardDaySchedule {
+  day: string;
+  schedule: StudentDashboardScheduleItem[];
+}
+
+export interface StudentDashboardClassSchedule {
+  today: StudentDashboardDaySchedule;
+  tomorrow: StudentDashboardDaySchedule;
+  day_after_tomorrow: StudentDashboardDaySchedule;
+}
+
+export interface StudentDashboardNotification {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  comingUpOn: string;
+  createdAt: string;
+}
+
+export interface StudentDashboardData {
+  general_info: StudentDashboardGeneralInfo;
+  stats: StudentDashboardStats;
+  subjects_enrolled: StudentDashboardSubject[];
+  class_schedule: StudentDashboardClassSchedule;
+  notifications: StudentDashboardNotification[];
+}
+
+export interface StudentDashboardResponse {
+  success: boolean;
+  message: string;
+  data: StudentDashboardData;
+  statusCode: number;
+}
+
+// Student Subjects Types
+export interface StudentSubjectThumbnail {
+  secure_url: string;
+  public_id: string;
+}
+
+export interface StudentSubjectClass {
+  id: string;
+  name: string;
+  classId: number;
+}
+
+export interface StudentSubjectTimetableEntry {
+  id: string;
+  day_of_week: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  class: StudentSubjectClass;
+}
+
+export interface StudentSubjectContentCounts {
+  totalVideos: number;
+  totalMaterials: number;
+  totalAssignments: number;
+}
+
+export interface StudentSubject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  description: string;
+  thumbnail: StudentSubjectThumbnail | null;
+  timetableEntries: StudentSubjectTimetableEntry[];
+  classesTakingSubject: StudentSubjectClass[];
+  contentCounts: StudentSubjectContentCounts;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentSubjectsStats {
+  totalSubjects: number;
+  totalVideos: number;
+  totalMaterials: number;
+  totalAssignments: number;
+}
+
+export interface StudentSubjectsAcademicSession {
+  id: string;
+  academic_year: string;
+  term: string;
+}
+
+export interface StudentSubjectsPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface StudentSubjectsData {
+  subjects: StudentSubject[];
+  stats: StudentSubjectsStats;
+  academicSession: StudentSubjectsAcademicSession;
+  pagination: StudentSubjectsPagination;
+}
+
+export interface StudentSubjectsResponse {
+  success: boolean;
+  message: string;
+  data: StudentSubjectsData;
+  statusCode: number;
+}
+
 // API Error Types
 export class ApiError extends Error {
   constructor(
