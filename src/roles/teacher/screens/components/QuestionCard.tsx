@@ -61,6 +61,7 @@ export default function QuestionCard({
   const editQuestionHandler = () => {
     console.log('🔴 Edit is pressed for question:', question.id);
   };
+  
   const [editedData, setEditedData] = useState<Partial<CreateQuestionRequest>>({
     question_text: question.question_text,
     points: question.points,
@@ -205,15 +206,10 @@ export default function QuestionCard({
     return (
       <View className="relative mb-4">
         {/* Clickable question content */}
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('🟢 Question card pressed - index:', index);
-            editQuestionHandler();
-          }}
+        <View 
           className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
             isGreyedOut ? 'opacity-50' : ''
           }`}
-          activeOpacity={0.7}
         >
         {/* Question Number */}
         <View className="absolute top-2 left-2 z-10">
@@ -224,12 +220,7 @@ export default function QuestionCard({
           </View>
         </View>
 
-        {/* Edit indicator */}
-        <View className="absolute top-2 right-2 z-10">
-          <View className="w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center">
-            <Ionicons name="pencil" size={12} color="#6b7280" />
-          </View>
-        </View>
+        {/* Edit indicator - removed from here */}
 
         {/* Drag Handle */}
         <View className="flex-row items-start">
@@ -282,10 +273,20 @@ export default function QuestionCard({
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
 
       {/* Action Icons - Vertical column positioned outside the greyed-out container */}
       <View className="absolute top-3 right-3 flex-col items-center gap-2 z-10">
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('🟢 Pencil icon pressed - index:', index);
+            editQuestionHandler();
+          }}
+          className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="pencil" size={16} color="#6b7280" />
+        </TouchableOpacity>
         <TouchableOpacity 
           onPress={onDuplicate} 
           className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
