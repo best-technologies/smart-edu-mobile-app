@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,15 +8,30 @@ import { useTeacherSubjects } from '@/hooks/useTeacherSubjects';
 import { CenteredLoader } from '@/components';
 import { cbtService } from '@/services/api/cbtService';
 import { CBTQuiz, AssessmentsResponse } from '@/services/types/cbtTypes';
+import { useToast } from '@/contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
+
+const ASSESSMENT_TYPES = [
+  'ASSIGNMENT',
+  'QUIZ',
+  'PRACTICE',
+  'CBT',
+  'EXAM',
+  'OTHER'
+];
 
 export default function AssessmentsListScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [selectedFilter, setSelectedFilter] = useState<string>('All');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('All');
+  const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
   const limit = 10;
 
   const {
@@ -68,19 +83,11 @@ export default function AssessmentsListScreen() {
     onSuccess: (data, assessmentId) => {
       console.log('✅ Assessment deleted successfully:', assessmentId);
       queryClient.invalidateQueries({ queryKey: ['assessments', selectedSubjectId] });
-      Alert.alert(
-        'Success',
-        'Assessment deleted successfully',
-        [{ text: 'OK' }]
-      );
+      showSuccess('Assessment Deleted', 'Assessment has been deleted successfully');
     },
     onError: (error: any, assessmentId) => {
       console.error('❌ Delete assessment error:', error, 'for assessment:', assessmentId);
-      Alert.alert(
-        'Error',
-        error?.message || 'Failed to delete assessment. Please try again.',
-        [{ text: 'OK' }]
-      );
+      showError('Delete Failed', error?.message || 'Failed to delete assessment. Please try again.');
     },
   });
 
@@ -93,19 +100,28 @@ export default function AssessmentsListScreen() {
     onSuccess: (data, assessmentId) => {
       console.log('✅ Assessment published successfully:', assessmentId);
       queryClient.invalidateQueries({ queryKey: ['assessments', selectedSubjectId] });
-      Alert.alert(
-        'Success',
-        'Assessment published successfully',
-        [{ text: 'OK' }]
-      );
+      showSuccess('Assessment Published', 'Assessment has been published successfully');
     },
     onError: (error: any, assessmentId) => {
       console.error('❌ Publish assessment error:', error, 'for assessment:', assessmentId);
-      Alert.alert(
-        'Error',
-        error?.message || 'Failed to publish assessment. Please try again.',
-        [{ text: 'OK' }]
-      );
+      showError('Publish Failed', error?.message || 'Failed to publish assessment. Please try again.');
+    },
+  });
+
+  // Update assessment mutation
+  const updateAssessmentMutation = useMutation({
+    mutationFn: async ({ assessmentId, assessmentData }: { assessmentId: string; assessmentData: any }) => {
+      console.log('✏️ Updating assessment:', assessmentId, assessmentData);
+      return await cbtService.updateQuiz(assessmentId, assessmentData);
+    },
+    onSuccess: (data, { assessmentId }) => {
+      console.log('✅ Assessment updated successfully:', assessmentId);
+      queryClient.invalidateQueries({ queryKey: ['assessments', selectedSubjectId] });
+      showSuccess('Assessment Updated', 'Assessment has been updated successfully');
+    },
+    onError: (error: any, { assessmentId }) => {
+      console.error('❌ Update assessment error:', error, 'for assessment:', assessmentId);
+      showError('Update Failed', error?.message || 'Failed to update assessment. Please try again.');
     },
   });
 
@@ -114,23 +130,77 @@ export default function AssessmentsListScreen() {
     setSelectedSubjectId(subject.id);
     setPage(1); // Reset to first page when changing subjects
     setSelectedFilter('All'); // Reset filter when changing subjects
+    setSelectedStatusFilter('All'); // Reset status filter when changing subjects
   };
 
   const handleFilterChange = (filter: string) => {
-    console.log('Filter changed to:', filter);
     setSelectedFilter(filter);
+    // Reset status filter when assessment type changes
+    setSelectedStatusFilter('All');
     // No need to reset page since we're filtering client-side
+  };
+
+  const handleStatusFilterChange = (statusFilter: string) => {
+    setSelectedStatusFilter(statusFilter);
+    // No need to reset page since we're filtering client-side
+  };
+
+  // Inline editing helper functions
+  const startEditing = (assessmentId: string, field: string, currentValue: string) => {
+    setEditingAssessmentId(assessmentId);
+    setEditingField(field);
+    setEditingValue(currentValue);
+  };
+
+  const saveEdit = (assessmentId: string) => {
+    if (!editingField) return;
+
+    const updateData: any = {};
+    
+    switch (editingField) {
+      case 'title':
+        updateData.title = editingValue;
+        break;
+      case 'description':
+        updateData.description = editingValue;
+        break;
+      case 'duration':
+        updateData.duration = parseInt(editingValue) || 60;
+        break;
+      case 'max_attempts':
+        updateData.max_attempts = parseInt(editingValue) || 1;
+        break;
+      case 'passing_score':
+        updateData.passing_score = parseInt(editingValue) || 50;
+        break;
+      case 'total_points':
+        updateData.total_points = parseInt(editingValue) || 100;
+        break;
+      case 'assessment_type':
+        updateData.assessment_type = editingValue;
+        break;
+    }
+
+    // Call the update mutation
+    updateAssessmentMutation.mutate({ assessmentId, assessmentData: updateData });
+    cancelEdit();
+  };
+
+  const cancelEdit = () => {
+    setEditingAssessmentId(null);
+    setEditingField(null);
+    setEditingValue('');
   };
 
   const handleCreateAssessment = () => {
     if (!selectedSubjectId) {
-      Alert.alert('No Subject Selected', 'Please select a subject first before creating an assessment.');
+      showError('No Subject Selected', 'Please select a subject first before creating an assessment.');
       return;
     }
 
     const selectedSubject = subjects.find(subject => subject.id === selectedSubjectId);
     if (!selectedSubject) {
-      Alert.alert('Subject Not Found', 'Selected subject not found. Please try again.');
+      showError('Subject Not Found', 'Selected subject not found. Please try again.');
       return;
     }
 
@@ -194,17 +264,37 @@ export default function AssessmentsListScreen() {
     );
   };
 
+  const handleUnpublishAssessment = (assessment: CBTQuiz) => {
+    Alert.alert(
+      'Unpublish Assessment',
+      `Unpublish "${assessment.title}" and change it back to draft?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Unpublish', 
+          onPress: () => {
+            console.log('⏸️ User confirmed unpublishing of assessment:', assessment.id);
+            const updateData = { status: 'DRAFT' };
+            updateAssessmentMutation.mutate({ assessmentId: assessment.id, assessmentData: updateData });
+          }
+        },
+      ]
+    );
+  };
+
   const getStatusColor = (status: string, isPublished: boolean) => {
-    if (isPublished) return '#10b981'; // green
+    if (status === 'ACTIVE') return '#10b981'; // green
     if (status === 'DRAFT') return '#f59e0b'; // yellow
-    if (status === 'ACTIVE') return '#3b82f6'; // blue
+    if (status === 'CLOSED') return '#ef4444'; // red
+    if (status === 'ARCHIVED') return '#6b7280'; // gray
     return '#6b7280'; // gray
   };
 
   const getStatusText = (status: string, isPublished: boolean) => {
-    if (isPublished) return 'Published';
-    if (status === 'DRAFT') return 'Draft';
     if (status === 'ACTIVE') return 'Active';
+    if (status === 'DRAFT') return 'Draft';
+    if (status === 'CLOSED') return 'Closed';
+    if (status === 'ARCHIVED') return 'Archived';
     return status;
   };
 
@@ -217,17 +307,38 @@ export default function AssessmentsListScreen() {
   // Apply client-side filtering
   const filteredAssessments = Array.isArray(allAssessments) 
     ? allAssessments.filter(assessment => {
-        if (selectedFilter === 'All') return true;
-        if (selectedFilter === 'OTHER') {
-          // Show assessments that are not in the main categories
-          const mainCategories = ['ASSIGNMENT', 'CBT', 'EXAM'];
-          return !mainCategories.includes(assessment.assessment_type);
+        // Filter by assessment type
+        let typeMatch = true;
+        if (selectedFilter !== 'All') {
+          if (selectedFilter === 'OTHER') {
+            // Show assessments that are not in the main categories
+            const mainCategories = ['ASSIGNMENT', 'CBT', 'EXAM'];
+            typeMatch = !mainCategories.includes(assessment.assessment_type);
+          } else {
+            typeMatch = assessment.assessment_type === selectedFilter;
+          }
         }
-        return assessment.assessment_type === selectedFilter;
+
+        // Filter by status
+        let statusMatch = true;
+        if (selectedStatusFilter !== 'All') {
+          if (selectedStatusFilter === 'Active') {
+            statusMatch = assessment.status === 'ACTIVE';
+          } else if (selectedStatusFilter === 'Closed') {
+            statusMatch = assessment.status === 'CLOSED';
+          } else if (selectedStatusFilter === 'Draft') {
+            statusMatch = assessment.status === 'DRAFT';
+          } else if (selectedStatusFilter === 'Archived') {
+            statusMatch = assessment.status === 'ARCHIVED';
+          }
+        }
+
+        return typeMatch && statusMatch;
       })
     : [];
   
   const assessments = filteredAssessments;
+
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -249,9 +360,23 @@ export default function AssessmentsListScreen() {
         }
       >
         <View className="px-4 py-6">
-          <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-            Assessment
-          </Text>
+          <View className="flex-row items-center justify-between mb-6">
+            <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Assessment
+            </Text>
+            <View className="flex-row items-center gap-4">
+              <View className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
+                <Text className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Session: 2024/2025
+                </Text>
+              </View>
+              <View className="bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full">
+                <Text className="text-sm font-medium text-green-700 dark:text-green-300">
+                  Term: 1st
+                </Text>
+              </View>
+            </View>
+          </View>
           
           {/* Subjects Loading State */}
           {subjectsLoading ? (
@@ -385,6 +510,67 @@ export default function AssessmentsListScreen() {
                   })()}
                 </View>
               </ScrollView>
+
+              {/* Status Filter Tabs - Mini Filter */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 4 }}
+                className="mb-4"
+              >
+                <View className="flex-row items-center gap-1">
+                  {(() => {
+                    // First filter by assessment type to get contextual assessments
+                    let contextualAssessments = allAssessments;
+                    if (selectedFilter !== 'All') {
+                      if (selectedFilter === 'OTHER') {
+                        const mainCategories = ['ASSIGNMENT', 'CBT', 'EXAM'];
+                        contextualAssessments = allAssessments.filter(a => !mainCategories.includes(a.assessment_type));
+                      } else {
+                        contextualAssessments = allAssessments.filter(a => a.assessment_type === selectedFilter);
+                      }
+                    }
+
+                    // Calculate status counts based on contextual assessments
+                    const statusCounts = {
+                      All: contextualAssessments.length,
+                      Active: contextualAssessments.filter(a => a.status === 'ACTIVE').length,
+                      Closed: contextualAssessments.filter(a => a.status === 'CLOSED').length,
+                      Draft: contextualAssessments.filter(a => a.status === 'DRAFT').length,
+                      Archived: contextualAssessments.filter(a => a.status === 'ARCHIVED').length,
+                    };
+                    
+                    const statusTabs = [
+                      { key: 'All', label: 'All', count: statusCounts.All },
+                      { key: 'Active', label: 'Active', count: statusCounts.Active },
+                      { key: 'Closed', label: 'Closed', count: statusCounts.Closed },
+                      { key: 'Draft', label: 'Draft', count: statusCounts.Draft },
+                      { key: 'Archived', label: 'Archived', count: statusCounts.Archived },
+                    ];
+
+                    return statusTabs.map((tab) => (
+                      <TouchableOpacity
+                        key={tab.key}
+                        onPress={() => handleStatusFilterChange(tab.key)}
+                        className={`px-2 py-1 rounded-full border ${
+                          selectedStatusFilter === tab.key
+                            ? 'bg-purple-500 border-purple-500'
+                            : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        }`}
+                        activeOpacity={0.7}
+                      >
+                        <Text className={`text-xs font-medium ${
+                          selectedStatusFilter === tab.key
+                            ? 'text-white'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {tab.label} ({tab.count})
+                        </Text>
+                      </TouchableOpacity>
+                    ));
+                  })()}
+                </View>
+              </ScrollView>
               
               {/* Assessments Loading State */}
               {assessmentsLoading ? (
@@ -435,19 +621,100 @@ export default function AssessmentsListScreen() {
                       {/* Assessment Header */}
                       <View className="flex-row items-start justify-between mb-2">
                         <View className="flex-1 mr-3">
-                          <Text className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
-                            {assessment.title}
-                          </Text>
+                          {editingAssessmentId === assessment.id && editingField === 'title' ? (
+                            <View className="flex-row items-center mb-1">
+                              <TextInput
+                                value={editingValue}
+                                onChangeText={setEditingValue}
+                                placeholder="Enter assessment title"
+                                className="flex-1 text-base font-bold text-gray-900 dark:text-gray-100 bg-transparent border-b border-gray-300 dark:border-gray-600"
+                                placeholderTextColor="#9ca3af"
+                                autoFocus
+                              />
+                              <View className="flex-row ml-2">
+                                <TouchableOpacity
+                                  onPress={() => saveEdit(assessment.id)}
+                                  className="p-1 mr-1"
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="checkmark" size={16} color="#10b981" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  onPress={cancelEdit}
+                                  className="p-1"
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="close" size={16} color="#ef4444" />
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => startEditing(assessment.id, 'title', assessment.title || '')}
+                              activeOpacity={0.7}
+                            >
+                              <Text className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
+                                {assessment.title}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                           
                           {/* Badges Row */}
                           <View className="flex-row items-center gap-2 mb-2">
-                            <View 
-                              className="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30"
-                            >
-                              <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                                {assessment.assessment_type}
-                              </Text>
-                            </View>
+                            {editingAssessmentId === assessment.id && editingField === 'assessment_type' ? (
+                              <View className="flex-row items-center">
+                                <View className="relative">
+                                  <View className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-32">
+                                    <ScrollView showsVerticalScrollIndicator={false}>
+                                      {ASSESSMENT_TYPES.map((type) => (
+                                        <TouchableOpacity
+                                          key={type}
+                                          onPress={() => {
+                                            const updateData = { assessment_type: type };
+                                            updateAssessmentMutation.mutate({ assessmentId: assessment.id, assessmentData: updateData });
+                                            cancelEdit();
+                                          }}
+                                          className={`px-3 py-2 border-b border-gray-200 dark:border-gray-700 ${
+                                            editingValue === type 
+                                              ? 'bg-blue-50 dark:bg-blue-900/20' 
+                                              : 'bg-white dark:bg-gray-800'
+                                          }`}
+                                          activeOpacity={0.7}
+                                        >
+                                          <Text className={`text-sm font-medium ${
+                                            editingValue === type 
+                                              ? 'text-blue-600 dark:text-blue-400' 
+                                              : 'text-gray-700 dark:text-gray-300'
+                                          }`}>
+                                            {type}
+                                          </Text>
+                                        </TouchableOpacity>
+                                      ))}
+                                    </ScrollView>
+                                  </View>
+                                </View>
+                                <TouchableOpacity
+                                  onPress={cancelEdit}
+                                  className="p-1 ml-2"
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="close" size={16} color="#ef4444" />
+                                </TouchableOpacity>
+                              </View>
+                            ) : (
+                              <TouchableOpacity
+                                onPress={() => startEditing(assessment.id, 'assessment_type', assessment.assessment_type || '')}
+                                activeOpacity={0.7}
+                              >
+                                <View 
+                                  className="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30"
+                                >
+                                  <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                    {assessment.assessment_type}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            )}
                             <View 
                               className="px-2 py-1 rounded-full"
                               style={{ backgroundColor: `${getStatusColor(assessment.status, assessment.is_published)}20` }}
@@ -461,10 +728,52 @@ export default function AssessmentsListScreen() {
                             </View>
                           </View>
                           
-                          {assessment.description && (
-                            <Text className="text-xs text-gray-600 dark:text-gray-400 leading-4" numberOfLines={2}>
-                              {assessment.description}
-                            </Text>
+                          {editingAssessmentId === assessment.id && editingField === 'description' ? (
+                            <View className="mb-2">
+                              <TextInput
+                                value={editingValue}
+                                onChangeText={setEditingValue}
+                                placeholder="Enter assessment description"
+                                className="text-xs text-gray-600 dark:text-gray-400 bg-transparent border-b border-gray-300 dark:border-gray-600"
+                                placeholderTextColor="#9ca3af"
+                                multiline
+                                autoFocus
+                              />
+                              <View className="flex-row mt-2">
+                                <TouchableOpacity
+                                  onPress={() => saveEdit(assessment.id)}
+                                  className="p-1 mr-1"
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="checkmark" size={14} color="#10b981" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  onPress={cancelEdit}
+                                  className="p-1"
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="close" size={14} color="#ef4444" />
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          ) : assessment.description ? (
+                            <TouchableOpacity
+                              onPress={() => startEditing(assessment.id, 'description', assessment.description || '')}
+                              activeOpacity={0.7}
+                            >
+                              <Text className="text-xs text-gray-600 dark:text-gray-400 leading-4" numberOfLines={2}>
+                                {assessment.description}
+                              </Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => startEditing(assessment.id, 'description', '')}
+                              activeOpacity={0.7}
+                            >
+                              <Text className="text-xs text-gray-400 dark:text-gray-500 italic">
+                                Tap to add description
+                              </Text>
+                            </TouchableOpacity>
                           )}
                         </View>
                         
@@ -505,9 +814,45 @@ export default function AssessmentsListScreen() {
                           <View className="flex-row items-center gap-4">
                             <View className="flex-row items-center gap-1">
                               <Ionicons name="time-outline" size={12} color="#3b82f6" />
-                              <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                {assessment.duration} min
-                              </Text>
+                              {editingAssessmentId === assessment.id && editingField === 'duration' ? (
+                                <View className="flex-row items-center">
+                                  <TextInput
+                                    value={editingValue}
+                                    onChangeText={setEditingValue}
+                                    placeholder="Duration"
+                                    className="text-xs font-medium text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 w-12"
+                                    placeholderTextColor="#9ca3af"
+                                    keyboardType="numeric"
+                                    autoFocus
+                                  />
+                                  <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1">min</Text>
+                                  <View className="flex-row ml-1">
+                                    <TouchableOpacity
+                                      onPress={() => saveEdit(assessment.id)}
+                                      className="p-0.5 mr-1"
+                                      activeOpacity={0.7}
+                                    >
+                                      <Ionicons name="checkmark" size={12} color="#10b981" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      onPress={cancelEdit}
+                                      className="p-0.5"
+                                      activeOpacity={0.7}
+                                    >
+                                      <Ionicons name="close" size={12} color="#ef4444" />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              ) : (
+                                <TouchableOpacity
+                                  onPress={() => startEditing(assessment.id, 'duration', assessment.duration?.toString() || '60')}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {assessment.duration} min
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
                             </View>
                             <View className="flex-row items-center gap-1">
                               <Ionicons name="help-circle-outline" size={12} color="#10b981" />
@@ -517,20 +862,85 @@ export default function AssessmentsListScreen() {
                             </View>
                             <View className="flex-row items-center gap-1">
                               <Ionicons name="star-outline" size={12} color="#8b5cf6" />
-                              <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                {assessment.total_points} pts
-                              </Text>
+                              {editingAssessmentId === assessment.id && editingField === 'total_points' ? (
+                                <View className="flex-row items-center">
+                                  <TextInput
+                                    value={editingValue}
+                                    onChangeText={setEditingValue}
+                                    placeholder="Points"
+                                    className="text-xs font-medium text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 w-12"
+                                    placeholderTextColor="#9ca3af"
+                                    keyboardType="numeric"
+                                    autoFocus
+                                  />
+                                  <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1">pts</Text>
+                                  <View className="flex-row ml-1">
+                                    <TouchableOpacity
+                                      onPress={() => saveEdit(assessment.id)}
+                                      className="p-0.5 mr-1"
+                                      activeOpacity={0.7}
+                                    >
+                                      <Ionicons name="checkmark" size={12} color="#10b981" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      onPress={cancelEdit}
+                                      className="p-0.5"
+                                      activeOpacity={0.7}
+                                    >
+                                      <Ionicons name="close" size={12} color="#ef4444" />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              ) : (
+                                <TouchableOpacity
+                                  onPress={() => startEditing(assessment.id, 'total_points', assessment.total_points?.toString() || '100')}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {assessment.total_points} pts
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
                             </View>
                           </View>
                           
-                          {/* Publish Button */}
-                          {!assessment.is_published && (
+                          {/* Publish/Unpublish Button */}
+                          {assessment.status === 'ACTIVE' ? (
                             <TouchableOpacity
-                              onPress={() => handlePublishAssessment(assessment)}
-                              disabled={publishAssessmentMutation.isPending}
-                              className="px-2 py-1 bg-green-600 rounded-lg flex-row items-center gap-1"
+                              onPress={() => handleUnpublishAssessment(assessment)}
+                              disabled={updateAssessmentMutation.isPending}
+                              className="px-2 py-1 bg-orange-600 rounded-lg flex-row items-center gap-1"
                               style={{ 
-                                opacity: publishAssessmentMutation.isPending ? 0.6 : 1 
+                                opacity: updateAssessmentMutation.isPending ? 0.6 : 1 
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <Ionicons 
+                                name={updateAssessmentMutation.isPending ? "hourglass-outline" : "pause-outline"} 
+                                size={10} 
+                                color="white" 
+                              />
+                              <Text className="text-white text-xs font-medium">
+                                {updateAssessmentMutation.isPending ? 'Unpublishing...' : 'Unpublish'}
+                              </Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => {
+                                if ((assessment._count?.questions || 0) === 0) {
+                                  showError('Cannot Publish', 'Assessment must have at least one question before publishing');
+                                  return;
+                                }
+                                handlePublishAssessment(assessment);
+                              }}
+                              disabled={publishAssessmentMutation.isPending || (assessment._count?.questions || 0) === 0}
+                              className={`px-2 py-1 rounded-lg flex-row items-center gap-1 ${
+                                (assessment._count?.questions || 0) === 0 
+                                  ? 'bg-gray-400' 
+                                  : 'bg-green-600'
+                              }`}
+                              style={{ 
+                                opacity: publishAssessmentMutation.isPending || (assessment._count?.questions || 0) === 0 ? 0.6 : 1 
                               }}
                               activeOpacity={0.7}
                             >
@@ -549,15 +959,87 @@ export default function AssessmentsListScreen() {
                         <View className="flex-row items-center gap-4 mt-1">
                           <View className="flex-row items-center gap-1">
                             <Ionicons name="refresh-outline" size={12} color="#f59e0b" />
-                            <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              {assessment.max_attempts} attempt{assessment.max_attempts !== 1 ? 's' : ''}
-                            </Text>
+                            {editingAssessmentId === assessment.id && editingField === 'max_attempts' ? (
+                              <View className="flex-row items-center">
+                                <TextInput
+                                  value={editingValue}
+                                  onChangeText={setEditingValue}
+                                  placeholder="Attempts"
+                                  className="text-xs font-medium text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 w-8"
+                                  placeholderTextColor="#9ca3af"
+                                  keyboardType="numeric"
+                                  autoFocus
+                                />
+                                <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1">attempts</Text>
+                                <View className="flex-row ml-1">
+                                  <TouchableOpacity
+                                    onPress={() => saveEdit(assessment.id)}
+                                    className="p-0.5 mr-1"
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="checkmark" size={12} color="#10b981" />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={cancelEdit}
+                                    className="p-0.5"
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="close" size={12} color="#ef4444" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            ) : (
+                              <TouchableOpacity
+                                onPress={() => startEditing(assessment.id, 'max_attempts', assessment.max_attempts?.toString() || '1')}
+                                activeOpacity={0.7}
+                              >
+                                <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                  {assessment.max_attempts} attempt{assessment.max_attempts !== 1 ? 's' : ''}
+                                </Text>
+                              </TouchableOpacity>
+                            )}
                           </View>
                           <View className="flex-row items-center gap-1">
                             <Ionicons name="trophy-outline" size={12} color="#eab308" />
-                            <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              {assessment.passing_score}% pass
-                            </Text>
+                            {editingAssessmentId === assessment.id && editingField === 'passing_score' ? (
+                              <View className="flex-row items-center">
+                                <TextInput
+                                  value={editingValue}
+                                  onChangeText={setEditingValue}
+                                  placeholder="Score"
+                                  className="text-xs font-medium text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 w-8"
+                                  placeholderTextColor="#9ca3af"
+                                  keyboardType="numeric"
+                                  autoFocus
+                                />
+                                <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1">% pass</Text>
+                                <View className="flex-row ml-1">
+                                  <TouchableOpacity
+                                    onPress={() => saveEdit(assessment.id)}
+                                    className="p-0.5 mr-1"
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="checkmark" size={12} color="#10b981" />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={cancelEdit}
+                                    className="p-0.5"
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="close" size={12} color="#ef4444" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            ) : (
+                              <TouchableOpacity
+                                onPress={() => startEditing(assessment.id, 'passing_score', assessment.passing_score?.toString() || '50')}
+                                activeOpacity={0.7}
+                              >
+                                <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                  {assessment.passing_score}% pass
+                                </Text>
+                              </TouchableOpacity>
+                            )}
                           </View>
                         </View>
                       </View>

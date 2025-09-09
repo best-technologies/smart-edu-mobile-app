@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Text, Animated, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,9 +29,36 @@ export default function Toast({
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
+  const isVisible = useRef(false);
+
+  const hideToast = useCallback(() => {
+    if (!isVisible.current) return;
+    
+    isVisible.current = false;
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.8,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onClose();
+    });
+  }, [translateY, opacity, scale, onClose]);
 
   useEffect(() => {
     if (visible) {
+      isVisible.current = true;
       // Show animation
       Animated.parallel([
         Animated.timing(translateY, {
@@ -59,31 +86,12 @@ export default function Toast({
 
       return () => clearTimeout(timer);
     } else {
-      hideToast();
+      // Only hide if we're transitioning from visible to not visible
+      if (isVisible.current) {
+        hideToast();
+      }
     }
-  }, [visible, duration]);
-
-  const hideToast = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 0.8,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
-  };
+  }, [visible, duration, hideToast]);
 
   const getToastConfig = () => {
     switch (type) {
