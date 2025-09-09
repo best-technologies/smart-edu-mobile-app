@@ -15,8 +15,13 @@ interface QuestionTypeSelectorProps {
   selectedType: QuestionType;
   onTypeSelect: (type: QuestionType) => void;
   onAddQuestion: (questionData: any) => void;
+  onCancel?: () => void; // Add cancel functionality
   isLoading: boolean;
   isNew?: boolean;
+  status?: 'idle' | 'saving' | 'success' | 'error';
+  error?: string;
+  onRetry?: () => void;
+  questionData?: any; // For displaying pending question data
 }
 
 const QUESTION_TYPES: Array<{
@@ -116,15 +121,23 @@ export default function QuestionTypeSelector({
   selectedType,
   onTypeSelect,
   onAddQuestion,
+  onCancel,
   isLoading,
   isNew = false,
+  status = 'idle',
+  error,
+  onRetry,
+  questionData,
 }: QuestionTypeSelectorProps) {
   const [showTypeModal, setShowTypeModal] = useState(false);
-  const [questionText, setQuestionText] = useState('');
-  const [options, setOptions] = useState([
-    { text: '', isCorrect: false },
-  ]);
-  const [isRequired, setIsRequired] = useState(true);
+  const [questionText, setQuestionText] = useState(questionData?.question_text || '');
+  const [options, setOptions] = useState(
+    questionData?.options?.map((opt: any) => ({
+      text: opt.option_text || '',
+      isCorrect: opt.is_correct || false
+    })) || [{ text: '', isCorrect: false }]
+  );
+  const [isRequired, setIsRequired] = useState(questionData?.is_required ?? true);
 
   const selectedTypeInfo = QUESTION_TYPES.find(t => t.type === selectedType);
 
@@ -157,13 +170,13 @@ export default function QuestionTypeSelector({
       }
       
       // All options must have text
-      const hasEmptyOptions = options.some(option => !option.text.trim());
+      const hasEmptyOptions = options.some((option: { text: string; isCorrect: boolean }) => !option.text.trim());
       if (hasEmptyOptions) {
         return 'Fill in all option text';
       }
       
       // At least one option must be selected as correct
-      const hasCorrectAnswer = options.some(option => option.isCorrect);
+      const hasCorrectAnswer = options.some((option: { text: string; isCorrect: boolean }) => option.isCorrect);
       if (!hasCorrectAnswer) {
         return 'Select the correct answer';
       }
@@ -172,7 +185,7 @@ export default function QuestionTypeSelector({
     // 3. For TRUE_FALSE questions
     if (selectedType === 'TRUE_FALSE') {
       // At least one option must be selected
-      const hasSelectedAnswer = options.some(option => option.isCorrect);
+      const hasSelectedAnswer = options.some((option: { text: string; isCorrect: boolean }) => option.isCorrect);
       if (!hasSelectedAnswer) {
         return 'Select True or False';
       }
@@ -199,7 +212,7 @@ export default function QuestionTypeSelector({
       show_hint: false,
       allow_multiple_attempts: false,
       ...(selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE' ? {
-        options: options.map((opt, idx) => ({
+        options: options.map((opt: { text: string; isCorrect: boolean }, idx: number) => ({
           option_text: opt.text,
           order: idx + 1,
           is_correct: opt.isCorrect,
@@ -212,29 +225,63 @@ export default function QuestionTypeSelector({
   };
 
   return (
-    <View className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
-      {/* Drag Handle */}
-      <View className="flex-row items-start">
-        <View className="w-8 h-16 flex items-center justify-center">
-          <View className="flex-row flex-wrap w-3 h-4 gap-0.5">
-            {[...Array(6)].map((_, i) => (
-              <View key={i} className="w-1 h-1 bg-gray-400 rounded-full" />
-            ))}
+    <View className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border mb-4 ${
+      isNew ? 'border-purple-300 dark:border-purple-600' : 'border-gray-200 dark:border-gray-700'
+    }`}>
+        {/* Drag Handle */}
+        <View className="flex-row items-start">
+          <View className="w-8 h-16 flex items-center justify-center">
+            <View className="flex-row flex-wrap w-3 h-4 gap-0.5">
+              {[...Array(6)].map((_, i) => (
+                <View key={i} className="w-1 h-1 bg-gray-400 rounded-full" />
+              ))}
+            </View>
           </View>
-        </View>
+          
+          {/* Status Indicator - Only show for pending questions, not new question form */}
+          {!isNew && (
+            <View className="absolute top-2 right-2 z-10">
+              {status === 'saving' && (
+              <View className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full items-center justify-center">
+                <Ionicons name="refresh" size={16} color="#3b82f6" />
+              </View>
+            )}
+            {status === 'success' && (
+              <View className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full items-center justify-center">
+                <Ionicons name="checkmark" size={16} color="#10b981" />
+              </View>
+            )}
+            {status === 'error' && (
+              <TouchableOpacity 
+                onPress={onRetry}
+                className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full items-center justify-center"
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="refresh" size={16} color="#dc2626" />
+              </TouchableOpacity>
+            )}
+            </View>
+          )}
         
         {/* Main Question Content */}
         <View className="flex-1 pt-4 pr-4 pb-4">
           {/* Question Title with Blue Left Border */}
           <View className="border-l-4 border-blue-500 pl-4 mb-4">
-            <TextInput
-              value={questionText}
-              onChangeText={setQuestionText}
-              placeholder="Untitled Question"
-              className="text-lg font-normal text-gray-900 dark:text-gray-100 bg-transparent"
-              placeholderTextColor="#9ca3af"
-              multiline
-            />
+            {status === 'idle' ? (
+              <TextInput
+                value={questionText}
+                onChangeText={setQuestionText}
+                placeholder="Untitled Question"
+                className="text-lg font-normal text-gray-900 dark:text-gray-100 bg-transparent"
+                placeholderTextColor="#9ca3af"
+                multiline
+              />
+            ) : (
+              <Text className="text-lg font-normal text-gray-900 dark:text-gray-100">
+                {questionText || 'Untitled Question'}
+              </Text>
+            )}
             <View className="h-0.5 bg-purple-500 mt-2" />
           </View>
 
@@ -260,14 +307,14 @@ export default function QuestionTypeSelector({
           {(selectedType === 'MULTIPLE_CHOICE_SINGLE' || selectedType === 'MULTIPLE_CHOICE_MULTIPLE') && (
             <View className="px-4 mb-4">
               <View className="space-y-4">
-                {options.map((option, index) => (
+                {options.map((option: { text: string; isCorrect: boolean }, index: number) => (
                   <View key={index} className="flex-row items-center gap-3 py-2">
                     <TouchableOpacity
                       onPress={() => {
                         const newOptions = [...options];
                         if (selectedType === 'MULTIPLE_CHOICE_SINGLE') {
                           // For single choice, only one can be correct
-                          newOptions.forEach((opt, i) => {
+                          newOptions.forEach((opt: { text: string; isCorrect: boolean }, i: number) => {
                             opt.isCorrect = i === index;
                           });
                         } else {
@@ -284,21 +331,27 @@ export default function QuestionTypeSelector({
                         {option.isCorrect && <View className="w-2 h-2 bg-white rounded-full" />}
                       </View>
                     </TouchableOpacity>
-                    <TextInput
-                      value={option.text}
-                      onChangeText={(text) => {
-                        const newOptions = [...options];
-                        newOptions[index].text = text;
-                        setOptions(newOptions);
-                      }}
-                      placeholder={option.text === '' ? 'Enter option text' : `Option ${index + 1}`}
-                      className="flex-1 text-gray-700 dark:text-gray-300 bg-transparent py-2"
-                      placeholderTextColor="#9ca3af"
-                    />
+                    {status === 'idle' ? (
+                      <TextInput
+                        value={option.text}
+                        onChangeText={(text) => {
+                          const newOptions = [...options];
+                          newOptions[index].text = text;
+                          setOptions(newOptions);
+                        }}
+                        placeholder={option.text === '' ? 'Enter option text' : `Option ${index + 1}`}
+                        className="flex-1 text-gray-700 dark:text-gray-300 bg-transparent py-2"
+                        placeholderTextColor="#9ca3af"
+                      />
+                    ) : (
+                      <Text className="flex-1 text-gray-700 dark:text-gray-300 py-2">
+                        {option.text || `Option ${index + 1}`}
+                      </Text>
+                    )}
                     <TouchableOpacity 
                       onPress={() => {
                         if (options.length > 1) {
-                          const newOptions = options.filter((_, i) => i !== index);
+                          const newOptions = options.filter((_: { text: string; isCorrect: boolean }, i: number) => i !== index);
                           setOptions(newOptions);
                         }
                       }}
@@ -384,36 +437,75 @@ export default function QuestionTypeSelector({
             </View>
           )}
 
-          {/* Bottom Toolbar */}
-          <View className="px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-4">
-                <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
-                  <Switch
-                    value={isRequired}
-                    onValueChange={setIsRequired}
-                    trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
-                    thumbColor={isRequired ? '#ffffff' : '#f3f4f6'}
-                  />
+          {/* API Error Message - Only show for pending questions, not new question form */}
+          {status === 'error' && error && !isNew && (
+            <View className="px-4 mb-2">
+              <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <View className="flex-row items-center">
+                  <Ionicons name="alert-circle" size={16} color="#dc2626" />
+                  <Text className="text-red-600 dark:text-red-400 ml-2 text-sm font-medium flex-1">
+                    {error}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={onRetry} 
+                    className="ml-2 p-2 bg-red-100 dark:bg-red-900/30 rounded-lg"
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                  >
+                    <Ionicons name="refresh" size={16} color="#dc2626" />
+                  </TouchableOpacity>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={handleAddQuestion}
-                disabled={isLoading || !isFormValid()}
-                className={`px-4 py-2 rounded-lg flex-row items-center ${
-                  isLoading || !isFormValid() ? 'bg-gray-400' : 'bg-purple-600'
-                }`}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add-circle" size={18} color="white" />
-                <Text className="text-white font-medium ml-2 text-sm">
-                  Add Question
-                </Text>
-              </TouchableOpacity>
             </View>
-          </View>
+          )}
+
+          {/* Bottom Toolbar - Only show for new questions */}
+          {status === 'idle' && (
+            <View className="px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-4">
+                  <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
+                    <Switch
+                      value={isRequired}
+                      onValueChange={setIsRequired}
+                      trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
+                      thumbColor={isRequired ? '#ffffff' : '#f3f4f6'}
+                    />
+                  </View>
+                </View>
+                <View className="flex-row items-center gap-3">
+                  {/* Cancel Button - Only show for new questions */}
+                  {isNew && onCancel && (
+                    <TouchableOpacity
+                      onPress={onCancel}
+                      className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 flex-row items-center"
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="close" size={18} color="#6b7280" />
+                      <Text className="text-gray-600 dark:text-gray-400 font-medium ml-2 text-sm">
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    onPress={handleAddQuestion}
+                    disabled={isLoading || !isFormValid()}
+                    className={`px-4 py-2 rounded-lg flex-row items-center ${
+                      isLoading || !isFormValid() ? 'bg-gray-400' : 'bg-purple-600'
+                    }`}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add-circle" size={18} color="white" />
+                    <Text className="text-white font-medium ml-2 text-sm">
+                      Add Question
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
       </View>
 

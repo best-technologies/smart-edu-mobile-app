@@ -89,6 +89,13 @@ export default function CBTQuestionCreationScreen() {
   const [questions, setQuestions] = useState<CBTQuestion[]>([]);
   const [assessmentData, setAssessmentData] = useState<any>(null);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [pendingQuestions, setPendingQuestions] = useState<Array<{
+    id: string;
+    data: CreateQuestionRequest;
+    status: 'saving' | 'success' | 'error';
+    error?: string;
+  }>>([]);
 
   // Fetch existing questions
   const {
@@ -110,15 +117,37 @@ export default function CBTQuestionCreationScreen() {
 
   // Mutations
   const addQuestionMutation = useMutation({
-    mutationFn: (questionData: CreateQuestionRequest) => cbtService.addQuestion(quizId, questionData),
-    onSuccess: (newQuestion) => {
+    mutationFn: ({ questionData, pendingId }: { questionData: CreateQuestionRequest; pendingId: string }) => 
+      cbtService.addQuestion(quizId, questionData),
+    onSuccess: (newQuestion, { pendingId }) => {
+      // Update pending question status to success
+      setPendingQuestions(prev => prev.map(p => 
+        p.id === pendingId ? { ...p, status: 'success' as const } : p
+      ));
+      
+      // Add to questions list
       setQuestions(prev => [...prev, newQuestion]);
-      setIsAddingQuestion(false);
+      
+      // Invalidate and refetch the questions query to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['assessment-questions', quizId] });
+      
+      // Show success message
       showSuccess('Question Added', 'Your question has been added successfully!');
-      // Don't invalidate queries here to avoid refetching and potential state conflicts
+      
+      // Remove from pending after a delay to show success state
+      setTimeout(() => {
+        setPendingQuestions(prev => prev.filter(p => p.id !== pendingId));
+      }, 2000);
     },
-    onError: (error: any) => {
-      showError('Failed to Add Question', error.message || 'Failed to add question');
+    onError: (error: any, { pendingId }) => {
+      // Update pending question status to error
+      setPendingQuestions(prev => prev.map(p => 
+        p.id === pendingId ? { 
+          ...p, 
+          status: 'error' as const, 
+          error: error.message || 'Failed to add question' 
+        } : p
+      ));
     },
   });
 
@@ -137,10 +166,10 @@ export default function CBTQuestionCreationScreen() {
 
   const deleteQuestionMutation = useMutation({
     mutationFn: (questionId: string) => cbtService.deleteQuestion(quizId, questionId),
-    onSuccess: (_, questionId) => {
-      setQuestions(prev => prev.filter(q => q.id !== questionId));
+    onSuccess: (response, questionId) => {
+      // Refresh the questions list by refetching
+      refetchQuestions();
       showSuccess('Question Deleted', 'Question has been removed successfully!');
-      queryClient.invalidateQueries({ queryKey: ['assessment-questions', quizId] });
     },
     onError: (error: any) => {
       showError('Failed to Delete Question', error.message || 'Failed to delete question');
@@ -148,7 +177,38 @@ export default function CBTQuestionCreationScreen() {
   });
 
   const handleAddQuestion = (questionData: CreateQuestionRequest) => {
-    addQuestionMutation.mutate(questionData);
+    // Generate a unique ID for the pending question
+    const pendingId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Add to pending questions immediately
+    setPendingQuestions(prev => [...prev, {
+      id: pendingId,
+      data: questionData,
+      status: 'saving'
+    }]);
+    
+    // Start the API call in the background
+    addQuestionMutation.mutate({ questionData, pendingId });
+  };
+
+  const handleRetryQuestion = (pendingId: string) => {
+    console.log('🔄 Retry button clicked for pending question:', pendingId);
+    const pendingQuestion = pendingQuestions.find(p => p.id === pendingId);
+    if (pendingQuestion) {
+      console.log('📝 Found pending question, retrying...', pendingQuestion.data);
+      // Update status to saving
+      setPendingQuestions(prev => prev.map(p => 
+        p.id === pendingId ? { ...p, status: 'saving' as const, error: undefined } : p
+      ));
+      
+      // Retry the API call
+      addQuestionMutation.mutate({ 
+        questionData: pendingQuestion.data, 
+        pendingId 
+      });
+    } else {
+      console.log('❌ Pending question not found:', pendingId);
+    }
   };
 
   const handleUpdateQuestion = (questionId: string, questionData: CreateQuestionRequest) => {
@@ -187,7 +247,7 @@ export default function CBTQuestionCreationScreen() {
       })),
     };
 
-    addQuestionMutation.mutate(duplicatedQuestion);
+    handleAddQuestion(duplicatedQuestion);
   };
 
   const isLoading = addQuestionMutation.isPending || updateQuestionMutation.isPending || deleteQuestionMutation.isPending;
@@ -233,35 +293,64 @@ export default function CBTQuestionCreationScreen() {
           }
         >
           {/* Questions List */}
-          {questions.map((question, index) => (
-            <QuestionCard
-              key={question.id}
-              question={question}
-              index={index + 1}
-              isEditing={false}
-              onEdit={() => {}}
-              onSave={(questionData) => handleUpdateQuestion(question.id, questionData as CreateQuestionRequest)}
-              onCancel={() => {}}
-              onDelete={() => handleDeleteQuestion(question.id)}
-              onDuplicate={() => handleDuplicateQuestion(question)}
-              onAddQuestion={() => setIsAddingQuestion(true)}
-              isLoading={isLoading}
-            />
-          ))}
+          <View className={isAddingQuestion || editingQuestionId ? 'opacity-50' : ''}>
+            {questions.map((question, index) => (
+              <QuestionCard
+                key={question.id}
+                question={question}
+                index={index + 1}
+                isEditing={editingQuestionId === question.id}
+                onEdit={() => {
+                  console.log('🔵 onEdit called for question:', question.id);
+                  setEditingQuestionId(question.id);
+                  setIsAddingQuestion(false);
+                }}
+                onSave={(questionData) => {
+                  handleUpdateQuestion(question.id, questionData as CreateQuestionRequest);
+                  setEditingQuestionId(null);
+                }}
+                onCancel={() => setEditingQuestionId(null)}
+                onDelete={() => handleDeleteQuestion(question.id)}
+                onDuplicate={() => handleDuplicateQuestion(question)}
+                onAddQuestion={() => setIsAddingQuestion(true)}
+                isLoading={isLoading}
+                isGreyedOut={editingQuestionId !== question.id}
+              />
+            ))}
+          </View>
+
+          {/* Pending Questions (being saved) */}
+          <View className={isAddingQuestion ? 'opacity-50' : ''}>
+            {pendingQuestions.map((pendingQuestion, index) => (
+              <QuestionTypeSelector
+                key={pendingQuestion.id}
+                selectedType={pendingQuestion.data.question_type}
+                onTypeSelect={() => {}}
+                onAddQuestion={() => {}}
+                isLoading={false}
+                status={pendingQuestion.status}
+                error={pendingQuestion.error}
+                onRetry={() => handleRetryQuestion(pendingQuestion.id)}
+                questionData={pendingQuestion.data}
+              />
+            ))}
+          </View>
 
           {/* Add Question Button - when there are existing questions */}
-          {questions.length > 0 && !isAddingQuestion && (
-            <TouchableOpacity
-              onPress={() => setIsAddingQuestion(true)}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 mb-6"
-            >
-              <View className="flex-row items-center justify-center">
-                <Ionicons name="add" size={24} color="#8b5cf6" />
-                <Text className="text-purple-600 dark:text-purple-400 font-medium ml-2 text-lg">
-                  Add Question
-                </Text>
-              </View>
-            </TouchableOpacity>
+          {questions.length > 0 && !isAddingQuestion && !editingQuestionId && (
+            <View className={isAddingQuestion || editingQuestionId ? 'opacity-50' : ''}>
+              <TouchableOpacity
+                onPress={() => setIsAddingQuestion(true)}
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 mb-6"
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="add" size={24} color="#8b5cf6" />
+                  <Text className="text-purple-600 dark:text-purple-400 font-medium ml-2 text-lg">
+                    Add Question
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           )}
 
           {/* Add New Question */}
@@ -273,6 +362,7 @@ export default function CBTQuestionCreationScreen() {
                 handleAddQuestion(questionData);
                 setIsAddingQuestion(false);
               }}
+              onCancel={() => setIsAddingQuestion(false)}
               isLoading={isLoading}
               isNew={true}
             />
@@ -304,7 +394,7 @@ export default function CBTQuestionCreationScreen() {
         </ScrollView>
 
         {/* Bottom Icon Bar */}
-        {!isAddingQuestion && (
+        {!isAddingQuestion && !editingQuestionId && (
           <View className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-3">
             <View className="flex-row items-center justify-between">
               {/* Left Actions */}

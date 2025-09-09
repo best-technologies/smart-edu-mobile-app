@@ -14,8 +14,8 @@ export class CBTService {
 
   constructor() {
     this.httpClient = new HttpClient();
-    // CBT endpoints are under teachers/assessments/cbt
-    this.baseURL = '/teachers/assessments/cbt';
+    // CBT endpoints are under teachers/assessments
+    this.baseURL = '/teachers/assessments';
   }
 
   // Quiz Management
@@ -85,9 +85,9 @@ export class CBTService {
   }
 
   // Question Management
-  async addQuestion(quizId: string, questionData: CreateQuestionRequest): Promise<CBTQuestion> {
+  async addQuestion(assessmentId: string, questionData: CreateQuestionRequest): Promise<CBTQuestion> {
     const response = await this.httpClient.makeRequest<CBTQuestion>(
-      `${this.baseURL}/${quizId}/questions`,
+      `${this.baseURL}/${assessmentId}/questions`,
       'POST',
       questionData
     );
@@ -121,7 +121,7 @@ export class CBTService {
       total_questions: number;
       total_points: number;
     }>(
-      `/teachers/assessments/${assessmentId}/questions`,
+      `${this.baseURL}/${assessmentId}/questions`,
       'GET'
     );
     if (!response.data) {
@@ -146,11 +146,12 @@ export class CBTService {
     return response.data;
   }
 
-  async deleteQuestion(quizId: string, questionId: string): Promise<void> {
-    await this.httpClient.makeRequest(
-      `${this.baseURL}/${quizId}/questions/${questionId}`,
+  async deleteQuestion(assessmentId: string, questionId: string): Promise<any> {
+    const response = await this.httpClient.makeRequest(
+      `${this.baseURL}/${assessmentId}/questions/${questionId}`,
       'DELETE'
     );
+    return response.data;
   }
 
   // Get all quizzes for a teacher
@@ -201,7 +202,7 @@ export class CBTService {
     assessmentType?: string
   ): Promise<AssessmentsResponse> {
     try {
-      let url = `/teachers/assessments?subject_id=${subjectId}&page=${page}&limit=${limit}`;
+      let url = `${this.baseURL}?subject_id=${subjectId}&page=${page}&limit=${limit}`;
       
       // Add assessment_type query parameter if provided and not 'All'
       if (assessmentType && assessmentType !== 'All') {

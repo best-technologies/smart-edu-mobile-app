@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,13 +14,13 @@ interface QuestionCardProps {
   question: CBTQuestion;
   index: number;
   isEditing: boolean;
-  onEdit: () => void;
   onSave: (questionData: Partial<CreateQuestionRequest>) => void;
   onCancel: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onAddQuestion?: () => void;
   isLoading: boolean;
+  isGreyedOut?: boolean;
 }
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -43,14 +42,25 @@ export default function QuestionCard({
   question,
   index,
   isEditing,
-  onEdit,
   onSave,
   onCancel,
   onDelete,
   onDuplicate,
   onAddQuestion,
   isLoading,
+  isGreyedOut = false,
 }: QuestionCardProps) {
+  console.log('🟡 QuestionCard rendering - index:', index, 'question:', question?.id);
+  
+  // Safety check to ensure component is properly initialized
+  if (!question) {
+    console.log('❌ QuestionCard: No question provided');
+    return null;
+  }
+
+  const editQuestionHandler = () => {
+    console.log('🔴 Edit is pressed for question:', question.id);
+  };
   const [editedData, setEditedData] = useState<Partial<CreateQuestionRequest>>({
     question_text: question.question_text,
     points: question.points,
@@ -85,7 +95,7 @@ export default function QuestionCard({
 
   const handleSave = () => {
     if (!editedData.question_text?.trim()) {
-      Alert.alert('Validation Error', 'Question text is required');
+      console.log('Validation Error: Question text is required');
       return;
     }
 
@@ -193,10 +203,34 @@ export default function QuestionCard({
 
   const renderQuestionPreview = () => {
     return (
-      <TouchableOpacity 
-        onPress={onEdit}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4"
-      >
+      <View className="relative mb-4">
+        {/* Clickable question content */}
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('🟢 Question card pressed - index:', index);
+            editQuestionHandler();
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
+            isGreyedOut ? 'opacity-50' : ''
+          }`}
+          activeOpacity={0.7}
+        >
+        {/* Question Number */}
+        <View className="absolute top-2 left-2 z-10">
+          <View className="w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
+            <Text className="text-white text-xs font-bold">
+              {index}
+            </Text>
+          </View>
+        </View>
+
+        {/* Edit indicator */}
+        <View className="absolute top-2 right-2 z-10">
+          <View className="w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center">
+            <Ionicons name="pencil" size={12} color="#6b7280" />
+          </View>
+        </View>
+
         {/* Drag Handle */}
         <View className="flex-row items-start">
           <View className="w-8 h-16 flex items-center justify-center">
@@ -208,10 +242,10 @@ export default function QuestionCard({
           </View>
           
           {/* Main Question Content */}
-          <View className="flex-1 pt-4 pr-4 pb-4">
+          <View className="flex-1 pt-4 pr-16 pb-4">
             {/* Question Title with Blue Left Border */}
             <View className="border-l-4 border-blue-500 pl-4 mb-4">
-              <Text className="text-lg font-normal text-gray-900 dark:text-gray-100">
+              <Text className="text-lg font-normal text-gray-900 dark:text-gray-100" numberOfLines={3}>
                 {question.question_text || 'Untitled Question New'}
               </Text>
               <View className="h-0.5 bg-purple-500 mt-2" />
@@ -231,15 +265,9 @@ export default function QuestionCard({
               {renderQuestionTypePreview()}
             </View>
 
-            {/* Bottom Toolbar */}
+            {/* Bottom Toolbar - Only show required switch, no action buttons */}
             <View className="flex-row items-center justify-between px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
               <View className="flex-row items-center gap-4">
-                <TouchableOpacity onPress={onDuplicate} className="p-2">
-                  <Ionicons name="copy-outline" size={18} color="#6b7280" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onDelete} className="p-2">
-                  <Ionicons name="trash-outline" size={18} color="#dc2626" />
-                </TouchableOpacity>
                 <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
@@ -251,13 +279,29 @@ export default function QuestionCard({
                   />
                 </View>
               </View>
-              <TouchableOpacity className="p-2">
-                <Ionicons name="ellipsis-vertical" size={18} color="#6b7280" />
-              </TouchableOpacity>
             </View>
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* Action Icons - Vertical column positioned outside the greyed-out container */}
+      <View className="absolute top-3 right-3 flex-col items-center gap-2 z-10">
+        <TouchableOpacity 
+          onPress={onDuplicate} 
+          className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="copy-outline" size={16} color="#6b7280" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={onDelete} 
+          className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="trash-outline" size={16} color="#dc2626" />
+        </TouchableOpacity>
+      </View>
+    </View>
     );
   };
 
