@@ -14,13 +14,13 @@ interface QuestionCardProps {
   question: CBTQuestion;
   index: number;
   isEditing: boolean;
+  onEdit: () => void;
   onSave: (questionData: Partial<CreateQuestionRequest>) => void;
   onCancel: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onAddQuestion?: () => void;
   isLoading: boolean;
-  isGreyedOut?: boolean;
 }
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -42,24 +42,79 @@ export default function QuestionCard({
   question,
   index,
   isEditing,
+  onEdit,
   onSave,
   onCancel,
   onDelete,
   onDuplicate,
   onAddQuestion,
   isLoading,
-  isGreyedOut = false,
 }: QuestionCardProps) {
-  console.log('🟡 QuestionCard rendering - index:', index, 'question:', question?.id);
-  
   // Safety check to ensure component is properly initialized
   if (!question) {
-    console.log('❌ QuestionCard: No question provided');
     return null;
   }
 
+  // Inline editing state management
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
+  const [editingOptionIndex, setEditingOptionIndex] = useState<number | null>(null);
+
   const editQuestionHandler = () => {
-    console.log('🔴 Edit is pressed for question:', question.id);
+    // Edit handler logic can be added here if needed
+  };
+
+  // Editing helper functions
+  const startEditing = (field: string, currentValue: string, optionIndex?: number) => {
+    setEditingField(field);
+    setEditingValue(currentValue);
+    if (optionIndex !== undefined) {
+      setEditingOptionIndex(optionIndex);
+    }
+  };
+
+  const saveEdit = () => {
+    if (!editingField) return;
+
+    const updateData: any = {};
+    
+    switch (editingField) {
+      case 'question_text':
+        updateData.question_text = editingValue;
+        break;
+      case 'option_text':
+        if (editingOptionIndex !== null && question.options) {
+          const newOptions = [...question.options];
+          newOptions[editingOptionIndex] = {
+            ...newOptions[editingOptionIndex],
+            option_text: editingValue
+          };
+          updateData.options = newOptions;
+        }
+        break;
+      case 'points':
+        const pointsValue = parseFloat(editingValue) || 1;
+        updateData.points = pointsValue;
+        break;
+      case 'hint_text':
+        updateData.hint_text = editingValue;
+        break;
+      case 'explanation':
+        updateData.explanation = editingValue;
+        break;
+    }
+
+    // Save the edit data
+
+    // Call the onSave function with the update data
+    onSave(updateData);
+    cancelEdit();
+  };
+
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditingValue('');
+    setEditingOptionIndex(null);
   };
   
   const [editedData, setEditedData] = useState<Partial<CreateQuestionRequest>>({
@@ -96,7 +151,6 @@ export default function QuestionCard({
 
   const handleSave = () => {
     if (!editedData.question_text?.trim()) {
-      console.log('Validation Error: Question text is required');
       return;
     }
 
@@ -148,7 +202,7 @@ export default function QuestionCard({
     return (
       <View className="space-y-3">
         {editOptions.map((option, optionIndex) => (
-          <View key={optionIndex} className="flex-row items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+          <View key={optionIndex} className="flex-row items-center gap-3 p-3">
             {/* Remove button - only show if more than 2 options */}
             {editOptions.length > 2 && (
               <TouchableOpacity 
@@ -207,9 +261,7 @@ export default function QuestionCard({
       <View className="relative mb-4">
         {/* Clickable question content */}
         <View 
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
-            isGreyedOut ? 'opacity-50' : ''
-          }`}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
         >
         {/* Question Number */}
         <View className="absolute top-2 left-2 z-10">
@@ -236,9 +288,44 @@ export default function QuestionCard({
           <View className="flex-1 pt-4 pr-16 pb-4">
             {/* Question Title with Blue Left Border */}
             <View className="border-l-4 border-blue-500 pl-4 mb-4">
-              <Text className="text-lg font-normal text-gray-900 dark:text-gray-100" numberOfLines={3}>
-                {question.question_text || 'Untitled Question New'}
-              </Text>
+              {editingField === 'question_text' ? (
+                <View className="flex-row items-center">
+                  <TextInput
+                    value={editingValue}
+                    onChangeText={setEditingValue}
+                    placeholder="Enter question text"
+                    className="flex-1 text-lg font-normal text-gray-900 dark:text-gray-100 bg-transparent"
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    autoFocus
+                  />
+                  <View className="flex-row ml-2">
+                    <TouchableOpacity
+                      onPress={saveEdit}
+                      className="p-1 mr-1"
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="checkmark" size={20} color="#10b981" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={cancelEdit}
+                      className="p-1"
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close" size={20} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => startEditing('question_text', question.question_text || '')}
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-lg font-normal text-gray-900 dark:text-gray-100" numberOfLines={3}>
+                    {question.question_text || 'Untitled Question New'}
+                  </Text>
+                </TouchableOpacity>
+              )}
               <View className="h-0.5 bg-purple-500 mt-2" />
             </View>
 
@@ -256,18 +343,190 @@ export default function QuestionCard({
               {renderQuestionTypePreview()}
             </View>
 
+            {/* Additional Editable Fields */}
+            <View className="px-4 mb-4 space-y-3">
+              {/* Points */}
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">Points:</Text>
+                  {editingField === 'points' ? (
+                    <View className="flex-row items-center ml-2">
+                      <TextInput
+                        value={editingValue}
+                        onChangeText={setEditingValue}
+                        placeholder="Enter points"
+                        className="text-sm text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 px-2 py-1 w-20"
+                        placeholderTextColor="#9ca3af"
+                        keyboardType="numeric"
+                        autoFocus
+                      />
+                      <View className="flex-row ml-2">
+                        <TouchableOpacity
+                          onPress={saveEdit}
+                          className="p-1 mr-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="checkmark" size={16} color="#10b981" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={cancelEdit}
+                          className="p-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="close" size={16} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => startEditing('points', question.points?.toString() || '1')}
+                      className="ml-2"
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">{question.points || 1}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {editingField !== 'points' && (
+                  <View className="flex-row items-center bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentPoints = question.points || 1;
+                        const newPoints = Math.max(1, currentPoints - 1);
+                        const updateData = { points: newPoints };
+                        onSave(updateData);
+                      }}
+                      className="p-2"
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="remove" size={16} color="#6b7280" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentPoints = question.points || 1;
+                        const newPoints = currentPoints + 1;
+                        const updateData = { points: newPoints };
+                        onSave(updateData);
+                      }}
+                      className="p-2"
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add" size={16} color="#6b7280" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              {/* Hint Text */}
+              {question.hint_text && (
+                <View className="flex-row items-start justify-between">
+                  <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">Hint:</Text>
+                  {editingField === 'hint_text' ? (
+                    <View className="flex-1 ml-4">
+                      <TextInput
+                        value={editingValue}
+                        onChangeText={setEditingValue}
+                        placeholder="Enter hint text"
+                        className="text-sm text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 px-2 py-1"
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        autoFocus
+                      />
+                      <View className="flex-row mt-2">
+                        <TouchableOpacity
+                          onPress={saveEdit}
+                          className="p-1 mr-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="checkmark" size={16} color="#10b981" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={cancelEdit}
+                          className="p-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="close" size={16} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => startEditing('hint_text', question.hint_text || '')}
+                      className="flex-1 ml-4"
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-sm text-gray-700 dark:text-gray-300">
+                        {question.hint_text}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {/* Explanation */}
+              {question.explanation && (
+                <View className="flex-row items-start justify-between">
+                  <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">Explanation:</Text>
+                  {editingField === 'explanation' ? (
+                    <View className="flex-1 ml-4">
+                      <TextInput
+                        value={editingValue}
+                        onChangeText={setEditingValue}
+                        placeholder="Enter explanation"
+                        className="text-sm text-gray-700 dark:text-gray-300 bg-transparent border-b border-gray-300 dark:border-gray-600 px-2 py-1"
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        autoFocus
+                      />
+                      <View className="flex-row mt-2">
+                        <TouchableOpacity
+                          onPress={saveEdit}
+                          className="p-1 mr-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="checkmark" size={16} color="#10b981" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={cancelEdit}
+                          className="p-1"
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="close" size={16} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => startEditing('explanation', question.explanation || '')}
+                      className="flex-1 ml-4"
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-sm text-gray-700 dark:text-gray-300">
+                        {question.explanation}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
+
             {/* Bottom Toolbar - Only show required switch, no action buttons */}
             <View className="flex-row items-center justify-between px-4 pt-4 border-t border-gray-200 dark:border-gray-600">
               <View className="flex-row items-center gap-4">
                 <View className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm text-gray-600 dark:text-gray-400">Required</Text>
-                  <Switch
-                    value={question.is_required}
-                    onValueChange={(value) => setEditedData(prev => ({ ...prev, is_required: value }))}
-                    trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
-                    thumbColor={question.is_required ? '#ffffff' : '#f3f4f6'}
-                  />
+                  <View style={{ transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] }}>
+                    <Switch
+                      value={question.is_required}
+                      onValueChange={(value) => {
+                        const updateData = { is_required: value };
+                        onSave(updateData);
+                      }}
+                      trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
+                      thumbColor={question.is_required ? '#ffffff' : '#f3f4f6'}
+                    />
+                  </View>
                 </View>
               </View>
             </View>
@@ -277,23 +536,13 @@ export default function QuestionCard({
 
       {/* Action Icons - Vertical column positioned outside the greyed-out container */}
       <View className="absolute top-3 right-3 flex-col items-center gap-2 z-10">
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('🟢 Pencil icon pressed - index:', index);
-            editQuestionHandler();
-          }}
-          className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
-          activeOpacity={0.7}
-        >
-          <Ionicons name="pencil" size={16} color="#6b7280" />
-        </TouchableOpacity>
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           onPress={onDuplicate} 
           className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
           activeOpacity={0.7}
         >
           <Ionicons name="copy-outline" size={16} color="#6b7280" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity 
           onPress={onDelete} 
           className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-600"
@@ -314,23 +563,99 @@ export default function QuestionCard({
           <View className="space-y-3">
             {question.options?.map((option, optionIndex) => (
               <View key={optionIndex} className="flex-row items-center gap-3">
-                <View className={`w-4 h-4 rounded-full border-2 border-gray-300`} />
-                <Text className="flex-1 text-gray-700 dark:text-gray-300">
-                  {option.option_text || `Option ${optionIndex + 1}`}
-                </Text>
-                {option.is_correct && (
-                  <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                <TouchableOpacity
+                  onPress={() => {
+                    // Toggle correct answer
+                    const newOptions = [...(question.options || [])];
+                    if (question.question_type === 'MULTIPLE_CHOICE_SINGLE') {
+                      // For single choice, only one can be correct
+                      newOptions.forEach((opt, i) => {
+                        opt.is_correct = i === optionIndex;
+                      });
+                    } else {
+                      // For multiple choice, toggle the selected one
+                      newOptions[optionIndex].is_correct = !newOptions[optionIndex].is_correct;
+                    }
+                    
+                    const updateData = { options: newOptions };
+                    onSave(updateData);
+                  }}
+                  className="p-1"
+                  activeOpacity={0.7}
+                >
+                  <View className={`w-4 h-4 rounded-full border-2 ${
+                    option.is_correct ? 'bg-purple-600 border-purple-600' : 'border-gray-300'
+                  } items-center justify-center`}>
+                    {option.is_correct && <View className="w-2 h-2 bg-white rounded-full" />}
+                  </View>
+                </TouchableOpacity>
+                {editingField === 'option_text' && editingOptionIndex === optionIndex ? (
+                  <View className="flex-1 flex-row items-center">
+                    <TextInput
+                      value={editingValue}
+                      onChangeText={setEditingValue}
+                      placeholder="Enter option text"
+                      className="flex-1 text-gray-700 dark:text-gray-300 bg-transparent"
+                      placeholderTextColor="#9ca3af"
+                      autoFocus
+                    />
+                    <View className="flex-row ml-2">
+                      <TouchableOpacity
+                        onPress={saveEdit}
+                        className="p-1 mr-1"
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="checkmark" size={16} color="#10b981" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={cancelEdit}
+                        className="p-1"
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={16} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => startEditing('option_text', option.option_text || '', optionIndex)}
+                    className="flex-1"
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-gray-700 dark:text-gray-300">
+                      {option.option_text || `Option ${optionIndex + 1}`}
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
             ))}
             <View className="flex-row items-center gap-3">
-              <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
-              <Text className="text-gray-500 dark:text-gray-400">
-                Add option
-              </Text>
-              <Text className="text-blue-600 dark:text-blue-400">
-                or add "Other"
-              </Text>
+              <View className="p-1">
+                <View className="w-4 h-4 rounded-full border-2 border-gray-300" />
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  // Add new option
+                  const newOptions = [...(question.options || [])];
+                  newOptions.push({
+                    id: `temp_${Date.now()}_${newOptions.length}`,
+                    question_id: question.id,
+                    option_text: `Option ${newOptions.length + 1}`,
+                    is_correct: false,
+                    order: newOptions.length + 1,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  });
+                  
+                  const updateData = { options: newOptions };
+                  onSave(updateData);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text className="text-blue-600 dark:text-blue-400">
+                  Add option
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         );
@@ -423,7 +748,7 @@ export default function QuestionCard({
             placeholder="Enter your question"
             multiline
             numberOfLines={3}
-            className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
+            className="bg-transparent border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
             placeholderTextColor="#9ca3af"
           />
         </View>
@@ -448,7 +773,7 @@ export default function QuestionCard({
             onChangeText={(text) => setEditedData(prev => ({ ...prev, points: parseFloat(text) || 1 }))}
             placeholder="1"
             keyboardType="numeric"
-            className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
+            className="bg-transparent border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
             placeholderTextColor="#9ca3af"
           />
         </View>
@@ -471,7 +796,7 @@ export default function QuestionCard({
               value={editedData.hint_text || ''}
               onChangeText={(text) => setEditedData(prev => ({ ...prev, hint_text: text }))}
               placeholder="Enter hint text"
-              className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
+              className="bg-transparent border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
               placeholderTextColor="#9ca3af"
             />
           )}
@@ -488,7 +813,7 @@ export default function QuestionCard({
             placeholder="Explain the correct answer"
             multiline
             numberOfLines={3}
-            className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
+            className="bg-transparent border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100"
             placeholderTextColor="#9ca3af"
           />
         </View>

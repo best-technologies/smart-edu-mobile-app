@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   Text,
@@ -96,6 +96,8 @@ export default function CBTQuestionCreationScreen() {
     status: 'saving' | 'success' | 'error';
     error?: string;
   }>>([]);
+  
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Fetch existing questions
   const {
@@ -282,6 +284,7 @@ export default function CBTQuestionCreationScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView 
+          ref={scrollViewRef}
           className="flex-1"
           contentContainerClassName="p-6"
           refreshControl={
@@ -301,7 +304,6 @@ export default function CBTQuestionCreationScreen() {
                 index={index + 1}
                 isEditing={editingQuestionId === question.id}
                 onEdit={() => {
-                  console.log('🔵 onEdit called for question:', question.id);
                   setEditingQuestionId(question.id);
                   setIsAddingQuestion(false);
                 }}
@@ -314,7 +316,6 @@ export default function CBTQuestionCreationScreen() {
                 onDuplicate={() => handleDuplicateQuestion(question)}
                 onAddQuestion={() => setIsAddingQuestion(true)}
                 isLoading={isLoading}
-                isGreyedOut={editingQuestionId !== question.id}
               />
             ))}
           </View>
@@ -340,7 +341,13 @@ export default function CBTQuestionCreationScreen() {
           {questions.length > 0 && !isAddingQuestion && !editingQuestionId && (
             <View className={isAddingQuestion || editingQuestionId ? 'opacity-50' : ''}>
               <TouchableOpacity
-                onPress={() => setIsAddingQuestion(true)}
+                onPress={() => {
+                  setIsAddingQuestion(true);
+                  // Scroll to bottom smoothly when showing new question form
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 mb-6"
               >
                 <View className="flex-row items-center justify-center">

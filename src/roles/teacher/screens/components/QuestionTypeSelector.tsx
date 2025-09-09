@@ -437,6 +437,7 @@ export default function QuestionTypeSelector({
             </View>
           )}
 
+
           {/* API Error Message - Only show for pending questions, not new question form */}
           {status === 'error' && error && !isNew && (
             <View className="px-4 mb-2">
