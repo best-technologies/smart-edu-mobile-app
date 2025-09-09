@@ -17,17 +17,30 @@ interface ManagedClassesProps {
 }
 
 export function ManagedClasses({ classes }: ManagedClassesProps) {
+  const validClasses = classes.filter(classItem => classItem && classItem.id);
+  
   return (
     <View className="mb-6">
       <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
         Managed Classes
       </Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        contentContainerClassName="gap-3"
-      >
-        {classes.map((classItem) => (
+      {validClasses.length === 0 ? (
+        <View className="bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 p-6 items-center">
+          <Ionicons name="school-outline" size={48} color="#9ca3af" />
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100 mt-3 mb-2">
+            No Classes Assigned
+          </Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            You are not currently managing any classes. Contact your administrator if this is incorrect.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerClassName="gap-3"
+        >
+          {validClasses.map((classItem) => (
           <TouchableOpacity
             key={classItem.id}
             activeOpacity={0.7}
@@ -63,8 +76,9 @@ export function ManagedClasses({ classes }: ManagedClassesProps) {
               </View>
             </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }

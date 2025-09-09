@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -145,6 +145,18 @@ export class StudentService {
 
   async getSubjects(): Promise<StudentSubjectsResponse> {
     return this.httpClient.makeRequest<StudentSubjectsResponse['data']>(API_ENDPOINTS.STUDENT.SUBJECTS) as Promise<StudentSubjectsResponse>;
+  }
+
+  async getSubjectDetails(subjectId: string): Promise<StudentSubjectDetailsResponse> {
+    return this.httpClient.makeRequest<StudentSubjectDetailsResponse['data']>(`${API_ENDPOINTS.STUDENT.SUBJECT_DETAILS}/${subjectId}`) as Promise<StudentSubjectDetailsResponse>;
+  }
+
+  async getTopics(subjectId: string): Promise<ApiResponse<any[]>> {
+    return this.httpClient.makeRequest(`${API_ENDPOINTS.STUDENT.TOPICS}?subjectId=${subjectId}`);
+  }
+
+  async getTopicContent(topicId: string): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(`${API_ENDPOINTS.STUDENT.TOPIC_CONTENT}/${topicId}/content`);
   }
 
   async getSchedules(): Promise<ApiResponse<any[]>> {

@@ -80,6 +80,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         requiresOTP: false,
       };
     case 'LOGOUT':
+      console.log('🔄 LOGOUT reducer: Setting user as not authenticated');
       return {
         ...state,
         isAuthenticated: false,
@@ -371,7 +372,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         showError(friendlyError.title, friendlyError.message, 4000);
       }
     } finally {
+      console.log('🔄 Dispatching LOGOUT action');
       dispatch({ type: 'LOGOUT' });
+      console.log('✅ LOGOUT action dispatched');
     }
   };
 

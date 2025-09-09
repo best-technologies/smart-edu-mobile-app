@@ -424,6 +424,75 @@ export interface StudentSubjectsResponse {
   statusCode: number;
 }
 
+// Student Subject Details Types (for individual subject with topics)
+export interface StudentSubjectDetailsVideo {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  thumbnail: string;
+  duration: number;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentSubjectDetailsMaterial {
+  id: string;
+  title: string;
+  description: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentSubjectDetailsTopic {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  order: number;
+  isActive: boolean;
+  subjectId: string;
+  videos: StudentSubjectDetailsVideo[];
+  materials: StudentSubjectDetailsMaterial[];
+  videoCount: number;
+  materialCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentSubjectDetailsData {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  description: string;
+  thumbnail: {
+    secure_url: string;
+    public_id: string;
+  } | null;
+  topics: StudentSubjectDetailsTopic[];
+  totalTopics: number;
+  totalVideos: number;
+  totalMaterials: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentSubjectDetailsResponse {
+  success: boolean;
+  message: string;
+  data: StudentSubjectDetailsData;
+  statusCode: number;
+}
+
 // API Error Types
 export class ApiError extends Error {
   constructor(

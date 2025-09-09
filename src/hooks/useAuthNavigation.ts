@@ -82,6 +82,7 @@ export function useAuthNavigation() {
 
     // Handle logout - redirect to login if not authenticated
     if (!isAuthenticated && !user) {
+      console.log('🚪 User logged out, redirecting to login page');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],

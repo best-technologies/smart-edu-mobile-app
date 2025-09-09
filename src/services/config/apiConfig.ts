@@ -45,7 +45,7 @@ export const API_ENDPOINTS = {
   },
   // Role-specific endpoints
   TEACHER: {
-    DASHBOARD: '/teacher/dashboard',
+    DASHBOARD: '/teachers/dashboard',
     SUBJECTS: '/teacher/subjects',
     SUBJECTS_DASHBOARD: '/teachers/subjects-dashboard',
     SUBJECT_DETAILS: '/teachers/subjects',
@@ -67,6 +67,9 @@ export const API_ENDPOINTS = {
   STUDENT: {
     DASHBOARD: '/students/dashboard',
     SUBJECTS: '/students/subjects',
+    SUBJECT_DETAILS: '/students/subjects',
+    TOPICS: '/students/topics',
+    TOPIC_CONTENT: '/students/topics',
     SCHEDULES: '/students/schedules',
   },
 } as const;

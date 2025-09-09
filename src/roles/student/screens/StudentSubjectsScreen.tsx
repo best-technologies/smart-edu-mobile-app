@@ -43,8 +43,7 @@ export default function StudentSubjectsScreen() {
   }, [subjectsData, searchQuery]);
 
   const handleSubjectPress = (subject: Subject) => {
-    // TODO: Navigate to subject details (read-only)
-    console.log('View subject:', subject.name);
+    navigation.navigate('StudentSubjectDetails', { subject });
   };
 
   const handleSearch = (query: string) => {

@@ -35,7 +35,7 @@ export default function TeacherDashboardScreen() {
   };
 
   // Transform API data to match component expectations
-  const managedClasses = dashboardData ? [dashboardData.managed_class] : [];
+  const managedClasses = dashboardData && dashboardData.managed_class ? [dashboardData.managed_class] : [];
   
   const subjectsTeaching = dashboardData ? dashboardData.subjects_teaching : [];
   
