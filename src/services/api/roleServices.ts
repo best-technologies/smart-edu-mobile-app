@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -161,6 +161,31 @@ export class StudentService {
 
   async getSchedules(): Promise<StudentSchedulesResponse> {
     return this.httpClient.makeRequest<StudentSchedulesResponse['data']>(API_ENDPOINTS.STUDENT.SCHEDULES) as Promise<StudentSchedulesResponse>;
+  }
+
+  async getAssessments(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    assessment_type?: string;
+    status?: string;
+  }): Promise<StudentAssessmentsResponse> {
+    const queryParams = new URLSearchParams();
+    
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.assessment_type) queryParams.append('assessment_type', params.assessment_type);
+    if (params?.status) queryParams.append('status', params.status);
+
+    const url = `${API_ENDPOINTS.STUDENT.ASSESSMENTS}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    return this.httpClient.makeRequest<StudentAssessmentsResponse['data']>(url) as Promise<StudentAssessmentsResponse>;
+  }
+
+  async getAssessmentQuestions(assessmentId: string): Promise<AssessmentQuestionsResponse> {
+    const url = `${API_ENDPOINTS.STUDENT.ASSESSMENT_QUESTIONS}/${assessmentId}/questions`;
+    return this.httpClient.makeRequest<AssessmentQuestionsResponse['data']>(url) as Promise<AssessmentQuestionsResponse>;
   }
 }
 

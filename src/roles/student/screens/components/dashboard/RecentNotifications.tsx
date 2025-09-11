@@ -42,6 +42,9 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
     }
   };
 
+  // Ensure notifications is always an array
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'exam':
@@ -88,7 +91,7 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
     }
   };
 
-  if (!notifications || notifications.length === 0) {
+  if (!safeNotifications || safeNotifications.length === 0) {
     return (
       <View className="mb-6">
         <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -139,51 +142,58 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
         showsHorizontalScrollIndicator={false} 
         contentContainerClassName="gap-3"
       >
-        {notifications?.map((notification) => (
-          <View
-            key={notification.id}
-            className="w-72 rounded-2xl bg-white dark:bg-black border border-gray-200 dark:border-gray-800 p-4"
-          >
-            {/* Header with Icon and Date */}
-            <View className="flex-row items-start justify-between mb-3">
-              <View 
-                className="h-8 w-8 rounded-lg items-center justify-center"
-                style={{ backgroundColor: `${getNotificationColor(notification.type)}15` }}
-              >
-                <Ionicons 
-                  name={getNotificationIcon(notification.type)} 
-                  size={16} 
-                  color={getNotificationColor(notification.type)} 
-                />
+        {safeNotifications?.map((notification) => {
+          // Ensure notification has required properties
+          if (!notification || typeof notification !== 'object') {
+            return null;
+          }
+
+          return (
+            <View
+              key={notification.id || Math.random().toString()}
+              className="w-72 rounded-2xl bg-white dark:bg-black border border-gray-200 dark:border-gray-800 p-4"
+            >
+              {/* Header with Icon and Date */}
+              <View className="flex-row items-start justify-between mb-3">
+                <View 
+                  className="h-8 w-8 rounded-lg items-center justify-center"
+                  style={{ backgroundColor: `${getNotificationColor(notification.type || 'default')}15` }}
+                >
+                  <Ionicons 
+                    name={getNotificationIcon(notification.type || 'default')} 
+                    size={16} 
+                    color={getNotificationColor(notification.type || 'default')} 
+                  />
+                </View>
+                <View className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                  <Text className="text-xs text-gray-600 dark:text-gray-300">
+                    {formatDate(notification.comingUpOn || '')}
+                  </Text>
+                </View>
               </View>
-              <View className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-                <Text className="text-xs text-gray-600 dark:text-gray-300">
-                  {formatDate(notification.comingUpOn)}
-                </Text>
-              </View>
+
+              {/* Title */}
+              <Text className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                {notification.title || 'No Title'}
+              </Text>
+              
+              {/* Description */}
+              <Text className="text-sm text-gray-600 dark:text-gray-300 leading-5 mb-3">
+                {notification.description || 'No description available'}
+              </Text>
+
+              {/* Coming Up Info */}
+              {notification.comingUpOn && (
+                <View className="flex-row items-center">
+                  <Ionicons name="time-outline" size={14} color="#6B7280" />
+                  <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                    {formatDateTime(notification.comingUpOn)}
+                  </Text>
+                </View>
+              )}
             </View>
-
-            {/* Title */}
-            <Text className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              {notification.title}
-            </Text>
-            
-            {/* Description */}
-            <Text className="text-sm text-gray-600 dark:text-gray-300 leading-5 mb-3">
-              {notification.description}
-            </Text>
-
-            {/* Coming Up Info */}
-            {notification.comingUpOn && (
-              <View className="flex-row items-center">
-                <Ionicons name="time-outline" size={14} color="#6B7280" />
-                <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                  {formatDateTime(notification.comingUpOn)}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );

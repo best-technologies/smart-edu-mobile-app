@@ -38,22 +38,33 @@ export default function ClassSchedule({ classSchedule }: ClassScheduleProps) {
     return time;
   };
 
+  // Add null checking for classSchedule
+  if (!classSchedule) {
+    return (
+      <View className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+        <Text className="text-gray-500 dark:text-gray-400 text-center">
+          No schedule data available
+        </Text>
+      </View>
+    );
+  }
+
   const daySchedules = [
     {
-      day: classSchedule.today.day,
-      schedule: classSchedule.today.schedule,
+      day: classSchedule.today?.day || 'Today',
+      schedule: classSchedule.today?.schedule || [],
       color: '#10B981',
       icon: 'today-outline' as const,
     },
     {
-      day: classSchedule.tomorrow.day,
-      schedule: classSchedule.tomorrow.schedule,
+      day: classSchedule.tomorrow?.day || 'Tomorrow',
+      schedule: classSchedule.tomorrow?.schedule || [],
       color: '#F59E0B',
       icon: 'calendar-outline' as const,
     },
     {
-      day: classSchedule.day_after_tomorrow.day,
-      schedule: classSchedule.day_after_tomorrow.schedule,
+      day: classSchedule.day_after_tomorrow?.day || 'Day After Tomorrow',
+      schedule: classSchedule.day_after_tomorrow?.schedule || [],
       color: '#8B5CF6',
       icon: 'calendar-outline' as const,
     },

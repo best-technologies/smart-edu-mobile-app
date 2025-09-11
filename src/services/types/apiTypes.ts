@@ -557,6 +557,141 @@ export interface StudentSchedulesResponse {
   data: StudentSchedulesData;
 }
 
+// Student Assessments Types
+export interface AssessmentSubject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+}
+
+export interface AssessmentTeacher {
+  id: string;
+  name: string;
+}
+
+export interface Assessment {
+  id: string;
+  title: string;
+  description: string;
+  assessment_type: 'ASSIGNMENT' | 'QUIZ' | 'PRACTICE' | 'CBT' | 'EXAM' | 'OTHER';
+  status: 'ACTIVE' | 'DRAFT' | 'CLOSED' | 'ARCHIVED';
+  duration: number;
+  total_points: number;
+  questions_count: number;
+  subject: AssessmentSubject;
+  teacher: AssessmentTeacher;
+  due_date: string;
+  created_at: string;
+  is_published: boolean;
+  _count: {
+    questions: number;
+  };
+}
+
+export interface GroupedAssessment {
+  assessment_type: string;
+  status: string;
+  count: number;
+  assessments: Assessment[];
+}
+
+export interface AssessmentPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface AssessmentFilters {
+  search?: string;
+  assessment_type?: string;
+  status?: string;
+}
+
+export interface StudentAssessmentsGeneralInfo {
+  current_session: {
+    academic_year: string;
+    term: string;
+  };
+}
+
+export interface StudentAssessmentsData {
+  general_info: StudentAssessmentsGeneralInfo;
+  assessments: Assessment[];
+  grouped_assessments: GroupedAssessment[];
+  pagination: AssessmentPagination;
+  filters: AssessmentFilters;
+}
+
+export interface StudentAssessmentsResponse {
+  success: boolean;
+  message: string;
+  data: StudentAssessmentsData;
+  statusCode: number;
+}
+
+// Assessment Questions Types
+export interface QuestionOption {
+  id: string;
+  text: string;
+  is_correct: boolean;
+  order: number;
+}
+
+export interface CorrectAnswer {
+  id: string;
+  option_ids: string[];
+}
+
+export interface AssessmentQuestion {
+  id: string;
+  question_text: string;
+  question_image?: string;
+  question_type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_IN_BLANK' | 'ESSAY';
+  points: number;
+  order: number;
+  explanation?: string;
+  options: QuestionOption[];
+  correct_answers: CorrectAnswer[];
+}
+
+export interface AssessmentDetails {
+  id: string;
+  title: string;
+  description: string;
+  assessment_type: 'ASSIGNMENT' | 'QUIZ' | 'PRACTICE' | 'CBT' | 'EXAM' | 'OTHER';
+  status: 'ACTIVE' | 'DRAFT' | 'CLOSED' | 'ARCHIVED';
+  duration: number;
+  total_points: number;
+  max_attempts: number;
+  passing_score: number;
+  instructions: string;
+  subject: AssessmentSubject;
+  teacher: AssessmentTeacher;
+  start_date: string;
+  end_date: string;
+  student_attempts: number;
+  remaining_attempts: number;
+}
+
+export interface AssessmentQuestionsData {
+  assessment: AssessmentDetails;
+  questions: AssessmentQuestion[];
+  total_questions: number;
+  total_points: number;
+  estimated_duration: number;
+}
+
+export interface AssessmentQuestionsResponse {
+  success: boolean;
+  message: string;
+  data: AssessmentQuestionsData;
+  statusCode: number;
+}
+
 // API Error Types
 export class ApiError extends Error {
   constructor(
