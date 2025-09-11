@@ -511,7 +511,7 @@ export default function StudentResultsScreen() {
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-1">
-                          <Ionicons name="percent-outline" size={16} color="#3b82f6" />
+                          <Ionicons name="stats-chart-outline" size={16} color="#3b82f6" />
                           <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             {result.percentage}%
                           </Text>

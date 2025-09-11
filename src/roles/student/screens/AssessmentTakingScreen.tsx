@@ -15,6 +15,7 @@ import { useAssessmentQuestions } from '@/hooks/useAssessmentQuestions';
 import { AssessmentQuestion, QuestionOption } from '@/services/types/apiTypes';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useToast } from '@/contexts/ToastContext';
+import { StudentService } from '@/services/api/roleServices';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +38,8 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -52,8 +55,9 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
 
   // Initialize timer when assessment loads
   useEffect(() => {
-    if (assessment && !isSubmitted) {
+    if (assessment && !isSubmitted && !startTime) {
       setTimeRemaining(assessment.duration * 60); // Convert minutes to seconds
+      setStartTime(new Date());
       
       timerRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
@@ -71,7 +75,7 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
         clearInterval(timerRef.current);
       }
     };
-  }, [assessment, isSubmitted]);
+  }, [assessment, isSubmitted, startTime]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -131,7 +135,7 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
     Alert.alert(
       'Time Up!',
       'Your time has expired. The assessment will be submitted automatically.',
-      [{ text: 'OK', onPress: () => handleSubmit() }]
+      [{ text: 'OK', onPress: () => submitAssessment() }]
     );
   };
 
@@ -139,19 +143,80 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
     setShowConfirmSubmit(true);
   };
 
-  const confirmSubmit = () => {
+  const submitAssessment = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     setIsSubmitted(true);
+    
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
-    // TODO: Submit answers to backend
-    showSuccess('Assessment Submitted', 'Your answers have been submitted successfully');
-    
-    // Navigate back after a delay
-    setTimeout(() => {
-      navigation.goBack();
-    }, 2000);
+
+    try {
+      // Calculate time spent
+      const timeSpent = startTime ? Math.floor((new Date().getTime() - startTime.getTime()) / 1000) : 0;
+      
+      // Create service instance
+      const studentService = new StudentService();
+      
+      // Debug: Check if method exists
+      console.log('StudentService instance:', studentService);
+      console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(studentService)));
+      console.log('submitAssessment method:', typeof studentService.submitAssessment);
+      
+      // Try to access the method directly
+      if (!studentService.submitAssessment) {
+        console.log('Method not found, trying alternative approach...');
+        // Try to call the method directly from the prototype
+        const method = Object.getPrototypeOf(studentService).submitAssessment;
+        if (typeof method === 'function') {
+          console.log('Found method on prototype, calling directly...');
+          const response = await method.call(studentService, assessmentId, {
+            answers,
+            timeSpent
+          });
+          return response;
+        } else {
+          throw new Error('submitAssessment method not found on StudentService');
+        }
+      }
+      
+      // Submit to backend
+      const response = await studentService.submitAssessment(assessmentId, {
+        answers,
+        timeSpent
+      });
+
+      if (response.success) {
+        const { total_score, total_points, percentage_score, passed, grade } = response.data;
+        
+        showSuccess(
+          'Assessment Submitted Successfully!', 
+          `Score: ${total_score}/${total_points} (${percentage_score}%)\nGrade: ${grade}\nStatus: ${passed ? 'Passed' : 'Failed'}\n\nReturning to tasks page...`
+        );
+        
+        // Navigate back to tasks page (not instructions)
+        setTimeout(() => {
+          // Go back to tasks page (2 levels back: instructions -> tasks)
+          navigation.navigate('StudentTabs', { screen: 'Tasks' });
+        }, 2000);
+      } else {
+        throw new Error(response.message || 'Failed to submit assessment');
+      }
+    } catch (error) {
+      console.error('Assessment submission error:', error);
+      showError('Submission Failed', 'Failed to submit assessment. Please try again.');
+      
+      // Reset submission state on error
+      setIsSubmitted(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const confirmSubmit = () => {
+    setShowConfirmSubmit(false);
+    submitAssessment();
   };
 
   const getAnsweredQuestionsCount = () => {
@@ -455,10 +520,22 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
           {currentQuestionIndex === totalQuestions - 1 ? (
             <TouchableOpacity
               onPress={handleSubmit}
-              className="flex-row items-center gap-2 bg-green-600 px-6 py-3 rounded-xl"
+              disabled={isSubmitting}
+              className={`flex-row items-center gap-2 px-6 py-3 rounded-xl ${
+                isSubmitting ? 'bg-gray-400' : 'bg-green-600'
+              }`}
             >
-              <Ionicons name="checkmark-circle" size={20} color="white" />
-              <Text className="text-white font-bold text-base">Submit Assessment</Text>
+              {isSubmitting ? (
+                <>
+                  <Ionicons name="hourglass" size={20} color="white" />
+                  <Text className="text-white font-bold text-base">Submitting...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color="white" />
+                  <Text className="text-white font-bold text-base">Submit Assessment</Text>
+                </>
+              )}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -487,6 +564,7 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
               <TouchableOpacity
                 onPress={() => setShowConfirmSubmit(false)}
                 className="flex-1 bg-gray-200 dark:bg-gray-600 py-3 rounded-lg"
+                disabled={isSubmitting}
               >
                 <Text className="text-center font-medium text-gray-700 dark:text-gray-300">
                   Cancel
@@ -494,13 +572,40 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={confirmSubmit}
-                className="flex-1 bg-green-600 py-3 rounded-lg"
+                className={`flex-1 py-3 rounded-lg ${
+                  isSubmitting ? 'bg-gray-400' : 'bg-green-600'
+                }`}
+                disabled={isSubmitting}
               >
-                <Text className="text-center font-medium text-white">
-                  Submit
-                </Text>
+                {isSubmitting ? (
+                  <View className="flex-row items-center justify-center gap-2">
+                    <Ionicons name="hourglass" size={16} color="white" />
+                    <Text className="text-center font-medium text-white">
+                      Submitting...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-center font-medium text-white">
+                    Submit
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      )}
+
+      {/* Submission Loading Overlay */}
+      {isSubmitting && (
+        <View className="absolute inset-0 bg-black/50 items-center justify-center">
+          <View className="bg-white dark:bg-gray-800 rounded-lg p-6 items-center">
+            <Ionicons name="hourglass" size={48} color="#3b82f6" />
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">
+              Submitting Assessment...
+            </Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-center">
+              Please wait while we process your submission
+            </Text>
           </View>
         </View>
       )}

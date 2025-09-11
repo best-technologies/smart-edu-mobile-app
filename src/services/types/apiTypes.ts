@@ -570,6 +570,23 @@ export interface AssessmentTeacher {
   name: string;
 }
 
+export interface AssessmentAttempt {
+  id: string;
+  attempt_number: number;
+  status: 'PENDING' | 'GRADED' | 'SUBMITTED';
+  total_score: number;
+  percentage: number;
+  passed: boolean;
+  submitted_at: string;
+}
+
+export interface StudentAttempts {
+  total_attempts: number;
+  remaining_attempts: number;
+  has_reached_max: boolean;
+  latest_attempt: AssessmentAttempt | null;
+}
+
 export interface Assessment {
   id: string;
   title: string;
@@ -578,12 +595,21 @@ export interface Assessment {
   status: 'ACTIVE' | 'DRAFT' | 'CLOSED' | 'ARCHIVED';
   duration: number;
   total_points: number;
+  max_attempts: number;
+  passing_score: number;
   questions_count: number;
   subject: AssessmentSubject;
   teacher: AssessmentTeacher;
   due_date: string;
   created_at: string;
   is_published: boolean;
+  student_attempts: StudentAttempts;
+  performance_summary: {
+    highest_score: number;
+    highest_percentage: number;
+    overall_achievable_mark: number;
+    best_attempt: AssessmentAttempt | null;
+  };
   _count: {
     questions: number;
   };
@@ -690,6 +716,131 @@ export interface AssessmentQuestionsResponse {
   message: string;
   data: AssessmentQuestionsData;
   statusCode: number;
+}
+
+// Assessment Submission Types
+export interface AssessmentSubmissionAnswer {
+  question_id: string;
+  is_correct: boolean;
+  points_earned: number;
+  max_points: number;
+}
+
+export interface AssessmentSubmissionData {
+  attempt_id: string;
+  assessment_id: string;
+  student_id: string;
+  total_score: number;
+  total_points: number;
+  percentage_score: number;
+  passed: boolean;
+  grade: string;
+  answers: AssessmentSubmissionAnswer[];
+  submitted_at: string;
+  time_spent: number;
+}
+
+export interface AssessmentSubmissionResponse {
+  success: boolean;
+  message: string;
+  data: AssessmentSubmissionData;
+}
+
+// Assessment Answers Types
+export interface AssessmentAnswerOption {
+  id: string;
+  text: string;
+  is_correct: boolean;
+  order: number;
+  is_selected: boolean;
+}
+
+export interface UserAnswer {
+  text_answer: string | null;
+  numeric_answer: number | null;
+  selected_options: {
+    id: string;
+    text: string;
+    is_correct: boolean;
+  }[];
+  is_correct: boolean;
+  points_earned: number;
+  answered_at: string;
+}
+
+export interface AssessmentAnswerQuestion {
+  id: string;
+  question_text: string;
+  question_image: string | null;
+  question_type: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_CHOICE_MULTIPLE' | 'TRUE_FALSE' | 'FILL_IN_BLANK' | 'ESSAY';
+  points: number;
+  order: number;
+  explanation: string | null;
+  options: AssessmentAnswerOption[];
+  user_answer: UserAnswer | null;
+  correct_answers: any[];
+}
+
+export interface AssessmentSubmission {
+  submission_id: string;
+  attempt_number: number;
+  status: 'PENDING' | 'GRADED' | 'SUBMITTED';
+  total_score: number;
+  percentage: number;
+  passed: boolean;
+  grade_letter: string | null;
+  time_spent: number;
+  started_at: string;
+  submitted_at: string;
+  graded_at: string;
+  is_graded: boolean;
+  overall_feedback: string | null;
+  questions: AssessmentAnswerQuestion[];
+  total_questions: number;
+  questions_answered: number;
+  questions_correct: number;
+}
+
+export interface SubmissionSummary {
+  total_submissions: number;
+  latest_submission: AssessmentSubmission;
+  best_score: number;
+  best_percentage: number;
+  passed_attempts: number;
+}
+
+export interface AssessmentAnswersData {
+  assessment: {
+    id: string;
+    title: string;
+    description: string;
+    assessment_type: string;
+    status: string;
+    duration: number;
+    total_points: number;
+    max_attempts: number;
+    passing_score: number;
+    instructions: string;
+    subject: AssessmentSubject;
+    teacher: AssessmentTeacher;
+    start_date: string;
+    end_date: string;
+    created_at: string;
+    is_published: boolean;
+    total_attempts: number;
+    remaining_attempts: number;
+  };
+  submissions: AssessmentSubmission[];
+  total_questions: number;
+  total_points: number;
+  estimated_duration: number;
+  submission_summary: SubmissionSummary;
+}
+
+export interface AssessmentAnswersResponse {
+  success: boolean;
+  message: string;
+  data: AssessmentAnswersData;
 }
 
 // API Error Types

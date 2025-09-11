@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import TopBar from './components/shared/TopBar';
 import { useStudentAssessments } from '@/hooks/useStudentAssessments';
@@ -38,6 +39,13 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
     refetch 
   } = useStudentAssessments();
 
+  // Refresh data when screen comes into focus (e.g., returning from assessment)
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -67,11 +75,101 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
 
   const handleStartAssessment = (assessment: Assessment) => {
     console.log('Starting assessment:', assessment.title);
-    // Navigate to assessment taking screen
-    navigation.navigate('AssessmentTaking', {
+    // Navigate to instructions screen first
+    navigation.navigate('AssessmentInstructions', {
+      assessment: assessment
+    });
+  };
+
+  const handleAssessmentAction = (assessment: Assessment) => {
+    if (assessment.student_attempts?.has_reached_max) {
+      // Show grade/view results
+      handleViewGrade(assessment);
+    } else {
+      // Start/retake assessment
+      handleStartAssessment(assessment);
+    }
+  };
+
+  const handleViewGrade = (assessment: Assessment) => {
+    console.log('View grade button clicked for:', assessment.title);
+    // Navigate to assessment results screen
+    navigation.navigate('AssessmentResults', {
       assessmentId: assessment.id,
       assessmentTitle: assessment.title
     });
+  };
+
+  const canTakeAssessment = (assessment: Assessment) => {
+    // Can take if status is ACTIVE and either no attempts or has remaining attempts
+    return assessment.status === 'ACTIVE' && 
+           (!assessment.student_attempts || 
+            assessment.student_attempts.remaining_attempts > 0);
+  };
+
+  // Calculate corrected percentage based on actual correct answers
+  const calculateCorrectedPercentage = (assessment: Assessment) => {
+    if (!assessment.performance_summary?.best_attempt) return 0;
+    
+    // Backend is working correctly, just round the percentage for display
+    return Math.round(assessment.performance_summary.highest_percentage * 10) / 10;
+  };
+
+  const getButtonStyle = (assessment: Assessment) => {
+    if (assessment.status !== 'ACTIVE') {
+      return 'bg-gray-400';
+    }
+    
+    if (assessment.student_attempts?.has_reached_max) {
+      return 'bg-green-600'; // View grade button
+    }
+    
+    if (isOverdue(assessment.due_date)) {
+      return 'bg-red-600'; // Overdue - urgent
+    }
+    
+    if (assessment.student_attempts?.total_attempts > 0) {
+      return 'bg-orange-600'; // Retake assessment
+    }
+    
+    return 'bg-blue-600'; // Start assessment
+  };
+
+  const getButtonIcon = (assessment: Assessment) => {
+    if (assessment.status !== 'ACTIVE') {
+      return 'lock-closed-outline';
+    }
+    
+    if (assessment.student_attempts?.has_reached_max) {
+      return 'eye-outline'; // View grade
+    }
+    
+    if (isOverdue(assessment.due_date)) {
+      return 'alert-circle-outline'; // Overdue
+    }
+    
+    if (assessment.student_attempts?.total_attempts > 0) {
+      return 'refresh-outline'; // Retake
+    }
+    
+    return 'play-outline'; // Start
+  };
+
+  const getButtonText = (assessment: Assessment) => {
+    if (assessment.status !== 'ACTIVE') {
+      return 'Not Available';
+    }
+    
+    if (assessment.student_attempts?.has_reached_max) {
+      return 'View Grade';
+    }
+    
+    if (isOverdue(assessment.due_date)) {
+      return 'Overdue - Submit Now';
+    }
+    
+    // Note: Two-button case is handled separately in the UI
+    return 'Start Assessment';
   };
 
   const getStatusColor = (status: string) => {
@@ -345,13 +443,32 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
                   {/* Assessment Header */}
                   <View className="flex-row items-start justify-between mb-3">
                     <View className="flex-1 mr-3">
-                      <Text className={`text-lg font-bold mb-2 ${
-                        isOverdue(assessment.due_date)
-                          ? 'text-red-900 dark:text-red-100'
-                          : 'text-gray-900 dark:text-gray-100'
-                      }`}>
-                        {assessment.title}
-                      </Text>
+                      <View className="flex-row items-center gap-2 mb-2">
+                        <Text className={`text-lg font-bold flex-1 ${
+                          isOverdue(assessment.due_date)
+                            ? 'text-red-900 dark:text-red-100'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}>
+                          {assessment.title}
+                        </Text>
+                        
+                        {/* Status Indicator */}
+                        <View 
+                          className="px-2 py-1 rounded-full"
+                          style={{ 
+                            backgroundColor: getStatusColor(assessment.status) + '20',
+                            borderColor: getStatusColor(assessment.status),
+                            borderWidth: 1
+                          }}
+                        >
+                          <Text 
+                            className="text-xs font-bold"
+                            style={{ color: getStatusColor(assessment.status) }}
+                          >
+                            {assessment.status}
+                          </Text>
+                        </View>
+                      </View>
                       
                       {/* Badges Row */}
                       <View className="flex-row items-center gap-2 mb-2">
@@ -396,25 +513,25 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
                     </View>
                   </View>
 
-                  {/* Assessment Details Grid */}
-                  <View className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-3">
+                  {/* Assessment Details Grid - Compact */}
+                  <View className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 mb-2">
                     <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-4">
+                      <View className="flex-row items-center gap-3">
                         <View className="flex-row items-center gap-1">
-                          <Ionicons name="time-outline" size={14} color="#3b82f6" />
-                          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <Ionicons name="time-outline" size={12} color="#3b82f6" />
+                          <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
                             {assessment.duration} min
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-1">
-                          <Ionicons name="help-circle-outline" size={14} color="#10b981" />
-                          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {assessment.questions_count} questions
+                          <Ionicons name="help-circle-outline" size={12} color="#10b981" />
+                          <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {assessment.questions_count} q
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-1">
-                          <Ionicons name="star-outline" size={14} color="#8b5cf6" />
-                          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <Ionicons name="star-outline" size={12} color="#8b5cf6" />
+                          <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
                             {assessment.total_points} pts
                           </Text>
                         </View>
@@ -422,65 +539,152 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
                     </View>
                   </View>
 
-                  {/* Due Date and Teacher Info */}
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center gap-4">
+                  {/* Performance Summary - Compact */}
+                  {assessment.student_attempts && (
+                    <View className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 mb-3">
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-3">
+                          <View className="flex-row items-center gap-1">
+                            <Ionicons name="repeat-outline" size={12} color="#3b82f6" />
+                            <Text className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                              {assessment.student_attempts.total_attempts}/{assessment.max_attempts}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center gap-1">
+                            <Ionicons name="refresh-outline" size={12} color="#10b981" />
+                            <Text className="text-xs font-medium text-green-700 dark:text-green-300">
+                              {assessment.student_attempts.remaining_attempts} left
+                            </Text>
+                          </View>
+                        </View>
+                        
+                        {/* Best Performance - Inline */}
+                        {assessment.performance_summary?.best_attempt ? (
+                          <View className="flex-row items-center gap-2">
+                            <View className="flex-row items-center gap-1">
+                              <Ionicons 
+                                name="trophy" 
+                                size={12} 
+                                color="#f59e0b" 
+                              />
+                              <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Best: {assessment.performance_summary.highest_score}/{assessment.performance_summary.overall_achievable_mark} ({Math.round(assessment.performance_summary.highest_percentage * 10) / 10}%)
+                              </Text>
+                            </View>
+                            {/* Pass/Fail Badge */}
+                            <View 
+                              className="px-2 py-1 rounded-full"
+                              style={{ 
+                                backgroundColor: calculateCorrectedPercentage(assessment) >= assessment.passing_score ? '#10b981' : '#ef4444'
+                              }}
+                            >
+                              <Text className="text-xs font-bold text-white">
+                                {calculateCorrectedPercentage(assessment) >= assessment.passing_score ? 'PASS' : 'FAIL'}
+                              </Text>
+                            </View>
+                          </View>
+                        ) : assessment.student_attempts.latest_attempt ? (
+                          <View className="flex-row items-center gap-2">
+                            <View className="flex-row items-center gap-1">
+                              <Ionicons 
+                                name={assessment.student_attempts.latest_attempt.passed ? "checkmark-circle" : "close-circle"} 
+                                size={12} 
+                                color={assessment.student_attempts.latest_attempt.passed ? "#10b981" : "#ef4444"} 
+                              />
+                              <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Latest: {assessment.student_attempts.latest_attempt.total_score}/{assessment.total_points} ({Math.round(assessment.student_attempts.latest_attempt.percentage * 10) / 10}%)
+                              </Text>
+                            </View>
+                            {/* Pass/Fail Badge */}
+                            <View 
+                              className="px-2 py-1 rounded-full"
+                              style={{ 
+                                backgroundColor: Math.round(assessment.student_attempts.latest_attempt.percentage * 10) / 10 >= assessment.passing_score ? '#10b981' : '#ef4444'
+                              }}
+                            >
+                              <Text className="text-xs font-bold text-white">
+                                {Math.round(assessment.student_attempts.latest_attempt.percentage * 10) / 10 >= assessment.passing_score ? 'PASS' : 'FAIL'}
+                              </Text>
+                            </View>
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Due Date and Teacher Info - Compact */}
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center gap-3">
                       <View className="flex-row items-center gap-1">
                         <Ionicons 
                           name="calendar-outline" 
-                          size={14} 
+                          size={12} 
                           color={isOverdue(assessment.due_date) ? '#ef4444' : isDueSoon(assessment.due_date) ? '#f59e0b' : '#6b7280'} 
                         />
                         <Text 
-                          className="text-sm font-medium"
+                          className="text-xs font-medium"
                           style={{ 
                             color: isOverdue(assessment.due_date) ? '#ef4444' : isDueSoon(assessment.due_date) ? '#f59e0b' : '#6b7280'
                           }}
                         >
-                          Due: {formatDate(assessment.due_date)} at {formatTime(assessment.due_date)}
+                          Due: {formatDate(assessment.due_date)}
                         </Text>
                       </View>
                       <View className="flex-row items-center gap-1">
-                        <Ionicons name="person-outline" size={14} color="#6b7280" />
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <Ionicons name="person-outline" size={12} color="#6b7280" />
+                        <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
                           {assessment.teacher.name}
                         </Text>
                       </View>
                     </View>
                   </View>
 
-                  {/* Action Button */}
-                  <TouchableOpacity
-                    onPress={() => handleStartAssessment(assessment)}
-                    className={`w-full py-3 rounded-lg flex-row items-center justify-center gap-2 ${
-                      isOverdue(assessment.due_date)
-                        ? 'bg-red-600'
-                        : assessment.status === 'ACTIVE' 
-                          ? 'bg-blue-600' 
-                          : 'bg-gray-400'
-                    }`}
-                    activeOpacity={0.8}
-                    disabled={assessment.status !== 'ACTIVE'}
-                  >
-                    <Ionicons 
-                      name={
-                        isOverdue(assessment.due_date)
-                          ? 'alert-circle-outline'
-                          : assessment.status === 'ACTIVE' 
-                            ? 'play-outline' 
-                            : 'lock-closed-outline'
-                      } 
-                      size={16} 
-                      color="white" 
-                    />
-                    <Text className="text-white font-semibold">
-                      {isOverdue(assessment.due_date)
-                        ? 'Overdue - Submit Now'
-                        : assessment.status === 'ACTIVE' 
-                          ? 'Start Assessment' 
-                          : 'Not Available'}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Action Buttons */}
+                  {assessment.student_attempts?.total_attempts > 0 && !assessment.student_attempts?.has_reached_max ? (
+                    // Two buttons for attempted assessments with remaining attempts
+                    <View className="flex-row gap-3">
+                      <TouchableOpacity
+                        onPress={() => handleStartAssessment(assessment)}
+                        className="flex-1 bg-orange-600 py-3 rounded-lg flex-row items-center justify-center gap-2"
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="refresh-outline" size={16} color="white" />
+                        <Text className="text-white font-semibold">
+                          Retake Assessment
+                        </Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        onPress={() => handleViewGrade(assessment)}
+                        className="flex-1 bg-green-600 py-3 rounded-lg flex-row items-center justify-center gap-2"
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="eye-outline" size={16} color="white" />
+                        <Text className="text-white font-semibold">
+                          View Grade
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    // Single button for other cases
+                    <TouchableOpacity
+                      onPress={() => handleAssessmentAction(assessment)}
+                      className={`w-full py-3 rounded-lg flex-row items-center justify-center gap-2 ${
+                        getButtonStyle(assessment)
+                      }`}
+                      activeOpacity={0.8}
+                      disabled={!canTakeAssessment(assessment) && !assessment.student_attempts?.has_reached_max}
+                    >
+                      <Ionicons 
+                        name={getButtonIcon(assessment)} 
+                        size={16} 
+                        color="white" 
+                      />
+                      <Text className="text-white font-semibold">
+                        {getButtonText(assessment)}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </View>

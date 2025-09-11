@@ -73,6 +73,8 @@ export const API_ENDPOINTS = {
     SCHEDULES: '/students/schedules',
     ASSESSMENTS: '/students/assessments',
     ASSESSMENT_QUESTIONS: '/students/assessments',
+    ASSESSMENT_SUBMIT: '/students/assessments',
+    ASSESSMENT_ANSWERS: '/students/assessments',
   },
 } as const;
 

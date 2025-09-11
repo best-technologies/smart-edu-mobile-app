@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -186,6 +186,35 @@ export class StudentService {
   async getAssessmentQuestions(assessmentId: string): Promise<AssessmentQuestionsResponse> {
     const url = `${API_ENDPOINTS.STUDENT.ASSESSMENT_QUESTIONS}/${assessmentId}/questions`;
     return this.httpClient.makeRequest<AssessmentQuestionsResponse['data']>(url) as Promise<AssessmentQuestionsResponse>;
+  }
+
+  async submitAssessment(assessmentId: string, submissionData: {
+    answers: Record<string, string[]>;
+    timeSpent: number;
+  }): Promise<AssessmentSubmissionResponse> {
+    
+    const url = `${API_ENDPOINTS.STUDENT.ASSESSMENT_SUBMIT}/${assessmentId}/submit`;
+    
+    // Transform answers to the format expected by backend
+    const transformedAnswers = Object.entries(submissionData.answers).map(([questionId, selectedOptions]) => ({
+      question_id: questionId,
+      selected_options: selectedOptions,
+      text_answer: selectedOptions.length > 0 && typeof selectedOptions[0] === 'string' && !selectedOptions[0].startsWith('opt_') 
+        ? selectedOptions[0] 
+        : null
+    }));
+
+    const payload = {
+      answers: transformedAnswers,
+      time_spent: submissionData.timeSpent,
+      submission_time: new Date().toISOString()
+    };
+    return this.httpClient.makeRequest<AssessmentSubmissionResponse['data']>(url, 'POST', payload) as Promise<AssessmentSubmissionResponse>;
+  }
+
+  async getAssessmentAnswers(assessmentId: string): Promise<AssessmentAnswersResponse> {
+    const url = `${API_ENDPOINTS.STUDENT.ASSESSMENT_ANSWERS}/${assessmentId}/answers`;
+    return this.httpClient.makeRequest<AssessmentAnswersResponse['data']>(url) as Promise<AssessmentAnswersResponse>;
   }
 }
 
