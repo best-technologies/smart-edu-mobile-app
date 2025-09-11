@@ -129,15 +129,21 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
-  // Navigate to dashboard only when authenticated and navigation is ready
+  // Handle navigation based on authentication state
   useEffect(() => {
-    if (state.isAuthenticated && navigationRef.isReady()) {
-      console.log('🚀 NavigationContainer is ready, navigating to dashboard...');
-      navigate('Dashboard');
-    } else if (state.isAuthenticated) {
+    if (!navigationRef.isReady()) {
       console.log('⏳ NavigationContainer not ready, skipping navigation');
+      return;
     }
-  }, [state.isAuthenticated, navigationRef.isReady()]);
+
+    if (state.isAuthenticated && state.user) {
+      console.log('🚀 User authenticated, navigating to dashboard...');
+      navigate('Dashboard');
+    } else if (!state.isAuthenticated && !state.user && state.isInitialized) {
+      console.log('🚪 User logged out, redirecting to login page');
+      navigate('Login');
+    }
+  }, [state.isAuthenticated, state.user, state.isInitialized, navigationRef.isReady()]);
 
   // Initialize auth state on app start
   useEffect(() => {

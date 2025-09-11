@@ -14,7 +14,7 @@ import { capitalizeWords } from '@/utils/textFormatter';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-interface VideoPlayerProps {
+interface StudentVideoPlayerProps {
   videoUri?: string;
   videoTitle?: string;
   topicTitle?: string;
@@ -26,7 +26,7 @@ interface VideoPlayerProps {
   onClose?: () => void;
 }
 
-export function VideoPlayer({ 
+export function StudentVideoPlayer({ 
   videoUri, 
   videoTitle, 
   topicTitle,
@@ -36,7 +36,7 @@ export function VideoPlayer({
   subjectCode,
   onVideoSelected, 
   onClose 
-}: VideoPlayerProps) {
+}: StudentVideoPlayerProps) {
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -204,6 +204,11 @@ export function VideoPlayer({
             onPlaybackStatusUpdate={handleVideoStatusUpdate}
             shouldPlay={false}
             volume={volume}
+            progressUpdateIntervalMillis={1000}
+            positionMillis={0}
+            rate={1.0}
+            shouldCorrectPitch={true}
+            isMuted={false}
           />
 
           {/* Loading Overlay */}
@@ -488,5 +493,3 @@ export function VideoPlayer({
     </SafeAreaView>
   );
 }
-
-export default VideoPlayer;

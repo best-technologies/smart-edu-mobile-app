@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Linking, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { ApiService } from '@/services/api';
 import { StudentTopic, StudentTopicVideo, StudentTopicMaterial } from './studentTopicTypes';
+import { capitalizeWords } from '@/utils/textFormatter';
 
 interface StudentTopicContentTabsProps {
   topic: StudentTopic;
@@ -31,6 +33,7 @@ export function StudentTopicContentTabs({
   onRefresh
 }: StudentTopicContentTabsProps) {
   const [activeTab, setActiveTab] = useState<'videos' | 'materials'>('videos');
+  const navigation = useNavigation<any>();
 
   // Fetch topic content using React Query for proper caching
   const {
@@ -139,35 +142,98 @@ export function StudentTopicContentTabs({
     if (videos.length === 0) {
       return (
         <View className="py-8 items-center">
-          <Ionicons name="play-circle-outline" size={48} color="#9ca3af" />
-          <Text className="text-gray-500 dark:text-gray-400 text-sm mt-2">No videos available</Text>
+          <Ionicons name="play-circle-outline" size={40} color="#9ca3af" />
+          <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">No videos available yet</Text>
+          <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
+            Videos will appear here when available
+          </Text>
         </View>
       );
     }
 
     return (
-      <ScrollView showsVerticalScrollIndicator={false} className="max-h-64">
-        {videos.map((video: StudentTopicVideo, index: number) => (
-          <TouchableOpacity
-            key={video.id}
-            onPress={() => onVideoPress(video)}
-            activeOpacity={0.7}
-            className="flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-2"
-          >
-            <View className="h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40">
-              <Ionicons name="play" size={20} color="#ef4444" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-900 dark:text-gray-100" numberOfLines={2}>
-                {video.title}
-              </Text>
-              <Text className="text-xs text-gray-500 dark:text-gray-400">
-                {formatDuration(video.duration)} • {video.views} views
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-          </TouchableOpacity>
-        ))}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingRight: 16 }}
+      >
+        {videos
+          .sort((a: StudentTopicVideo, b: StudentTopicVideo) => (a.order || 0) - (b.order || 0))
+          .map((video: StudentTopicVideo, index: number) => {
+          return (
+            <TouchableOpacity
+              key={video.id}
+              onPress={() => {
+                // Navigate to video player screen
+                navigation.navigate('StudentVideoPlayer', { 
+                  videoUri: video.url,
+                  videoTitle: video.title,
+                  videoDescription: video.description,
+                  topicTitle: topicTitle || 'Untitled Topic',
+                  topicDescription: topicDescription || 'No description available',
+                  topicInstructions: topicInstructions || 'Watch this video carefully and take notes on the key concepts. Pay attention to the examples shown and practice the problems discussed in the video.',
+                  subjectName: subjectName || 'Subject',
+                  subjectCode: subjectCode || 'SUB'
+                });
+              }}
+              activeOpacity={0.8}
+              className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative ${
+                index === 0 ? 'ml-0' : 'ml-3'
+              }`}
+            >
+              {/* Order Badge */}
+              <View className="absolute top-2 left-2 z-10 bg-blue-600 dark:bg-blue-500 rounded-full w-6 h-6 items-center justify-center">
+                <Text className="text-xs font-bold text-white">
+                  {video.order || index + 1}
+                </Text>
+              </View>
+              <View className="relative">
+                {video.thumbnail && (typeof video.thumbnail === 'string' || video.thumbnail?.secure_url) ? (
+                  <Image 
+                    source={{ 
+                      uri: typeof video.thumbnail === 'string' 
+                        ? video.thumbnail 
+                        : video.thumbnail.secure_url
+                    }} 
+                    className="w-full h-24"
+                    resizeMode="cover"
+                    onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+                  />
+                ) : (
+                  <View className="w-full h-24 bg-gray-300 dark:bg-gray-600 items-center justify-center">
+                    <Ionicons name="videocam-outline" size={32} color="#9ca3af" />
+                  </View>
+                )}
+                <View className="absolute inset-0 items-center justify-center bg-black/30">
+                  <View className="h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                    <Ionicons name="play" size={20} color="#000" />
+                  </View>
+                </View>
+              </View>
+              <View className="p-3">
+                <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
+                  {video.title ? capitalizeWords(video.title) : 'Untitled Video'}
+                </Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2" numberOfLines={2}>
+                  {video.description}
+                </Text>
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatDuration(video.duration)}
+                  </Text>
+                  <Text className="text-xs text-gray-500 dark:text-gray-400">
+                    {video.isActive ? 'Active' : 'Inactive'}
+                  </Text>
+                </View>
+                <View className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <Text className="text-xs text-blue-600 dark:text-blue-400 text-center font-medium">
+                    Tap to watch
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     );
   };

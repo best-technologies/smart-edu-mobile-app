@@ -16,7 +16,7 @@ interface RecentNotificationsProps {
 }
 
 export default function RecentNotifications({ notifications = [], pendingAssessments }: RecentNotificationsProps) {
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     if (!dateString) return 'No date';
     
     const date = new Date(dateString);
@@ -69,6 +69,22 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
         return '#10B981';
       default:
         return '#6B7280';
+    }
+  };
+
+  const formatDateTime = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid date';
     }
   };
 
@@ -162,21 +178,7 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
               <View className="flex-row items-center">
                 <Ionicons name="time-outline" size={14} color="#6B7280" />
                 <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                  {(() => {
-                    try {
-                      const date = new Date(notification.comingUpOn);
-                      if (isNaN(date.getTime())) return 'Invalid date';
-                      return date.toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-                    } catch (error) {
-                      return 'Invalid date';
-                    }
-                  })()}
+                  {formatDateTime(notification.comingUpOn)}
                 </Text>
               </View>
             )}

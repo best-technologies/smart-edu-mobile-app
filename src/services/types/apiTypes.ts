@@ -430,7 +430,10 @@ export interface StudentSubjectDetailsVideo {
   title: string;
   description: string;
   url: string;
-  thumbnail: string;
+  thumbnail: {
+    public_id: string;
+    secure_url: string;
+  };
   duration: number;
   order: number;
   isActive: boolean;
@@ -491,6 +494,67 @@ export interface StudentSubjectDetailsResponse {
   message: string;
   data: StudentSubjectDetailsData;
   statusCode: number;
+}
+
+// Student Schedules Types
+export interface StudentClass {
+  id: string;
+  name: string;
+}
+
+export interface ScheduleSubject {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+}
+
+export interface ScheduleTeacher {
+  id: string;
+  name: string;
+}
+
+export interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  order: number;
+  label: string;
+}
+
+export interface ScheduleItem {
+  timeSlotId: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  subject: ScheduleSubject | null;
+  teacher: ScheduleTeacher | null;
+  room: string | null;
+}
+
+export interface TimetableData {
+  timeSlots: TimeSlot[];
+  schedule: {
+    MONDAY: ScheduleItem[];
+    TUESDAY: ScheduleItem[];
+    WEDNESDAY: ScheduleItem[];
+    THURSDAY: ScheduleItem[];
+    FRIDAY: ScheduleItem[];
+    SATURDAY: ScheduleItem[];
+    SUNDAY: ScheduleItem[];
+  };
+}
+
+export interface StudentSchedulesData {
+  studentClass: StudentClass;
+  subjects: ScheduleSubject[];
+  timetable_data: TimetableData;
+}
+
+export interface StudentSchedulesResponse {
+  success: boolean;
+  message: string;
+  data: StudentSchedulesData;
 }
 
 // API Error Types
