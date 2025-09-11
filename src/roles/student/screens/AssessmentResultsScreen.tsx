@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AssessmentAnswersData, AssessmentSubmission, AssessmentAnswerQuestion } from '@/services/types/apiTypes';
-import { StudentService } from '@/services/api/roleServices';
+import { useAssessmentAnswers } from '@/hooks/useAssessmentAnswers';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -31,55 +31,32 @@ export default function AssessmentResultsScreen({ route, navigation }: Assessmen
   const { assessmentId, assessmentTitle } = route.params;
   const { showError } = useToast();
   
-  const [resultsData, setResultsData] = useState<AssessmentAnswersData | null>(null);
+  const { 
+    data: resultsResponse, 
+    isLoading, 
+    error,
+    refetch
+  } = useAssessmentAnswers(assessmentId);
+  
   const [selectedAttempt, setSelectedAttempt] = useState<AssessmentSubmission | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAssessmentResults();
-  }, []);
+  // Set the first attempt as selected by default when data loads
+  React.useEffect(() => {
+    if (resultsResponse?.data?.submissions && resultsResponse.data.submissions.length > 0) {
+      setSelectedAttempt(resultsResponse.data.submissions[0]);
+    }
+  }, [resultsResponse]);
 
-  const fetchAssessmentResults = async () => {
-    try {
-      setIsLoading(true);
-      const studentService = new StudentService();
-      
-      // Debug: Check if method exists
-      console.log('StudentService instance:', studentService);
-      console.log('getAssessmentAnswers method:', typeof studentService.getAssessmentAnswers);
-      
-      let response;
-      
-      if (typeof studentService.getAssessmentAnswers !== 'function') {
-        console.log('Method not found, trying alternative approach...');
-        // Try to call the method directly from the prototype
-        const method = Object.getPrototypeOf(studentService).getAssessmentAnswers;
-        if (typeof method === 'function') {
-          console.log('Found method on prototype, calling directly...');
-          response = await method.call(studentService, assessmentId);
-        } else {
-          throw new Error('getAssessmentAnswers method not found on StudentService');
-        }
-      } else {
-        response = await studentService.getAssessmentAnswers(assessmentId);
-      }
-      
-      if (response.success) {
-        setResultsData(response.data);
-        // Set the latest submission as default selected
-        if (response.data.submissions.length > 0) {
-          setSelectedAttempt(response.data.submissions[0]);
-        }
-      } else {
-        throw new Error(response.message || 'Failed to fetch assessment results');
-      }
-    } catch (error) {
+  // Handle error
+  React.useEffect(() => {
+    if (error) {
       console.error('Error fetching assessment results:', error);
       showError('Error', 'Failed to load assessment results. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [error, showError]);
+
+  const resultsData = resultsResponse?.data || null;
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -175,7 +152,7 @@ export default function AssessmentResultsScreen({ route, navigation }: Assessmen
             Unable to load assessment results. Please try again.
           </Text>
           <TouchableOpacity
-            onPress={fetchAssessmentResults}
+            onPress={() => refetch()}
             className="bg-blue-600 px-6 py-3 rounded-lg"
           >
             <Text className="text-white font-semibold">Retry</Text>

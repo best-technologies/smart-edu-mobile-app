@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import TopBar from './components/shared/TopBar';
 import { useStudentAssessments } from '@/hooks/useStudentAssessments';
@@ -39,12 +38,8 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
     refetch 
   } = useStudentAssessments();
 
-  // Refresh data when screen comes into focus (e.g., returning from assessment)
-  useFocusEffect(
-    React.useCallback(() => {
-      refetch();
-    }, [refetch])
-  );
+  // Only refetch if data is stale (TanStack Query will handle this automatically)
+  // Removed useFocusEffect to respect TanStack Query caching
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -306,11 +301,11 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
         }
       >
         <View className="px-4 py-6">
-          <View className="flex-row items-center justify-between mb-6">
-            <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              My Tasks
+          <View className="mb-6">
+            <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              My Assessments
             </Text>
-            <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-3 flex-wrap">
               <View className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
                 <Text className="text-sm font-medium text-blue-700 dark:text-blue-300">
                   Session: {generalInfo?.current_session?.academic_year || 'N/A'}
@@ -408,7 +403,7 @@ export default function StudentTasksScreen({ navigation }: StudentTasksScreenPro
             <View className="flex-1 items-center justify-center py-16">
               <Ionicons name="help-circle-outline" size={64} color="#9ca3af" />
               <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
-                No Tasks Found
+                No Assessments Found
               </Text>
               <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
                 No assessments match your current filters

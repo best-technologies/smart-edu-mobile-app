@@ -16,6 +16,7 @@ import { AssessmentQuestion, QuestionOption } from '@/services/types/apiTypes';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useToast } from '@/contexts/ToastContext';
 import { StudentService } from '@/services/api/roleServices';
+import { useQueryClient } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +33,7 @@ interface AssessmentTakingScreenProps {
 export default function AssessmentTakingScreen({ route, navigation }: AssessmentTakingScreenProps) {
   const { assessmentId, assessmentTitle } = route.params;
   const { showError, showSuccess } = useToast();
+  const queryClient = useQueryClient();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
@@ -196,10 +198,13 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
           `Score: ${total_score}/${total_points} (${percentage_score}%)\nGrade: ${grade}\nStatus: ${passed ? 'Passed' : 'Failed'}\n\nReturning to tasks page...`
         );
         
+        // Invalidate assessments query to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['studentAssessments'] });
+        
         // Navigate back to tasks page (not instructions)
         setTimeout(() => {
           // Go back to tasks page (2 levels back: instructions -> tasks)
-          navigation.navigate('StudentTabs', { screen: 'Tasks' });
+          navigation.navigate('StudentTabs', { screen: 'Assessments' });
         }, 2000);
       } else {
         throw new Error(response.message || 'Failed to submit assessment');

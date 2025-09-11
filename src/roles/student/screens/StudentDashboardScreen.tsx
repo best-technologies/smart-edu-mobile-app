@@ -57,7 +57,7 @@ export default function StudentDashboardScreen() {
       title: 'Assessments',
       icon: 'document-text-outline' as const,
       color: '#3B82F6',
-      onPress: () => navigation.navigate('Tasks'),
+      onPress: () => navigation.navigate('Assessments'),
     },
     {
       id: '2',
@@ -82,10 +82,10 @@ export default function StudentDashboardScreen() {
     },
     {
       id: '5',
-      title: 'Tasks',
+      title: 'Assessments',
       icon: 'list-outline' as const,
       color: '#EF4444',
-      onPress: () => navigation.navigate('Tasks'),
+      onPress: () => navigation.navigate('Assessments'),
     },
   ];
 

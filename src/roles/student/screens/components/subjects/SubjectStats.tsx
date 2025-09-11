@@ -66,7 +66,7 @@ export function SubjectStats({ stats, academicSession }: SubjectStatsProps) {
       id: 'assignments',
       title: 'Assignments',
       value: stats.totalAssignments,
-      subtitle: 'Tasks',
+      subtitle: 'Assessments',
       icon: 'library-outline' as const,
       color: '#F59E0B',
       bgColor: 'bg-orange-50 dark:bg-orange-900/20',
