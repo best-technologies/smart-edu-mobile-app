@@ -121,6 +121,14 @@ export default function TeacherDashboardScreen() {
 
   const quickActions = [
     {
+      id: 'ai-assistance',
+      title: 'AI Assistance',
+      icon: 'sparkles',
+      color: '#8B5CF6',
+      onPress: () => console.log('AI Assistance'),
+      isAnimated: true,
+    },
+    {
       id: '1',
       title: 'Take Attendance',
       icon: 'checkmark-circle-outline',

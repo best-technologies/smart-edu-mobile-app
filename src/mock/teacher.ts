@@ -4,6 +4,7 @@ export type QuickAction = {
   icon: string;
   color: string;
   onPress?: () => void;
+  isAnimated?: boolean;
 };
 
 export type QuickStat = {
