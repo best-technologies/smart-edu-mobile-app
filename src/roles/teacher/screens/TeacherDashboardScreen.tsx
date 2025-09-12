@@ -125,7 +125,7 @@ export default function TeacherDashboardScreen() {
       title: 'AI Assistance',
       icon: 'sparkles',
       color: '#8B5CF6',
-      onPress: () => console.log('AI Assistance'),
+      onPress: () => navigation.navigate('AIChatMain'),
       isAnimated: true,
     },
     {

@@ -12,6 +12,7 @@ import NotificationDetailScreen from './screens/notifications/NotificationDetail
 import NotificationsListScreen from './screens/notifications/NotificationsListScreen';
 import GradingScreen from './screens/GradingScreen';
 import AIChatScreen from './screens/AIChatScreen';
+import { AIChatMainScreen, ChatWithExistingScreen, UploadNewMaterialScreen } from './screens/AI-Chat';
 import CBTCreationScreen from './screens/CBTCreationScreen';
 import CBTQuestionCreationScreen from './screens/CBTQuestionCreationScreen';
 import CBTQuizDetailScreen from './screens/CBTQuizDetailScreen';
@@ -94,6 +95,9 @@ export default function TeacherTabs() {
       <Stack.Screen name="VideoDemo" component={VideoDemoScreen} />
       <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
       <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
+      <Stack.Screen name="AIChatMain" component={AIChatMainScreen} />
+      <Stack.Screen name="ChatWithExisting" component={ChatWithExistingScreen} />
+      <Stack.Screen name="UploadNewMaterial" component={UploadNewMaterialScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
       <Stack.Screen name="CBTCreation" component={CBTCreationScreen} />
       <Stack.Screen name="CBTQuizDetail" component={CBTQuizDetailScreen} />
