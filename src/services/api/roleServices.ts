@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse, StudentProfileData } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -215,6 +215,11 @@ export class StudentService {
   async getAssessmentAnswers(assessmentId: string): Promise<AssessmentAnswersResponse> {
     const url = `${API_ENDPOINTS.STUDENT.ASSESSMENT_ANSWERS}/${assessmentId}/answers`;
     return this.httpClient.makeRequest<AssessmentAnswersResponse['data']>(url) as Promise<AssessmentAnswersResponse>;
+  }
+
+  async getProfile(): Promise<ApiResponse<StudentProfileData>> {
+    const url = API_ENDPOINTS.USER.PROFILE;
+    return this.httpClient.makeRequest<StudentProfileData>(url);
   }
 }
 

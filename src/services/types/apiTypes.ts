@@ -854,3 +854,109 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
+
+// Student Profile Types
+export interface StudentProfileData {
+  general_info: {
+    student: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+      date_of_birth: string | null;
+      display_picture: string;
+      student_id: string;
+      emergency_contact_name: string | null;
+      emergency_contact_phone: string | null;
+      address: {
+        street: string | null;
+        city: string | null;
+        state: string | null;
+        country: string | null;
+        postal_code: string | null;
+      };
+    };
+    student_class: {
+      id: string;
+      name: string;
+      level: string;
+      section: string;
+    };
+    current_session: {
+      id: string;
+      academic_year: string;
+      term: string;
+      start_date: string;
+      end_date: string;
+    };
+  };
+  academic_info: {
+    subjects_enrolled: Array<{
+      id: string;
+      name: string;
+      code: string;
+      teacher_name: string;
+      status: string;
+      credits: number;
+    }>;
+    performance_summary: {
+      average_score: number;
+      total_assessments: number;
+      passed_assessments: number;
+      failed_assessments: number;
+      current_rank: number;
+      total_students: number;
+      grade_point_average: number;
+      attendance_percentage: number;
+    };
+    recent_achievements: Array<{
+      id: string;
+      title: string;
+      description: string;
+      date_earned: string;
+      type: string;
+    }>;
+  };
+  settings: {
+    notifications: {
+      push_notifications: boolean;
+      email_notifications: boolean;
+      assessment_reminders: boolean;
+      grade_notifications: boolean;
+      announcement_notifications: boolean;
+    };
+    app_preferences: {
+      dark_mode: boolean;
+      sound_effects: boolean;
+      haptic_feedback: boolean;
+      auto_save: boolean;
+      offline_mode: boolean;
+    };
+    privacy: {
+      profile_visibility: string;
+      show_contact_info: boolean;
+      show_academic_progress: boolean;
+      data_sharing: boolean;
+    };
+  };
+  support_info: {
+    help_center: {
+      faq_count: number;
+      last_updated: string;
+      categories: string[];
+    };
+    contact_options: {
+      email_support: string;
+      phone_support: string;
+      live_chat_available: boolean;
+      response_time: string;
+    };
+    app_info: {
+      version: string;
+      build_number: string;
+      last_updated: string;
+      minimum_ios_version: string;
+      minimum_android_version: string;
+    };
+  };
+}
