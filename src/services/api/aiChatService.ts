@@ -22,11 +22,59 @@ export interface UploadedDocument {
   isProcessed: boolean;
 }
 
+export interface Conversation {
+  id: string;
+  title: string;
+  status: string;
+  materialId: string;
+  totalMessages: number;
+  lastActivity: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  content: string;
+  role: 'USER' | 'ASSISTANT';
+  conversationId: string;
+  materialId: string;
+  tokensUsed: number | null;
+  responseTimeMs: number | null;
+  createdAt: string;
+}
+
+export interface ContextChunk {
+  id: string;
+  content: string;
+  similarity: number;
+  chunkType: string;
+}
+
+export interface SendMessageRequest {
+  message: string;
+  materialId: string;
+  conversationId: string;
+}
+
+export interface SendMessageResponse {
+  id: string;
+  content: string;
+  role: 'USER' | 'ASSISTANT';
+  conversationId: string;
+  materialId: string;
+  contextChunks: ContextChunk[];
+  tokensUsed: number;
+  responseTimeMs: number;
+  createdAt: string;
+}
+
 export interface InitiateAIChatResponse {
   userRole: string;
   documentCount: number;
   supportedDocumentTypes: SupportedDocumentType[];
   uploadedDocuments: UploadedDocument[];
+  conversations: Conversation[];
 }
 
 export interface UploadSessionResponse {
@@ -46,8 +94,17 @@ export interface UploadProgressData {
 export interface UploadedDocumentResponse {
   id: string;
   title: string;
+  description: string;
+  url: string;
+  fileType: string;
+  size: string;
+  originalName: string;
+  subject_id: string;
+  topic_id: string;
+  processing_status: string;
   status: string;
-  uploadedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export class AIChatService {
@@ -72,17 +129,65 @@ export class AIChatService {
     }
   }
 
+  async getConversationMessages(
+    conversationId: string, 
+    limit: number = 25, 
+    offset: number = 0
+  ): Promise<ApiResponse<ChatMessage[]>> {
+    try {
+      // Ensure parameters are integers
+      const limitParam = Math.floor(limit);
+      const offsetParam = Math.floor(offset);
+      
+      const response = await this.httpClient.makeRequest(
+        `${API_ENDPOINTS.AI_CHAT.CONVERSATION_MESSAGES}/${conversationId}/messages?limit=${limitParam}&offset=${offsetParam}`,
+        'GET',
+        null,
+        true
+      );
+      return response as ApiResponse<ChatMessage[]>;
+    } catch (error) {
+      console.error('Failed to fetch conversation messages:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(
+    message: string,
+    materialId: string,
+    conversationId: string
+  ): Promise<ApiResponse<SendMessageResponse>> {
+    try {
+      const requestData: SendMessageRequest = {
+        message,
+        materialId,
+        conversationId
+      };
+      
+      const response = await this.httpClient.makeRequest(
+        API_ENDPOINTS.AI_CHAT.SEND_MESSAGE,
+        'POST',
+        requestData,
+        true
+      );
+      return response as ApiResponse<SendMessageResponse>;
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      throw error;
+    }
+  }
+
   async uploadDocument(file: any, title?: string, description?: string): Promise<ApiResponse<UploadedDocumentResponse>> {
     try {
-      console.log('🔧 AIChatService.uploadDocument called with file:', {
-        name: file?.name,
-        type: file?.type,
-        size: file?.size,
-        uri: file?.uri
-      });
+    //   console.log('🔧 AIChatService.uploadDocument called with file:', {
+    //     name: file?.name,
+    //     type: file?.type,
+    //     size: file?.size,
+    //     uri: file?.uri
+    //   });
       
       // Log file size for debugging
-      console.log('📊 File size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    //   console.log('📊 File size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
       
       const formData = new FormData();
       
@@ -96,7 +201,7 @@ export class AIChatService {
       if (title) formData.append('title', title);
       if (description) formData.append('description', description);
 
-      console.log('📤 FormData prepared, making request...');
+    //   console.log('📤 FormData prepared, making request...');
 
       const response = await this.httpClient.makeRequest(
         API_ENDPOINTS.AI_CHAT.UPLOAD_DOCUMENT,

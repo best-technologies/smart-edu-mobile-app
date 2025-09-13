@@ -5,6 +5,7 @@ import StudentVideoScreen from './screens/StudentVideoScreen';
 import AssessmentInstructionsScreen from './screens/AssessmentInstructionsScreen';
 import AssessmentTakingScreen from './screens/AssessmentTakingScreen';
 import AssessmentResultsScreen from './screens/AssessmentResultsScreen';
+import { AIChatScreen, AIChatMainScreen } from '@/screens/ai-chat';
 
 export type StudentStackParamList = {
   StudentTabs: undefined;
@@ -30,6 +31,17 @@ export type StudentStackParamList = {
     assessmentId: string;
     assessmentTitle: string;
   };
+  AIChatMain: undefined;
+  AIChat: {
+    materialTitle?: string;
+    materialDescription?: string;
+    materialUrl?: string;
+    documentId?: string;
+    documentTitle?: string;
+    documentUrl?: string;
+    fileType?: string;
+    processingStatus?: string;
+  };
 };
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
@@ -48,6 +60,8 @@ export default function StudentNavigator() {
       <Stack.Screen name="AssessmentInstructions" component={AssessmentInstructionsScreen} />
       <Stack.Screen name="AssessmentTaking" component={AssessmentTakingScreen} />
       <Stack.Screen name="AssessmentResults" component={AssessmentResultsScreen} />
+      <Stack.Screen name="AIChatMain" component={AIChatMainScreen} />
+      <Stack.Screen name="AIChat" component={AIChatScreen} />
     </Stack.Navigator>
   );
 }

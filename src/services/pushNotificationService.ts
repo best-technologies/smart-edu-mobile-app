@@ -28,12 +28,19 @@ export interface PushToken {
 
 class PushNotificationService {
   private expoPushToken: string | null = null;
+  private isRegistered: boolean = false;
 
   // Register device for push notifications
   async registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
       console.log('Push notifications only work on physical devices');
       return null;
+    }
+
+    // Prevent duplicate registrations
+    if (this.isRegistered) {
+      console.log('Push notifications already registered');
+      return this.expoPushToken;
     }
 
     try {
@@ -72,6 +79,9 @@ class PushNotificationService {
       // Set up notification listeners
       this.setupNotificationListeners();
 
+      // Mark as registered
+      this.isRegistered = true;
+
       return token.data;
     } catch (error) {
       console.error('Error registering for push notifications:', error);
@@ -82,6 +92,15 @@ class PushNotificationService {
   // Register token with your backend
   private async registerTokenWithBackend(token: string) {
     try {
+      const userId = await this.getCurrentUserId();
+      const schoolId = await this.getCurrentSchoolId();
+      
+      // Don't register if user data isn't available yet
+      if (!userId || !schoolId) {
+        console.log('Skipping push notification registration - user data not available yet');
+        return;
+      }
+      
       // Build absolute URL (relative URLs fail on device)
       const url = `${API_CONFIG.BASE_URL}/push-notifications/register-device`;
       const res = await fetch(url, {
@@ -93,8 +112,8 @@ class PushNotificationService {
         body: JSON.stringify({
           token,
           deviceType: Platform.OS,
-          userId: await this.getCurrentUserId(),
-          schoolId: await this.getCurrentSchoolId(),
+          userId,
+          schoolId,
         }),
       });
       if (!res.ok) {

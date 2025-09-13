@@ -81,6 +81,8 @@ export const API_ENDPOINTS = {
     START_UPLOAD: '/ai-chat/start-upload',
     UPLOAD_PROGRESS: '/ai-chat/upload-progress',
     UPLOAD_DOCUMENT: '/ai-chat/upload-document',
+    CONVERSATION_MESSAGES: '/ai-chat/conversations',
+    SEND_MESSAGE: '/ai-chat/send-message',
   },
 } as const;
 

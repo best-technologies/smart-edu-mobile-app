@@ -80,29 +80,30 @@ export class HttpClient {
 
       if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
         if (data instanceof FormData) {
-          console.log('📦 Sending FormData with headers:', headers);
           requestConfig.body = data;
         } else {
           requestConfig.body = JSON.stringify(data);
         }
       }
       
-      // Add timeout - longer for file uploads
+      // Add timeout - longer for file uploads and AI chat
       const controller = new AbortController();
-      const timeout = data instanceof FormData ? 60000 : 10000; // 60s for file uploads, 10s for others
+      let timeout = 10000; // Default 10s
+      
+      if (data instanceof FormData) {
+        timeout = 60000; // 60s for file uploads
+      } else if (endpoint.includes('/ai-chat/')) {
+        timeout = 30000; // 30s for AI chat requests
+      }
+      
       const timeoutId = setTimeout(() => {
         controller.abort();
       }, timeout);
       
       requestConfig.signal = controller.signal;
       
-      console.log(`⏱️ Request timeout set to: ${timeout}ms`);
-      
       const response = await fetch(url, requestConfig);
       clearTimeout(timeoutId);
-
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
-      console.log(`📡 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
@@ -114,7 +115,6 @@ export class HttpClient {
       }
 
       const responseData = await response.json();
-      console.log('📄 JSON response:', responseData);
 
       if (!response.ok) {
         throw new ApiError(response.status, responseData.message || 'Request failed', responseData);
