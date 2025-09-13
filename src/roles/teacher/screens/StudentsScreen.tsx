@@ -42,10 +42,10 @@ export default function StudentsScreen() {
             ...prev,
             students: {
               ...prev.students,
-              data: [...prev.students.data, ...response.data.students.data],
-              pagination: response.data.students.pagination
+              data: [...prev.students.data, ...response.data!.students.data],
+              pagination: response.data!.students.pagination
             }
-          } : response.data);
+          } : response.data!);
         }
         
         setHasMore(response.data.students.pagination.has_next);
@@ -203,7 +203,7 @@ export default function StudentsScreen() {
                         {capitalizeWords(subject.name)}
                       </Text>
                       <Text className="text-xs text-green-600 dark:text-green-400">
-                        {subject.code} • {capitalizeWords(subject.assigned_class.name)}
+                        {subject.code}{subject.assigned_class ? ` • ${capitalizeWords(subject.assigned_class.name)}` : ' • No class assigned'}
                       </Text>
                     </View>
                   ))}

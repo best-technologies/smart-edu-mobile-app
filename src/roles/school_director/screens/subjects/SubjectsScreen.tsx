@@ -14,23 +14,18 @@ import EmptyState from '../../components/shared/EmptyState';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useSubjectsData } from '@/hooks/useDirectorData';
 import AddSubjectModal from '../../components/subjects/AddSubjectModal';
-import { SuccessModal } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 
 export default function SubjectsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SchoolDirectorStackParamList>>();
   const [addSubjectModalVisible, setAddSubjectModalVisible] = useState(false);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   
   // Reset modal state when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       // Reset modal states when screen is focused
       setAddSubjectModalVisible(false);
-      setSuccessModalVisible(false);
-      setSuccessMessage('');
     }, [])
   );
   
@@ -205,27 +200,13 @@ export default function SubjectsScreen() {
           refetch();
         }}
         onShowSuccess={(message) => {
-          setSuccessMessage(message);
-          setSuccessModalVisible(true);
+          showSuccess('Subject Created', message);
         }}
         onShowError={(message) => {
           showError('Subject Creation Failed', message);
         }}
       />
 
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Success!"
-        message={successMessage}
-        onClose={() => {
-          setSuccessModalVisible(false);
-          setSuccessMessage('');
-        }}
-        confirmText="OK"
-        autoClose={true}
-        autoCloseDelay={3000}
-      />
 
 
     </SafeAreaView>

@@ -6,6 +6,7 @@ import { UserService } from './roleServices';
 import { TokenManager } from './tokenManager';
 import { directorService as directorDashboardService } from './directorService';
 import { cbtService } from './cbtService';
+import { aiChatService } from './aiChatService';
 
 // Create service instances
 const authService = new AuthService();
@@ -35,6 +36,9 @@ export class ApiService {
   // CBT services
   static cbt = cbtService;
   
+  // AI Chat services
+  static aiChat = aiChatService;
+  
   // Token management
   static tokens = TokenManager;
   
@@ -60,5 +64,5 @@ export class ApiService {
 }
 
 // Export individual service instances
-export { authService, teacherService, directorService, studentService, userService, cbtService };
+export { authService, teacherService, directorService, studentService, userService, cbtService, aiChatService };
 export { TokenManager };

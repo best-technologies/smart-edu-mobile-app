@@ -76,6 +76,11 @@ export const API_ENDPOINTS = {
     ASSESSMENT_SUBMIT: '/students/assessments',
     ASSESSMENT_ANSWERS: '/students/assessments',
   },
+  AI_CHAT: {
+    INITIATE: '/ai-chat/initiate-ai-chat',
+    START_UPLOAD: '/ai-chat/start-upload',
+    UPLOAD_PROGRESS: '/ai-chat/upload-progress',
+  },
 } as const;
 
 // Storage Keys

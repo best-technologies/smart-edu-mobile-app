@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, TouchableOpacity, View, TextInput, Alert, Modal, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Subject, directorService } from '@/services/api/directorService';
-import { SuccessModal, ErrorModal } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
 
 interface SubjectCardProps {
   subject: Subject;
@@ -12,10 +12,7 @@ interface SubjectCardProps {
 export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const { showSuccess, showError } = useToast();
   
   // Form state
   const [subjectName, setSubjectName] = useState(subject.name);
@@ -36,6 +33,12 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
     ).join(' ');
   };
 
+  // Reset modal state when subject changes
+  useEffect(() => {
+    setUpdateModalVisible(false);
+    setIsUpdating(false);
+  }, [subject.id]);
+
   // Fetch available teachers and classes
   const fetchAvailableData = async () => {
     try {
@@ -54,6 +57,9 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
   };
 
   const handleUpdateClick = () => {
+    // Reset any previous states
+    setIsUpdating(false);
+    
     // Reset form to current values
     setSubjectName(subject.name);
     setSubjectCode(subject.code);
@@ -109,19 +115,16 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
           onUpdate(updatedSubject);
         }
 
-        setSuccessMessage('Subject updated successfully');
-        setSuccessModalVisible(true);
+        showSuccess('Subject Updated', 'Subject updated successfully');
         setUpdateModalVisible(false);
       } else {
         const errorMsg = response.message || 'Failed to update subject';
-        setErrorMessage(errorMsg);
-        setErrorModalVisible(true);
+        showError('Update Failed', errorMsg);
       }
     } catch (error) {
       console.error('Error updating subject:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to update subject';
-      setErrorMessage(errorMsg);
-      setErrorModalVisible(true);
+      showError('Update Failed', errorMsg);
     } finally {
       setIsUpdating(false);
     }
@@ -129,6 +132,7 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
 
   const handleCancel = () => {
     setUpdateModalVisible(false);
+    setIsUpdating(false);
   };
 
   const toggleTeacherSelection = (teacherId: string) => {
@@ -401,26 +405,6 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
         </View>
       </Modal>
 
-      {/* Success Modal */}
-      <SuccessModal
-        visible={successModalVisible}
-        title="Success!"
-        message={successMessage}
-        onClose={() => setSuccessModalVisible(false)}
-        confirmText="OK"
-        autoClose={true}
-        autoCloseDelay={3000}
-      />
-
-      {/* Error Modal */}
-      <ErrorModal
-        visible={errorModalVisible}
-        title="Error"
-        message={errorMessage}
-        onClose={() => setErrorModalVisible(false)}
-        closeText="OK"
-        autoClose={false}
-      />
     </>
   );
 }

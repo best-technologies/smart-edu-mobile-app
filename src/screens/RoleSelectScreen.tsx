@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthGuard } from '@/hooks/useAuthGuard';
+// Navigation is handled by useAuthNavigation hook in RootNavigator
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
@@ -9,8 +9,7 @@ import { RootStackParamList } from '@/navigation/RootNavigator';
 type RoleSelectScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'RoleSelect'>;
 
 export default function RoleSelectScreen() {
-  const { user, logout } = useAuth();
-  const { isAuthenticated, isLoading } = useAuthGuard();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const navigation = useNavigation<RoleSelectScreenNavigationProp>();
 
   const handleRoleSelect = (role: string) => {

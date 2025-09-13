@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
-import { navigationRef, navigate } from '@/navigation/RootNavigation';
+// Navigation is handled by useAuthNavigation hook
 import { ApiService } from '@/services';
 import { User } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
@@ -129,21 +129,8 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
-  // Handle navigation based on authentication state
-  useEffect(() => {
-    if (!navigationRef.isReady()) {
-      console.log('⏳ NavigationContainer not ready, skipping navigation');
-      return;
-    }
-
-    if (state.isAuthenticated && state.user) {
-      console.log('🚀 User authenticated, navigating to dashboard...');
-      navigate('Dashboard');
-    } else if (!state.isAuthenticated && !state.user && state.isInitialized) {
-      console.log('🚪 User logged out, redirecting to login page');
-      navigate('Login');
-    }
-  }, [state.isAuthenticated, state.user, state.isInitialized, navigationRef.isReady()]);
+  // Navigation is now handled by useAuthNavigation hook
+  // This ensures consistent navigation behavior across the app
 
   // Initialize auth state on app start
   useEffect(() => {

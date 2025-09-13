@@ -64,6 +64,24 @@ export default function SubjectsScreen() {
     filters,
   } = useTeacherSubjects();
 
+  // Debug: Check for duplicate subject IDs
+  React.useEffect(() => {
+    if (subjects && subjects.length > 0) {
+      const subjectIds = subjects.map(s => s.id);
+      const uniqueIds = new Set(subjectIds);
+      if (subjectIds.length !== uniqueIds.size) {
+        console.warn('⚠️ Duplicate subject IDs detected:', {
+          total: subjectIds.length,
+          unique: uniqueIds.size,
+          duplicates: subjectIds.length - uniqueIds.size
+        });
+        // Log the duplicate IDs
+        const duplicates = subjectIds.filter((id, index) => subjectIds.indexOf(id) !== index);
+        console.warn('Duplicate IDs:', [...new Set(duplicates)]);
+      }
+    }
+  }, [subjects]);
+
   const handleSubjectPress = (subject: Subject) => {
     navigation.navigate('SubjectDetail', { subject });
   };
@@ -204,16 +222,20 @@ export default function SubjectsScreen() {
               {subjects.length > 0 ? (
                 <>
                   <View className="flex-row flex-wrap gap-3">
-                    {subjects.map((subject: Subject) => (
-                      <View key={subject.id} style={{ width: '48%' }}>
-                        <SubjectCard 
-                          subject={subject}
-                          onPress={() => handleSubjectPress(subject)}
-                          onEdit={() => handleEditSubject(subject)}
-                          onManageContent={() => handleManageContent(subject)}
-                        />
-                      </View>
-                    ))}
+                    {subjects.map((subject: Subject, index: number) => {
+                      // Create unique key by combining id and index to handle duplicates
+                      const uniqueKey = `${subject.id}-${index}`;
+                      return (
+                        <View key={uniqueKey} style={{ width: '48%' }}>
+                          <SubjectCard 
+                            subject={subject}
+                            onPress={() => handleSubjectPress(subject)}
+                            onEdit={() => handleEditSubject(subject)}
+                            onManageContent={() => handleManageContent(subject)}
+                          />
+                        </View>
+                      );
+                    })}
                   </View>
 
                   {/* Pagination */}

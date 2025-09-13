@@ -119,4 +119,9 @@ export class HttpClient {
       throw new ApiError(500, 'Network error', error);
     }
   }
+
+  // Get access token for external use
+  async getAccessToken(): Promise<string | null> {
+    return await TokenManager.getAccessToken();
+  }
 }

@@ -26,8 +26,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState('bernardmayowaa@gmail.com');
-  const [password, setPassword] = useState('iba/sm/4787');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   const { login, isLoading, error, clearError } = useAuth();

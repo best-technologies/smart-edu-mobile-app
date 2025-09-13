@@ -1,25 +1,116 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { ApiService } from '@/services';
+import { InitiateAIChatResponse } from '@/services/api/aiChatService';
 import TopBar from '../components/shared/TopBar';
+import DocumentUploadModal from './components/DocumentUploadModal';
 
 export default function AIChatMainScreen() {
   const navigation = useNavigation<any>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [aiChatData, setAiChatData] = useState<InitiateAIChatResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  useEffect(() => {
+    console.log('🎯 AI Chat Main Screen mounted, initializing...');
+    initializeAIChat();
+  }, []);
+
+  const initializeAIChat = async () => {
+    try {
+      console.log('🚀 Starting AI chat initialization...');
+      setIsLoading(true);
+      setError(null);
+      
+    //   console.log('📡 Calling API service...');
+      const response = await ApiService.aiChat.initiateAIChat('teacher');
+    //   console.log('📡 API response:', response);
+      
+      if (response.success && response.data) {
+        // console.log('✅ AI chat initialized successfully:', response.data);
+        setAiChatData(response.data);
+      } else {
+        // console.log('❌ API response indicates failure:', response.message);
+        setError(response.message || 'Failed to initialize AI chat');
+      }
+    } catch (err) {
+      console.error('💥 Error initializing AI chat:', err);
+      setError('Failed to initialize AI chat. Please try again.');
+    } finally {
+      console.log('🏁 AI chat initialization successful');
+      setIsLoading(false);
+    }
+  };
 
   const handleChatWithExisting = () => {
     navigation.navigate('ChatWithExisting');
   };
 
   const handleUploadNew = () => {
-    navigation.navigate('UploadNewMaterial');
+    setShowUploadModal(true);
   };
+
+  const handleUploadSuccess = (document: any) => {
+    console.log('✅ Document uploaded successfully:', document);
+    // Refresh the AI chat data to show the new document
+    initializeAIChat();
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <TopBar />
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="items-center">
+            <View className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mb-4">
+              <ActivityIndicator size="large" color="#8B5CF6" />
+            </View>
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Initializing AI Assistant
+            </Text>
+            <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              Loading your documents and preparing AI chat...
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <TopBar />
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="items-center">
+            <View className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full items-center justify-center mb-4">
+              <Ionicons name="alert-circle" size={32} color="#EF4444" />
+            </View>
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Initialization Failed
+            </Text>
+            <Text className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">
+              {error}
+            </Text>
+            <TouchableOpacity
+              onPress={initializeAIChat}
+              className="bg-purple-600 px-6 py-3 rounded-xl"
+            >
+              <Text className="text-white font-semibold">Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
       <TopBar />
-      
       <ScrollView className="flex-1 px-6 py-4">
         {/* Header Section */}
         <View className="mb-8">
@@ -74,12 +165,12 @@ export default function AIChatMainScreen() {
                   Available Materials
                 </Text>
                 <Text className="text-sm text-gray-700 dark:text-gray-300">
-                  12 documents • 3 subjects
+                  {aiChatData?.documentCount || 0} documents • {aiChatData?.uploadedDocuments?.length || 0} processed
                 </Text>
               </View>
               <View className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
                 <Text className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Ready
+                  {aiChatData?.documentCount && aiChatData.documentCount > 0 ? 'Ready' : 'Empty'}
                 </Text>
               </View>
             </View>
@@ -118,8 +209,22 @@ export default function AIChatMainScreen() {
                 <Text className="text-xs text-gray-500 dark:text-gray-500 mb-2">
                   Supported Formats
                 </Text>
-                <Text className="text-sm text-gray-700 dark:text-gray-300">
-                  PDF, DOC, TXT, PPT • Max 10MB
+                <View className="flex-row flex-wrap gap-1">
+                  {(aiChatData?.supportedDocumentTypes || [
+                    { type: 'PDF', maxSize: '50MB' },
+                    { type: 'DOCX', maxSize: '50MB' },
+                    { type: 'TXT', maxSize: '10MB' },
+                    { type: 'RTF', maxSize: '10MB' }
+                  ]).map((docType, index) => (
+                    <View key={index} className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md mr-1 mb-1">
+                      <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {docType.type}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Max {aiChatData?.supportedDocumentTypes?.[0]?.maxSize || '50MB'} per file
                 </Text>
               </View>
               <View className="bg-green-50 dark:bg-green-900/30 px-3 py-1 rounded-full">
@@ -173,6 +278,15 @@ export default function AIChatMainScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Document Upload Modal */}
+      <DocumentUploadModal
+        visible={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={handleUploadSuccess}
+        supportedTypes={aiChatData?.supportedDocumentTypes?.map(type => type.type.toLowerCase()) || ['pdf', 'docx', 'txt', 'rtf']}
+        maxSize={aiChatData?.supportedDocumentTypes?.[0]?.maxSize || '50MB'}
+      />
     </SafeAreaView>
   );
 }

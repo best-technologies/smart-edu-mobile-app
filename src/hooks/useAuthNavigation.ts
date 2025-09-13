@@ -83,10 +83,16 @@ export function useAuthNavigation() {
     // Handle logout - redirect to login if not authenticated
     if (!isAuthenticated && !user) {
       console.log('🚪 User logged out, redirecting to login page');
+      console.log('🔄 Current navigation state before reset:', {
+        isAuthenticated,
+        userEmail: 'null (user is null)',
+        requiresOTP
+      });
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
       });
+      console.log('✅ Navigation reset completed - should now be on Login screen');
       return;
     }
 
