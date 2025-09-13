@@ -1,5 +1,4 @@
 import { ApiError } from '@/services/types/apiTypes';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface UserFriendlyError {
   title: string;
@@ -296,35 +295,63 @@ export function isAuthenticationError(error: any): boolean {
     'access denied',
     'user does not exist',
     'account not found',
+    'jwt strategy',
+    'invalid payload',
+    'payload structure',
+    'jwt error',
+    'token invalid',
+    'malformed token',
+    'invalid jwt',
   ];
   
   return authErrorPatterns.some(pattern => errorString.includes(pattern));
 }
 
 /**
- * Hook to handle authentication errors and automatically logout
- * @returns Function to handle errors with automatic logout
+ * Check if an error should trigger authentication-related actions
+ * This is a pure function that doesn't depend on React hooks
+ * @param error - The error to check
+ * @returns true if the error indicates authentication issues
  */
-export function useAuthErrorHandler() {
-  const { logout, requiresOTP, isAuthenticated } = useAuth();
+export function shouldTriggerAuthAction(error: any): boolean {
+  if (!error) return false;
   
-  const handleAuthError = async (error: any) => {
-    // Don't trigger logout if user is in OTP verification state
-    // 403 errors are expected during OTP verification since user is not fully authenticated yet
-    if (requiresOTP || !isAuthenticated) {
-      console.log('🔐 Skipping logout - user is in OTP verification or not authenticated yet');
-      return;
-    }
-    
-    if (isAuthenticationError(error)) {
-      console.log('🔐 Authentication error detected, logging out user:', error.message);
-      try {
-        await logout();
-      } catch (logoutError) {
-        console.error('Error during automatic logout:', logoutError);
-      }
-    }
-  };
+  const errorMessage = error.message || error.toString() || '';
+  const errorString = errorMessage.toLowerCase();
   
-  return handleAuthError;
+  console.log('🔍 Checking if error should trigger auth action:', {
+    errorMessage,
+    errorString,
+    errorType: typeof error,
+    errorConstructor: error.constructor?.name
+  });
+  
+  // Check for common authentication error patterns
+  const authErrorPatterns = [
+    'not found',
+    'user not found',
+    'director not found',
+    'teacher not found',
+    'student not found',
+    'unauthorized',
+    'forbidden',
+    'invalid token',
+    'token expired',
+    'authentication failed',
+    'access denied',
+    'user does not exist',
+    'account not found',
+    'jwt strategy',
+    'invalid payload',
+    'payload structure',
+    'jwt error',
+    'token invalid',
+    'malformed token',
+    'invalid jwt',
+  ];
+  
+  const shouldTrigger = authErrorPatterns.some(pattern => errorString.includes(pattern));
+  console.log('🔍 Auth action trigger result:', shouldTrigger);
+  
+  return shouldTrigger;
 }

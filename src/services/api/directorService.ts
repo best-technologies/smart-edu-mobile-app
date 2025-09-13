@@ -359,7 +359,6 @@ class DirectorService {
       if (params?.status) queryParams.append('status', params.status);
 
       const url = `/director/teachers/dashboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log('🌐 Making API request to:', url);
       
       const response = await this.httpClient.makeRequest<TeachersData>(url);
       
@@ -380,7 +379,6 @@ class DirectorService {
    */
   async enrollTeacher(payload: EnrollTeacherPayload): Promise<EnrollTeacherApiResponse> {
     try {
-      console.log('🌐 Making API request to: /director/teachers');
 
       const response = await this.httpClient.makeRequest<EnrollTeacherResponse>(
         '/director/teachers',
@@ -414,7 +412,6 @@ class DirectorService {
       if (params?.status) queryParams.append('status', params.status);
 
       const url = `/director/students/dashboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log('🌐 Making API request to:', url);
       
       const response = await this.httpClient.makeRequest<StudentsData>(url);
       
@@ -443,7 +440,6 @@ class DirectorService {
       if (params?.classId) queryParams.append('classId', params.classId);
 
       const url = `/director/subjects/fetch-all-subjects${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log('🌐 Making API request to:', url);
       
       const response = await this.httpClient.makeRequest<SubjectsData>(url);
       

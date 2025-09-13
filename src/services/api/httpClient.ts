@@ -55,14 +55,16 @@ export class HttpClient {
     requiresAuth: boolean = true
   ): Promise<ApiResponse<T>> {
     try {
-      // const url = `${this.baseURL}${endpoint}`;
-      // console.log(`🌐 ${method} ${url}`);
       const url = `${API_CONFIG.BASE_URL}${endpoint}`;
       console.log(`🌐 ${method} ${url}`);
       
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
+      const headers: Record<string, string> = {};
+
+      // Only set Content-Type for JSON data, let React Native set it for FormData
+      if (!(data instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+      }
+      // For FormData, React Native will automatically set the correct Content-Type with boundary
 
       if (requiresAuth) {
         const token = await TokenManager.getAccessToken();
@@ -77,26 +79,42 @@ export class HttpClient {
       };
 
       if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-        requestConfig.body = JSON.stringify(data);
+        if (data instanceof FormData) {
+          console.log('📦 Sending FormData with headers:', headers);
+          requestConfig.body = data;
+        } else {
+          requestConfig.body = JSON.stringify(data);
+        }
       }
-
-      // console.log('📤 Request config:', {
-      //   method,
-      //   url,
-      //   headers: Object.keys(headers),
-      //   hasBody: !!requestConfig.body,
-      // });
-
+      
+      // Add timeout - longer for file uploads
+      const controller = new AbortController();
+      const timeout = data instanceof FormData ? 60000 : 10000; // 60s for file uploads, 10s for others
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeout);
+      
+      requestConfig.signal = controller.signal;
+      
+      console.log(`⏱️ Request timeout set to: ${timeout}ms`);
+      
       const response = await fetch(url, requestConfig);
+      clearTimeout(timeoutId);
+
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📡 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
+      
       if (!contentType || !contentType.includes('application/json')) {
-        console.log('⚠️ Non-JSON response received');
-        throw new ApiError(response.status, 'Invalid response format', { status: response.status });
+        const textResponse = await response.text();
+        console.log('📄 Non-JSON response body:', textResponse);
+        throw new ApiError(response.status, 'Invalid response format', { status: response.status, body: textResponse });
       }
 
       const responseData = await response.json();
+      console.log('📄 JSON response:', responseData);
 
       if (!response.ok) {
         throw new ApiError(response.status, responseData.message || 'Request failed', responseData);
@@ -104,12 +122,21 @@ export class HttpClient {
 
       return responseData;
     } catch (error) {
-      console.log('💥 HTTP request error:', error);
+      console.error('🚨 Request error details:', error);
       
       // Handle specific network errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.log('🌐 Network error - backend might not be running');
         throw new ApiError(0, 'Unable to connect to server. Please check if the backend is running.', error);
+      }
+      
+      // Handle AbortError (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError(408, 'Request timeout. The server took too long to respond.', error);
+      }
+      
+      // Handle network errors
+      if (error instanceof Error && (error.message.includes('Network request failed') || error.message.includes('fetch'))) {
+        throw new ApiError(0, 'Network request failed. Please check your internet connection and try again.', error);
       }
       
       if (error instanceof ApiError) {

@@ -39,7 +39,6 @@ export class AuthService {
       // Check if response contains tokens (direct login) or user data (OTP required)
       if ('access_token' in response.data) {
         // Direct login successful - store tokens and user data
-        console.log('✅ Direct login - storing tokens');
         const loginData = response.data as LoginResponse;
         await TokenManager.storeTokens(loginData.access_token, loginData.refresh_token);
         await TokenManager.storeUserData(loginData.user);

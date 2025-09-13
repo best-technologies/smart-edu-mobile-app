@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -12,7 +12,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { ApiService } from '@/services';
-import { UploadProgressData } from '@/services/api/aiChatService';
 
 interface DocumentUploadModalProps {
   visible: boolean;
@@ -36,20 +35,48 @@ export default function DocumentUploadModal({
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'processing' | 'completed' | 'failed'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState<any>(null);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
   
   const progressAnimation = useRef(new Animated.Value(0)).current;
+
 
   const handleFileSelection = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: supportedTypes.map(type => `application/${type}`).join(','),
+        type: '*/*',
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const file = result.assets[0];
-        setSelectedFile(file);
+        
+        // Determine file type based on extension
+        let fileType = 'application/octet-stream';
+        if (file.name) {
+          const extension = file.name.split('.').pop()?.toLowerCase();
+          const mimeTypes: { [key: string]: string } = {
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'txt': 'text/plain',
+            'rtf': 'application/rtf'
+          };
+          fileType = mimeTypes[extension || ''] || 'application/octet-stream';
+        }
+        
+        // Create file object with proper typing
+        const fileWithType = {
+          ...file,
+          type: fileType
+        };
+        
+        console.log('📁 Selected file:', {
+          name: fileWithType.name,
+          type: fileWithType.type,
+          size: fileWithType.size,
+          uri: fileWithType.uri
+        });
+        
+        setSelectedFile(fileWithType);
         setUploadStatus('idle');
         setUploadProgress(0);
         setUploadMessage('');
@@ -60,66 +87,60 @@ export default function DocumentUploadModal({
     }
   };
 
+  const handleTestFileSelection = () => {
+    // Use a test file from assets for testing
+    const testFile = {
+      uri: 'file:///Users/macbook/Desktop/B-Tech/projects/mobile-apps/smart-edu-mobile-app/assets/test-files/test-document.txt',
+      name: 'test-document.txt',
+      type: 'text/plain',
+      size: 50
+    };
+    setSelectedFile(testFile);
+    setUploadStatus('idle');
+    setUploadProgress(0);
+    setUploadMessage('');
+  };
+
   const startUpload = async () => {
-    if (!selectedFile) return;
+    console.log('🚀 startUpload called, selectedFile:', selectedFile);
+    if (!selectedFile) {
+      console.log('❌ No file selected, returning early');
+      return;
+    }
 
     try {
+      console.log('🔄 Starting upload process...');
       setIsUploading(true);
       setUploadStatus('uploading');
-      setUploadMessage('Starting upload...');
+      setUploadMessage('Uploading document...');
 
-      // Start upload session
-      const response = await ApiService.aiChat.startUpload(selectedFile);
+      // Simple upload without progress tracking
+      console.log('📤 Uploading document to: /api/v1/ai-chat/upload-document');
+      const response = await ApiService.aiChat.uploadDocument(selectedFile);
       
       if (response.success && response.data) {
-        setUploadMessage('Upload session started, tracking progress...');
-        
-        // Start progress tracking
-        const eventSource = await ApiService.aiChat.trackUploadProgress(response.data.uploadId);
-        setEventSource(eventSource);
+        setUploadStatus('completed');
+        setUploadMessage('Upload completed successfully!');
+        setUploadProgress(100);
 
-        eventSource.onmessage = (event) => {
-          try {
-            const data: UploadProgressData = JSON.parse(event.data);
-            console.log('📊 Upload progress:', data);
-            
-            setUploadProgress(data.progress);
-            setUploadStatus(data.status);
-            setUploadMessage(data.message);
+        // Animate progress bar to 100%
+        Animated.timing(progressAnimation, {
+          toValue: 100,
+          duration: 500,
+          useNativeDriver: false,
+        }).start();
 
-            // Animate progress bar
-            Animated.timing(progressAnimation, {
-              toValue: data.progress,
-              duration: 300,
-              useNativeDriver: false,
-            }).start();
-
-            if (data.status === 'completed') {
-              setUploadMessage('Upload completed successfully!');
-              setTimeout(() => {
-                onSuccess({
-                  id: response.data?.uploadId,
-                  title: selectedFile.name,
-                  status: 'completed'
-                });
-                handleClose();
-              }, 1500);
-            } else if (data.status === 'failed') {
-              setUploadStatus('failed');
-              setUploadMessage('Upload failed. Please try again.');
-            }
-          } catch (error) {
-            console.error('Error parsing progress data:', error);
-          }
-        };
-
-        eventSource.onerror = (error) => {
-          console.error('EventSource error:', error);
-          setUploadStatus('failed');
-          setUploadMessage('Connection lost. Please try again.');
-        };
+        // Show success for 2 seconds then close
+        setTimeout(() => {
+          onSuccess({
+            id: response.data?.id || 'unknown',
+            title: response.data?.title || selectedFile.name,
+            status: response.data?.status || 'completed'
+          });
+          handleClose();
+        }, 2000);
       } else {
-        throw new Error(response.message || 'Failed to start upload');
+        throw new Error(response.message || 'Failed to upload document');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -132,10 +153,6 @@ export default function DocumentUploadModal({
   };
 
   const handleClose = () => {
-    if (eventSource) {
-      eventSource.close();
-      setEventSource(null);
-    }
     setSelectedFile(null);
     setUploadProgress(0);
     setUploadStatus('idle');
@@ -197,23 +214,38 @@ export default function DocumentUploadModal({
 
           {/* File Selection */}
           {!selectedFile && (
-            <TouchableOpacity
-              onPress={handleFileSelection}
-              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 items-center mb-6"
-            >
-              <View className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full items-center justify-center mb-4">
-                <Ionicons name="cloud-upload" size={32} color="#3B82F6" />
-              </View>
-              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                Select Document
-              </Text>
-              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Choose a file to upload
-              </Text>
-              <Text className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                Supported: {supportedTypes.join(', ').toUpperCase()} • Max {maxSize}
-              </Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                onPress={handleFileSelection}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 items-center mb-4"
+              >
+                <View className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full items-center justify-center mb-4">
+                  <Ionicons name="cloud-upload" size={32} color="#3B82F6" />
+                </View>
+                <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Select Document
+                </Text>
+                <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Choose a file to upload
+                </Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  Supported: {supportedTypes.join(', ').toUpperCase()} • Max {maxSize}
+                </Text>
+              </TouchableOpacity>
+              
+              {/* Test Button */}
+              <TouchableOpacity
+                onPress={handleTestFileSelection}
+                className="bg-green-100 dark:bg-green-900 rounded-xl p-4 items-center mb-6"
+              >
+                <Text className="text-green-800 dark:text-green-200 font-semibold">
+                  🧪 Use Test File (for debugging)
+                </Text>
+                <Text className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  Small text file to test upload
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
 
           {/* Selected File */}
@@ -308,7 +340,10 @@ export default function DocumentUploadModal({
             
             {selectedFile && uploadStatus === 'idle' && (
               <TouchableOpacity
-                onPress={startUpload}
+                onPress={() => {
+                  console.log('🔘 Upload button pressed');
+                  startUpload();
+                }}
                 disabled={isUploading}
                 className="flex-1 py-3 px-4 bg-blue-600 rounded-xl items-center"
               >

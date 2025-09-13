@@ -82,17 +82,10 @@ export function useAuthNavigation() {
 
     // Handle logout - redirect to login if not authenticated
     if (!isAuthenticated && !user) {
-      console.log('🚪 User logged out, redirecting to login page');
-      console.log('🔄 Current navigation state before reset:', {
-        isAuthenticated,
-        userEmail: 'null (user is null)',
-        requiresOTP
-      });
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
       });
-      console.log('✅ Navigation reset completed - should now be on Login screen');
       return;
     }
 
@@ -112,22 +105,11 @@ export function useAuthNavigation() {
       return;
     }
 
-    console.log('🧭 Navigation state:', {
-      isAuthenticated,
-      requiresOTP,
-      userEmail: user?.email,
-      userRole: user?.role,
-      isEmailVerified: user?.is_email_verified
-    });
-
     // Handle email verification requirement
     if (!user.is_email_verified) {
-      console.log('📧 Redirecting to email verification');
       navigation.navigate('EmailVerification', { email: user.email });
       return;
     }
-
-    console.log('✅ User fully authenticated, redirecting to dashboard');
     // User is fully authenticated, redirect to role-based dashboard
     const routeForRole = getRouteForRole(user.role);
     if (routeForRole) {

@@ -18,7 +18,7 @@ module.exports = function (api) {
         },
       ],
       // Keep Reanimated plugin last
-      "react-native-reanimated/plugin",
+      "react-native-worklets/plugin",
     ],
   };
 };

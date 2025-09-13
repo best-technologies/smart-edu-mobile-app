@@ -45,9 +45,7 @@ export default function RootNavigator() {
   return (
     <NavigationContainer 
       theme={AppTheme}
-      onReady={() => {
-        console.log('🚀 NavigationContainer is ready');
-      }}
+      onReady={() => {}}
     >
       <Stack.Navigator 
         initialRouteName="Login" 

@@ -21,21 +21,13 @@ export function UserProfileProvider({ children }: UserProfileProviderProps) {
   const { isAuthenticated, user } = useAuth();
   const { userProfile, isLoading, error, refreshProfile, clearProfile } = useUserProfile();
 
-  // Automatically refresh profile after successful login/email verification
   // Clear profile when user logs out
   useEffect(() => {
-    if (isAuthenticated && user) {
-      // Small delay to ensure auth state is fully updated
-      const timer = setTimeout(() => {
-        refreshProfile();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    } else if (!isAuthenticated) {
+    if (!isAuthenticated) {
       // Clear profile when user is not authenticated (logout)
       clearProfile();
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, clearProfile]);
 
   const value: UserProfileContextType = {
     userProfile,

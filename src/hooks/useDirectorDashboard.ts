@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiService } from '@/services/api';
 import type { DirectorDashboardData, DirectorDashboardResponse } from '@/services/api/directorService';
-import { useAuthErrorHandler } from '@/utils/errorHandler';
+import { shouldTriggerAuthAction } from '@/utils/errorHandler';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Query keys for React Query
 export const directorQueryKeys = {
@@ -21,7 +22,26 @@ export const teacherQueryKeys = {
  * Uses React Query for caching, background updates, and error handling
  */
 export function useDirectorDashboard() {
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    console.log('🔍 Auth error handler called:', {
+      error: error?.message || error,
+      requiresOTP,
+      isAuthenticated,
+      shouldTrigger: shouldTriggerAuthAction(error)
+    });
+    
+    if (requiresOTP || !isAuthenticated) {
+      console.log('🔐 Skipping logout - user is in OTP verification or not authenticated yet');
+      return;
+    }
+    
+    if (shouldTriggerAuthAction(error)) {
+      console.log('🔐 Authentication error detected, logging out user');
+      await logout();
+    }
+  };
   
   return useQuery({
     queryKey: directorQueryKeys.dashboard,
@@ -55,7 +75,14 @@ export function useDirectorDashboard() {
  */
 export function useRefreshDirectorDashboard() {
   const queryClient = useQueryClient();
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    if (requiresOTP || !isAuthenticated) return;
+    if (shouldTriggerAuthAction(error)) {
+      await logout();
+    }
+  };
   
   return useMutation({
     mutationFn: async (): Promise<DirectorDashboardData> => {
@@ -88,7 +115,14 @@ export function useRefreshDirectorDashboard() {
  */
 export function usePrefetchDirectorDashboard() {
   const queryClient = useQueryClient();
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    if (requiresOTP || !isAuthenticated) return;
+    if (shouldTriggerAuthAction(error)) {
+      await logout();
+    }
+  };
   
   return () => {
     queryClient.prefetchQuery({
@@ -234,7 +268,14 @@ export interface TeacherDashboardData {
  * Uses React Query for caching, background updates, and error handling
  */
 export function useTeacherDashboard() {
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    if (requiresOTP || !isAuthenticated) return;
+    if (shouldTriggerAuthAction(error)) {
+      await logout();
+    }
+  };
   
   return useQuery({
     queryKey: teacherQueryKeys.dashboard,
@@ -268,7 +309,14 @@ export function useTeacherDashboard() {
  */
 export function useRefreshTeacherDashboard() {
   const queryClient = useQueryClient();
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    if (requiresOTP || !isAuthenticated) return;
+    if (shouldTriggerAuthAction(error)) {
+      await logout();
+    }
+  };
   
   return useMutation({
     mutationFn: async (): Promise<TeacherDashboardData> => {
@@ -301,7 +349,14 @@ export function useRefreshTeacherDashboard() {
  */
 export function usePrefetchTeacherDashboard() {
   const queryClient = useQueryClient();
-  const handleAuthError = useAuthErrorHandler();
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+  
+  const handleAuthError = async (error: any) => {
+    if (requiresOTP || !isAuthenticated) return;
+    if (shouldTriggerAuthAction(error)) {
+      await logout();
+    }
+  };
   
   return () => {
     queryClient.prefetchQuery({

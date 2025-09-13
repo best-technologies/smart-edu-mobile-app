@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, RefreshControl, Animated } from 'react-native';
 import DraggableFlatList, { 
   RenderItemParams, 
   ScaleDecorator 
@@ -105,7 +105,7 @@ export function DraggableTopicList({
     
     return (
       <ScaleDecorator>
-        <View
+        <Animated.View
           className={`mb-4 ${isActive ? 'opacity-50 scale-105' : ''}`}
           style={isActive ? { transform: [{ scale: 1.05 }] } : undefined}
         >
@@ -119,7 +119,7 @@ export function DraggableTopicList({
               drag();
             }}
           />
-        </View>
+        </Animated.View>
       </ScaleDecorator>
     );
   };

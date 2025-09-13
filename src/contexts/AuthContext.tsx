@@ -3,9 +3,10 @@ import React, { createContext, useContext, useReducer, useEffect, useState, Reac
 import { ApiService } from '@/services';
 import { User } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
-import { ErrorHandler } from '@/utils/errorHandler';
+import { ErrorHandler, shouldTriggerAuthAction } from '@/utils/errorHandler';
 import { getRouteForRole } from '@/utils/roleMapper';
 import { pushNotificationService } from '@/services/pushNotificationService';
+import { queryClient } from './QueryProvider';
 
 // Auth State Interface
 interface AuthState {
@@ -80,7 +81,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         requiresOTP: false,
       };
     case 'LOGOUT':
-      console.log('🔄 LOGOUT reducer: Setting user as not authenticated');
       return {
         ...state,
         isAuthenticated: false,
@@ -119,6 +119,36 @@ interface AuthContextType extends AuthState {
 
 // Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Global error handler component
+function GlobalErrorHandler() {
+  const { logout, requiresOTP, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const handleGlobalError = async (error: any) => {
+      if (requiresOTP || !isAuthenticated) {
+        return;
+      }
+
+      if (shouldTriggerAuthAction(error)) {
+        await logout();
+      }
+    };
+
+    // Listen for query errors
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (event.type === 'observerAdded' || event.type === 'observerRemoved') return;
+      
+      if (event.type === 'updated' && event.query.state.error) {
+        handleGlobalError(event.query.state.error);
+      }
+    });
+
+    return unsubscribe;
+  }, [logout, requiresOTP, isAuthenticated]);
+
+  return null;
+}
 
 // Auth Provider Props
 interface AuthProviderProps {
@@ -166,12 +196,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // OTPVerificationResponse is just a User object, while LoginResponse has access_token
         if ('access_token' in response.data && response.data.access_token) {
           // Direct login successful
-          console.log('✅ Direct login successful');
           const loginData = response.data as any;
           
           // Check if email verification is required
           if (!loginData.user.is_email_verified) {
-            console.log('📧 Email verification required');
             
             // Show info toast for email verification requirement
             showInfo(
@@ -206,7 +234,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           try {
             await pushNotificationService.registerForPushNotifications();
           } catch (e) {
-            console.log('Push registration failed (non-blocking):', e);
+            // Push registration failed (non-blocking)
           }
         } else {
           // OTP verification required - response.data is the user object directly
@@ -225,11 +253,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           });
         }
       } else {
-        console.log('❌ Login failed:', response.message);
         throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      console.log('💥 Login error:', error);
       
       // Get user-friendly error message
       const friendlyError = ErrorHandler.getAuthError(error, 'login');
@@ -248,21 +274,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const verifyOTP = async (request: { email: string; otp: string }) => {
     try {
-      console.log('🔐 OTP verification attempt for:', request.email);
       dispatch({ type: 'SET_LOADING', payload: true });
 
       const response = await ApiService.auth.verifyOTP(request);
       // console.log('📡 OTP verification response:', response);
 
       if (response.success && response.data) {
-        console.log('✅ OTP verification successful');
         const loginData = response.data as any;
-        console.log('📧 User data after OTP:', loginData.user);
-        console.log('📧 Email verified status:', loginData.user.is_email_verified);
         
         // Check if email verification is required
         if (!loginData.user.is_email_verified) {
-          console.log('📧 Email verification required after OTP');
           
           // Show info toast for email verification requirement
           showInfo(
@@ -281,7 +302,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
         
-        console.log('✅ Email already verified, proceeding to dashboard');
         
         // Show success toast with backend message
         showSuccess(
@@ -298,15 +318,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           await pushNotificationService.registerForPushNotifications();
         } catch (e) {
-          console.log('Push registration failed (non-blocking):', e);
+          // Push registration failed (non-blocking)
         }
         // Navigation will be handled by the component using useAuthNavigation
       } else {
-        console.log('❌ OTP verification failed:', response.message);
         throw new Error(response.message || 'OTP verification failed');
       }
     } catch (error) {
-      console.log('💥 OTP verification error:', error);
       
       // Get user-friendly error message
       const friendlyError = ErrorHandler.getAuthError(error, 'otp');
@@ -551,7 +569,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshUserProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <GlobalErrorHandler />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 // Custom hook to use auth context

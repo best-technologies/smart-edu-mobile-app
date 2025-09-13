@@ -63,7 +63,7 @@ export default function AIChatMainScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-        <TopBar />
+        
         <View className="flex-1 items-center justify-center px-6">
           <View className="items-center">
             <View className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mb-4">
@@ -84,7 +84,6 @@ export default function AIChatMainScreen() {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-        <TopBar />
         <View className="flex-1 items-center justify-center px-6">
           <View className="items-center">
             <View className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full items-center justify-center mb-4">
@@ -110,7 +109,6 @@ export default function AIChatMainScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      <TopBar />
       <ScrollView className="flex-1 px-6 py-4">
         {/* Header Section */}
         <View className="mb-8">

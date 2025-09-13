@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiService } from '@/services';
 import { UserProfile } from '@/services/types/apiTypes';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,79 +12,52 @@ interface UseUserProfileReturn {
 }
 
 /**
- * Custom hook for managing user profile data
+ * Custom hook for managing user profile data using TanStack Query
  * 
- * This hook handles user profile fetching at the right moments:
- * 1. App initialization (if user is authenticated)
- * 2. After successful login
- * 3. After email verification
- * 4. Manual refresh when needed
- * 
- * It avoids unnecessary API calls by:
- * - Only fetching when user is authenticated
- * - Caching the profile data
- * - Providing manual refresh capability
+ * This hook handles user profile fetching with proper caching:
+ * - Only fetches when user is authenticated
+ * - Uses TanStack Query for caching and deduplication
+ * - Prevents multiple API calls for the same data
  */
 export const useUserProfile = (): UseUserProfileReturn => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Fetch user profile from API
-  const fetchUserProfile = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // console.log('🔄 Fetching user profile...');
-      const response = await ApiService.user.getProfile();
-      
-      if (response.success && response.data) {
-        console.log('✅ User profile fetched successfully');
-        setUserProfile(response.data);
-      } else {
-        throw new Error(response.message || 'Failed to fetch user profile');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching user profile:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user profile';
-      setError(errorMessage);
-      setUserProfile(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Clear profile data
-  const clearProfile = useCallback(() => {
-    setUserProfile(null);
-    setError(null);
-  }, []);
-
-  // Manual refresh function
-  const refreshProfile = useCallback(async () => {
-    await fetchUserProfile();
-  }, [fetchUserProfile]);
-
-  // Effect to fetch profile when authentication state changes
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Only fetch if we don't already have profile data or if user data changed
-      if (!userProfile || userProfile.id !== user.id) {
-        fetchUserProfile();
-      }
-    } else {
-      // Clear profile when not authenticated
-      clearProfile();
-    }
-  }, [isAuthenticated, user?.id, userProfile?.id]);
-
-  return {
-    userProfile,
+  // Use TanStack Query for user profile
+  const {
+    data: userProfile,
     isLoading,
     error,
+    refetch
+  } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async () => {
+      const response = await ApiService.user.getProfile();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to fetch user profile');
+    },
+    enabled: isAuthenticated && !!user?.id, // Only fetch when authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+  });
+
+  // Manual refresh function
+  const refreshProfile = async () => {
+    await refetch();
+  };
+
+  // Clear profile data
+  const clearProfile = () => {
+    queryClient.removeQueries({ queryKey: ['userProfile'] });
+  };
+
+  return {
+    userProfile: userProfile || null,
+    isLoading,
+    error: error?.message || null,
     refreshProfile,
     clearProfile,
   };
