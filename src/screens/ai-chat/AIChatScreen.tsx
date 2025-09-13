@@ -7,6 +7,7 @@ import { aiChatService, Conversation, ChatMessage as ApiChatMessage } from '../.
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAIChatConversations } from '../../hooks/useAIChatConversations';
 import { useConversationMessages } from '../../hooks/useConversationMessages';
+import { professionalMarkdownStyles, professionalDarkMarkdownStyles } from '../../utils/markdownStyles';
 
 type AIChatRouteParams = {
   materialTitle?: string;
@@ -64,6 +65,7 @@ export default function AIChatScreen() {
   const [failedMessage, setFailedMessage] = useState<string | null>(null);
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const scrollViewRef = useRef<FlatList<ChatMessage>>(null);
   const messagesLoadedRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
@@ -74,34 +76,26 @@ export default function AIChatScreen() {
   
   // Combined loading state
   const isLoading = conversationsLoading || messagesLoading;
+  
+  // Combine API messages with local optimistic messages
+  const displayMessages = [...messages, ...localMessages];
 
   // Improved scroll to bottom function for inverted FlatList
   const scrollToBottom = (animated: boolean = true, delay: number = 0) => {
-    console.log('🔄 scrollToBottom called:', { 
-      hasRef: !!scrollViewRef.current, 
-      messagesLength: messages.length,
-      animated,
-      delay 
-    });
-    
-    if (scrollViewRef.current && messages.length > 0) {
+    if (scrollViewRef.current && displayMessages.length > 0) {
       const scrollToEnd = () => {
         try {
-          console.log('📜 Attempting scrollToOffset to 0 (top of inverted list)');
           // For inverted FlatList, scroll to offset 0 to show the latest messages
           scrollViewRef.current?.scrollToOffset({ 
             offset: 0, 
             animated 
           });
-          console.log('✅ scrollToOffset successful');
           
         } catch (error) {
           console.log('❌ scrollToOffset failed:', error);
           // Fallback to scrollToEnd
           try {
-            console.log('🔄 Trying scrollToEnd fallback');
             scrollViewRef.current?.scrollToEnd({ animated });
-            console.log('✅ scrollToEnd successful');
           } catch (fallbackError) {
             console.log('❌ scrollToEnd also failed:', fallbackError);
           }
@@ -114,7 +108,7 @@ export default function AIChatScreen() {
         scrollToEnd();
       }
     } else {
-      console.log('❌ Cannot scroll - missing ref or no messages');
+      // console.log('❌ Cannot scroll - missing ref or no messages');
     }
   };
 
@@ -127,16 +121,16 @@ export default function AIChatScreen() {
   const interval = setInterval(() => {
     if (index < text.length) {
       // Add 2-3 characters at once instead of 1
-      const nextChars = text.slice(index, index + 3);
+      const nextChars = text.slice(index, index + 5);
       setTypingText(prev => prev + nextChars);
-      index += 3;
+      index += 5;
       scrollToBottom(true);
     } else {
       clearInterval(interval);
       setIsTyping(false);
       callback?.();
     }
-  }, 15); // 15ms with 3 chars = much faster
+  }, 3); // 3ms with 5 chars = much faster
 
   return interval;
   };
@@ -187,14 +181,7 @@ export default function AIChatScreen() {
 
   // Handle messages loading and auto-scroll - AGGRESSIVE
   useEffect(() => {
-    console.log('📊 Messages changed:', { 
-      messagesLength: messages.length, 
-      isLoading,
-      currentConversationId 
-    });
-    
-    if (messages.length > 0) {
-      console.log('🚀 Starting aggressive scroll sequence');
+    if (displayMessages.length > 0) {
       // Immediate scroll
       scrollToBottom(false);
       // Multiple delayed scrolls to ensure it works
@@ -203,7 +190,7 @@ export default function AIChatScreen() {
       setTimeout(() => scrollToBottom(false), 300);
       setTimeout(() => scrollToBottom(false), 500);
     }
-  }, [messages.length]);
+  }, [displayMessages.length]);
 
   // Auto-scroll when screen comes into focus
   useFocusEffect(
@@ -246,6 +233,18 @@ export default function AIChatScreen() {
       setFailedMessage(null); // Clear any previous failed message
       setIsWaitingForResponse(true);
       
+      // Add user message immediately (optimistic UI)
+      const userMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        text: messageText,
+        isUser: true,
+        timestamp: new Date(),
+      };
+      setLocalMessages(prev => [userMessage, ...prev]);
+      
+      // Scroll to show the new message
+      setTimeout(() => scrollToBottom(false), 100);
+      
       try {
         // For new conversations, we need to create a conversation first
         // For now, we'll use a placeholder conversationId and let the backend handle it
@@ -264,7 +263,8 @@ export default function AIChatScreen() {
             setCurrentConversationId(response.data.conversationId);
           }
           
-          // Refresh messages to get the updated conversation
+          // Clear local messages and refresh from API
+          setLocalMessages([]);
           await refreshMessages();
           // Refresh conversations to update recent activity
           await refreshConversations();
@@ -277,10 +277,14 @@ export default function AIChatScreen() {
         } else {
           console.error('Failed to send message:', response.message);
           setFailedMessage(messageText); // Store failed message for retry
+          // Remove the optimistic message on failure
+          setLocalMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
         }
       } catch (error) {
         console.error('Failed to send message:', error);
         setFailedMessage(messageText); // Store failed message for retry
+        // Remove the optimistic message on failure
+        setLocalMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
       } finally {
         setIsWaitingForResponse(false);
       }
@@ -357,119 +361,6 @@ export default function AIChatScreen() {
     </TouchableOpacity>
   );
 
-  // Markdown styles for better rendering - REMOVED maxHeight
-  const markdownStyles = {
-    body: {
-      color: '#374151', // gray-700
-      fontSize: 14,
-      lineHeight: 20,
-    },
-    paragraph: {
-      marginTop: 0,
-      marginBottom: 8,
-    },
-    heading1: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginTop: 8,
-      marginBottom: 4,
-    },
-    heading2: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginTop: 6,
-      marginBottom: 4,
-    },
-    heading3: {
-      fontSize: 15,
-      fontWeight: 'bold',
-      marginTop: 4,
-      marginBottom: 4,
-    },
-    code_inline: {
-      backgroundColor: '#F3F4F6', // gray-100
-      paddingHorizontal: 4,
-      paddingVertical: 2,
-      borderRadius: 4,
-      fontFamily: 'monospace',
-    },
-    code_block: {
-      backgroundColor: '#F3F4F6', // gray-100
-      padding: 12,
-      borderRadius: 8,
-      marginVertical: 8,
-      fontFamily: 'monospace',
-    },
-    blockquote: {
-      backgroundColor: '#F9FAFB', // gray-50
-      borderLeftWidth: 4,
-      borderLeftColor: '#8B5CF6', // purple-500
-      paddingLeft: 12,
-      paddingVertical: 8,
-      marginVertical: 8,
-    },
-    list_item: {
-      marginVertical: 2,
-    },
-    bullet_list: {
-      marginVertical: 4,
-    },
-    ordered_list: {
-      marginVertical: 4,
-    },
-  };
-
-  const darkMarkdownStyles = {
-    ...markdownStyles,
-    body: {
-      ...markdownStyles.body,
-      color: '#1F2937', // gray-800 - darker for better contrast
-    },
-    paragraph: {
-      ...markdownStyles.paragraph,
-      color: '#1F2937', // gray-800
-    },
-    heading1: {
-      ...markdownStyles.heading1,
-      color: '#1F2937', // gray-800
-    },
-    heading2: {
-      ...markdownStyles.heading2,
-      color: '#1F2937', // gray-800
-    },
-    heading3: {
-      ...markdownStyles.heading3,
-      color: '#1F2937', // gray-800
-    },
-    code_inline: {
-      ...markdownStyles.code_inline,
-      backgroundColor: '#E5E7EB', // gray-200
-      color: '#1F2937', // gray-800
-    },
-    code_block: {
-      ...markdownStyles.code_block,
-      backgroundColor: '#F3F4F6', // gray-100
-      color: '#1F2937', // gray-800
-    },
-    blockquote: {
-      ...markdownStyles.blockquote,
-      backgroundColor: '#F9FAFB', // gray-50
-      borderLeftColor: '#8B5CF6', // purple-500
-      color: '#1F2937', // gray-800
-    },
-    list_item: {
-      ...markdownStyles.list_item,
-      color: '#1F2937', // gray-800
-    },
-    bullet_list: {
-      ...markdownStyles.bullet_list,
-      color: '#1F2937', // gray-800
-    },
-    ordered_list: {
-      ...markdownStyles.ordered_list,
-      color: '#1F2937', // gray-800
-    },
-  };
 
   // Loading Screen - only show for initial conversation loading
   if (isLoading && !currentConversationId && !documentId) {
@@ -568,34 +459,31 @@ export default function AIChatScreen() {
       <KeyboardAvoidingView 
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <FlatList
           ref={scrollViewRef}
-          data={messages.slice().reverse()}
+          data={displayMessages.slice().reverse()}
           keyExtractor={(item) => item.id}
           className="flex-1 px-4 py-4"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           inverted={true}
           onLayout={() => {
-            console.log('📐 FlatList onLayout - messages:', messages.length);
             // Scroll to bottom when FlatList is laid out
             if (messages.length > 0) {
               setTimeout(() => scrollToBottom(false), 100);
             }
           }}
           onContentSizeChange={() => {
-            console.log('📏 FlatList onContentSizeChange - messages:', messages.length);
             // Always scroll to bottom when content changes
             scrollToBottom(false, 100);
           }}
           renderItem={({ item: msg, index }) => {
             // Since we're using inverted, the first item (index 0) is actually the last message
-            const actualIndex = messages.length - 1 - index;
-            const isLastAIMessage = !msg.isUser && actualIndex === messages.length - 1;
+            const actualIndex = displayMessages.length - 1 - index;
+            const isLastAIMessage = !msg.isUser && actualIndex === displayMessages.length - 1;
             const shouldShowTypewriter = isLastAIMessage && isTyping;
             
             return (
@@ -612,7 +500,7 @@ export default function AIChatScreen() {
                   ) : (
                     <View style={{ width: '100%' }}>
                       <Markdown 
-                        style={darkMarkdownStyles}
+                        style={professionalMarkdownStyles}
                         mergeStyle={false}
                       >
                         {shouldShowTypewriter ? typingText : msg.text}
@@ -631,7 +519,7 @@ export default function AIChatScreen() {
           ListHeaderComponent={() => (
             <>
               {/* Welcome Message - Only show if no messages */}
-              {messages.length === 0 && !isLoading && (
+              {displayMessages.length === 0 && !isLoading && (
                 <View className="items-center mb-6">
                   <View className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 rounded-full items-center justify-center mb-4">
                     <Ionicons name="sparkles" size={24} color="#8B5CF6" />
@@ -681,7 +569,7 @@ export default function AIChatScreen() {
               )}
 
               {/* Loading State for Messages */}
-              {isLoading && messages.length === 0 && (
+              {isLoading && displayMessages.length === 0 && (
                 <View className="items-center mb-6">
                   <ActivityIndicator size="large" color="#8B5CF6" />
                   <Text className="text-gray-600 dark:text-gray-400 mt-2">
