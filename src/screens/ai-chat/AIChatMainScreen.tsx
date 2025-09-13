@@ -37,6 +37,14 @@ export default function AIChatMainScreen() {
     });
   };
 
+  const handleGeneralChat = () => {
+    console.log('General chat button pressed');
+    // Navigate to AI chat screen for general chat (no material/document)
+    navigation.navigate('AIChat', {
+      isGeneralChat: true
+    });
+  };
+
   const formatLastActivity = (lastActivity: string) => {
     const date = new Date(lastActivity);
     const now = new Date();
@@ -104,17 +112,46 @@ export default function AIChatMainScreen() {
       <ScrollView className="flex-1 px-6 py-4">
         {/* Header Section */}
         <View className="mb-8">
-          <View className="flex-row items-center mb-4">
-            <View className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mr-4">
-              <Ionicons name="sparkles" size={24} color="#8B5CF6" />
+          <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center flex-1">
+              <View className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mr-4">
+                <Ionicons name="sparkles" size={24} color="#8B5CF6" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  AI Assistant
+                </Text>
+                <Text className="text-sm text-gray-600 dark:text-gray-400">
+                  Chat with your teaching materials using AI
+                </Text>
+              </View>
             </View>
-            <View className="flex-1">
-              <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                AI Assistant
-              </Text>
-              <Text className="text-sm text-gray-600 dark:text-gray-400">
-                Chat with your teaching materials using AI
-              </Text>
+            <TouchableOpacity
+              onPress={handleGeneralChat}
+              className="bg-purple-600 px-4 py-2 rounded-xl"
+            >
+              <Text className="text-white font-semibold text-sm">General Chat</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Help Section */}
+        <View className="mb-6">
+          <View className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-4 border border-purple-200 dark:border-purple-700">
+            <View className="flex-row items-start">
+              <View className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mr-3 mt-1">
+                <Ionicons name="help-circle" size={16} color="#8B5CF6" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                  How it works
+                </Text>
+                <Text className="text-xs text-gray-600 dark:text-gray-400 leading-5">
+                  Upload your teaching materials and ask questions about the content. 
+                  Our AI will help you create lesson plans, answer student questions, 
+                  and generate assessments based on your documents.
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -170,7 +207,7 @@ export default function AIChatMainScreen() {
           <TouchableOpacity
             onPress={handleUploadNew}
             activeOpacity={0.8}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mt-4"
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
@@ -311,26 +348,6 @@ export default function AIChatMainScreen() {
           )}
         </View>
 
-        {/* Help Section */}
-        <View className="mt-6 mb-8">
-          <View className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-4 border border-purple-200 dark:border-purple-700">
-            <View className="flex-row items-start">
-              <View className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mr-3 mt-1">
-                <Ionicons name="help-circle" size={16} color="#8B5CF6" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                  How it works
-                </Text>
-                <Text className="text-xs text-gray-600 dark:text-gray-400 leading-5">
-                  Upload your teaching materials and ask questions about the content. 
-                  Our AI will help you create lesson plans, answer student questions, 
-                  and generate assessments based on your documents.
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
       </ScrollView>
 
       {/* Document Upload Modal */}

@@ -53,7 +53,7 @@ export interface ContextChunk {
 
 export interface SendMessageRequest {
   message: string;
-  materialId: string;
+  materialId: string | null;
   conversationId: string;
 }
 
@@ -67,6 +67,7 @@ export interface SendMessageResponse {
   tokensUsed: number;
   responseTimeMs: number;
   createdAt: string;
+  chatTitle?: string; // Include generated title
 }
 
 export interface InitiateAIChatResponse {
@@ -154,7 +155,7 @@ export class AIChatService {
 
   async sendMessage(
     message: string,
-    materialId: string,
+    materialId: string | null,
     conversationId: string
   ): Promise<ApiResponse<SendMessageResponse>> {
     try {
@@ -164,12 +165,20 @@ export class AIChatService {
         conversationId
       };
       
+      console.log('🔗 API Request Details:', {
+        endpoint: API_ENDPOINTS.AI_CHAT.SEND_MESSAGE,
+        method: 'POST',
+        requestData: requestData
+      });
+      
       const response = await this.httpClient.makeRequest(
         API_ENDPOINTS.AI_CHAT.SEND_MESSAGE,
         'POST',
         requestData,
         true
       );
+      
+      console.log('📥 API Response:', response);
       return response as ApiResponse<SendMessageResponse>;
     } catch (error) {
       console.error('Failed to send message:', error);

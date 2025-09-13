@@ -24,6 +24,8 @@ type AIChatRouteParams = {
   conversationTitle?: string;
   materialId?: string;
   showHistory?: boolean;
+  // General chat
+  isGeneralChat?: boolean;
 };
 
 type AIChatRouteProp = RouteProp<{ AIChat: AIChatRouteParams }, 'AIChat'>;
@@ -50,7 +52,8 @@ export default function AIChatScreen() {
     conversationId,
     conversationTitle,
     materialId,
-    showHistory
+    showHistory,
+    isGeneralChat
   } = route.params || {};
   
   // Decode URL-encoded title
@@ -66,6 +69,7 @@ export default function AIChatScreen() {
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const [currentChatTitle, setCurrentChatTitle] = useState<string | null>(conversationTitle || null);
   const scrollViewRef = useRef<FlatList<ChatMessage>>(null);
   const messagesLoadedRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
@@ -227,7 +231,7 @@ export default function AIChatScreen() {
   }, []);
 
   const handleSendMessage = async () => {
-    if (message.trim() && !isWaitingForResponse && currentMaterialId) {
+    if (message.trim() && !isWaitingForResponse && (currentMaterialId || isGeneralChat)) {
       const messageText = message.trim();
       setMessage('');
       setFailedMessage(null); // Clear any previous failed message
@@ -250,10 +254,20 @@ export default function AIChatScreen() {
         // For now, we'll use a placeholder conversationId and let the backend handle it
         const conversationIdToUse = currentConversationId || 'new-conversation';
         
+        // Log what we're sending to backend
+        const materialIdToSend = isGeneralChat ? null : (currentMaterialId || null);
+        const requestData = {
+          message: messageText,
+          materialId: materialIdToSend,
+          conversationId: conversationIdToUse,
+          isGeneralChat: isGeneralChat
+        };
+        console.log('📤 Sending to backend:', requestData);
+        
         // Send message to API
         const response = await aiChatService.sendMessage(
           messageText,
-          currentMaterialId,
+          materialIdToSend,
           conversationIdToUse
         );
         
@@ -261,6 +275,11 @@ export default function AIChatScreen() {
           // Set conversationId from response if this is a new conversation
           if (!currentConversationId) {
             setCurrentConversationId(response.data.conversationId);
+          }
+          
+          // Update chat title if provided in response (for general chat)
+          if (response.data.chatTitle && !currentChatTitle) {
+            setCurrentChatTitle(response.data.chatTitle);
           }
           
           // Clear local messages and refresh from API
@@ -433,9 +452,9 @@ export default function AIChatScreen() {
             <Ionicons name="sparkles" size={18} color="#8B5CF6" />
           </View>
           <View className="flex-1">
-            {(conversationTitle || documentTitle || materialTitle) && (
+            {(currentChatTitle || documentTitle || materialTitle) && (
               <Text className="text-sm font-medium text-purple-600 dark:text-purple-400" numberOfLines={1}>
-                {conversationTitle || documentTitle || materialTitle}
+                {currentChatTitle || documentTitle || materialTitle}
               </Text>
             )}
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -528,9 +547,9 @@ export default function AIChatScreen() {
                     AI Assistant
                   </Text>
                   <Text className="text-gray-600 dark:text-gray-400 text-center text-sm leading-6">
-                    {conversationTitle ? (
+                    {currentChatTitle ? (
                       <>
-                        Continuing conversation: <Text className="font-semibold text-purple-600 dark:text-purple-400">"{conversationTitle}"</Text>
+                        Continuing conversation: <Text className="font-semibold text-purple-600 dark:text-purple-400">"{currentChatTitle}"</Text>
                         {'\n\n'}You can continue asking questions or start a new topic.
                       </>
                     ) : documentTitle ? (
@@ -544,6 +563,12 @@ export default function AIChatScreen() {
                         You're now chatting about <Text className="font-semibold text-purple-600 dark:text-purple-400">"{materialTitle}"</Text>. 
                         {'\n\n'}I can help you with questions pertaining to this material, and I can also assist you in creating practice tests, quizzes, assignments, and exam questions based on this content.
                         {'\n\n'}What would you like to explore or learn about this material?
+                      </>
+                    ) : isGeneralChat ? (
+                      <>
+                        Welcome to General Chat! <Text className="font-semibold text-purple-600 dark:text-purple-400">General AI Assistant</Text>
+                        {'\n\n'}I'm here to help you with any questions, provide explanations, create study materials, or assist with educational topics.
+                        {'\n\n'}What would you like to discuss or learn about today?
                       </>
                     ) : (
                       "Hi! I'm here to help you with your studies. Ask me anything!"
@@ -581,20 +606,6 @@ export default function AIChatScreen() {
           )}
           ListFooterComponent={() => (
             <>
-              {/* Typing Indicator */}
-              {isWaitingForResponse && (
-                <View className="mb-4 items-start">
-                  <View className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-3">
-                    <View className="flex-row items-center space-x-1">
-                      <ActivityIndicator size="small" color="#9CA3AF" />
-                      <Text className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                        AI is typing...
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
               {/* Failed Message Retry */}
               {failedMessage && !isWaitingForResponse && (
                 <View className="mb-4 items-start">
@@ -624,12 +635,26 @@ export default function AIChatScreen() {
 
         {/* Input Area */}
         <View className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-          <View className="flex-row items-end bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2 min-h-[44px]">
+          <View className={`flex-row items-end rounded-2xl px-4 py-2 min-h-[44px] ${
+            isWaitingForResponse 
+              ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700' 
+              : 'bg-gray-100 dark:bg-gray-800'
+          }`}>
+            {/* Typing Indicator in Input */}
+            {isWaitingForResponse && (
+              <View className="flex-row items-center mr-3">
+                <ActivityIndicator size="small" color="#8B5CF6" />
+                <Text className="text-xs text-purple-600 dark:text-purple-400 ml-2 font-medium">
+                  AI is typing...
+                </Text>
+              </View>
+            )}
+            
             {/* Text Input */}
             <TextInput
               value={message}
               onChangeText={handleTextChange}
-              placeholder={isWaitingForResponse ? "AI is typing..." : "Type your message..."}
+              placeholder={isWaitingForResponse ? "typing..." : "Type your message..."}
               placeholderTextColor="#9ca3af"
               className="flex-1 text-gray-900 dark:text-gray-100 text-base max-h-20"
               multiline
