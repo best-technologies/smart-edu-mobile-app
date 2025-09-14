@@ -91,6 +91,8 @@ export class AuthService {
       
       // Call logout endpoint with authentication
       const response = await this.httpClient.makeRequest(API_ENDPOINTS.AUTH.LOGOUT, 'POST', undefined, true);
+
+      console.log('🔄 Logout success response:', response.success);
       
       if (response.success) {
         console.log('✅ Logout successful:', response.message);

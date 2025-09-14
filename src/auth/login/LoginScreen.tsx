@@ -119,10 +119,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 </View>
 
                 {/* Login Form */}
-                <View className="space-y-6 mb-8">
+                <View className="space-y-6 mb-4">
                   {/* Email Input */}
                   <View>
-                    <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Email Address
                     </Text>
                     <View className="relative">
@@ -152,7 +152,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                   {/* Password Input */}
                   <View>
-                    <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    <Text className="text-white font-semibold text-sm mt-4 mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Password
                     </Text>
                     <View className="relative">
@@ -189,7 +189,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                   {/* Forgot Password */}
                   <TouchableOpacity onPress={handleForgotPassword} className="self-end">
-                    <Text className="text-cyan-300 font-semibold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    <Text className="text-cyan-300 mt-4 font-semibold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Forgot Password?
                     </Text>
                   </TouchableOpacity>

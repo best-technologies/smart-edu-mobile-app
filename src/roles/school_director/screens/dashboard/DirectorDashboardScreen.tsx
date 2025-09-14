@@ -1,6 +1,8 @@
-import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
+import { ScrollView, Text, View, RefreshControl, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef } from 'react';
 import TopBar from '../../components/shared/TopBar';
 import Section from '../../components/shared/Section';
 import EmptyState from '../../components/shared/EmptyState';
@@ -8,6 +10,124 @@ import { OverviewCard, SmallOverviewCard } from '../../components/dashboard/Over
 import FinanceCard from '../../components/dashboard/Finance';
 import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDirectorDashboard';
 import { CenteredLoader } from '@/components';
+
+// Animated Action Component
+const AnimatedAction = ({ action }: { action: any }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0.8)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!action.isAnimated) return;
+
+    const createBreathingAnimation = () => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1.08,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 0.8,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 0,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+    };
+
+    const animation = createBreathingAnimation();
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [action.isAnimated, scaleAnim, opacityAnim, glowAnim]);
+
+  if (action.isAnimated) {
+    return (
+      <Animated.View
+        style={{
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+        }}
+      >
+        <TouchableOpacity
+          onPress={action.onPress}
+          activeOpacity={0.7}
+          className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 items-center min-w-[100px]"
+        >
+          <Animated.View 
+            className="w-12 h-12 rounded-full items-center justify-center mb-3"
+            style={{ 
+              backgroundColor: `${action.color}20`,
+              shadowColor: action.color,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.6],
+              }),
+              shadowRadius: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [4, 8],
+              }),
+              elevation: 5,
+              transform: [{ scale: scaleAnim }],
+            }}
+          >
+            <Ionicons name={action.icon} size={24} color={action.color} />
+          </Animated.View>
+          <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 text-center">
+            {action.title}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={action.onPress}
+      activeOpacity={0.8}
+      className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 items-center min-w-[100px]"
+    >
+      <View 
+        className="w-12 h-12 rounded-full items-center justify-center mb-3"
+        style={{ backgroundColor: `${action.color}20` }}
+      >
+        <Ionicons name={action.icon} size={24} color={action.color} />
+      </View>
+      <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 text-center">
+        {action.title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 export default function DirectorDashboardScreen() {
   const navigation = useNavigation();
@@ -17,6 +137,38 @@ export default function DirectorDashboardScreen() {
   const handleRefresh = () => {
     refreshMutation.mutate();
   };
+
+  const quickActions = [
+    {
+      id: 'ai-assistance',
+      title: 'AI Assistance',
+      icon: 'sparkles' as const,
+      color: '#8B5CF6',
+      onPress: () => (navigation as any).navigate('AIChatMain'),
+      isAnimated: true,
+    },
+    {
+      id: 'teachers',
+      title: 'Teachers',
+      icon: 'people-outline' as const,
+      color: '#10B981',
+      onPress: () => (navigation as any).navigate('AllTeachersList'),
+    },
+    {
+      id: 'students',
+      title: 'Students',
+      icon: 'school-outline' as const,
+      color: '#3B82F6',
+      onPress: () => (navigation as any).navigate('AllStudentsList'),
+    },
+    {
+      id: 'subjects',
+      title: 'Subjects',
+      icon: 'book-outline' as const,
+      color: '#F59E0B',
+      onPress: () => (navigation as any).navigate('AllSubjectsList'),
+    },
+  ];
 
   // Show loading state
   if (isLoading && !data) {
@@ -72,6 +224,22 @@ export default function DirectorDashboardScreen() {
           avatarUri={undefined}
           onNotificationPress={() => (navigation as any).navigate('NotificationsList')}
         />
+
+        {/* Quick Actions Section */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Quick Actions
+          </Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-3 px-1"
+          >
+            {quickActions.map((action) => (
+              <AnimatedAction key={action.id} action={action} />
+            ))}
+          </ScrollView>
+        </View>
 
       <Section title="Overview">
         <View className="gap-3">

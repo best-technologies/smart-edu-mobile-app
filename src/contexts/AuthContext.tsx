@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 // Navigation is handled by useAuthNavigation hook
 import { ApiService } from '@/services';
-import { User } from '@/services/types/apiTypes';
+import { User, ApiResponse } from '@/services/types/apiTypes';
 import { useToast } from './ToastContext';
 import { ErrorHandler, shouldTriggerAuthAction } from '@/utils/errorHandler';
 import { getRouteForRole } from '@/utils/roleMapper';
@@ -108,7 +108,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: { email: string; password: string }) => Promise<void>;
   verifyOTP: (request: { email: string; otp: string }) => Promise<void>;
   logout: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<ApiResponse>;
   requestEmailVerificationOTP: (email: string) => Promise<void>;
   verifyEmail: (request: { email: string; otp: string }) => Promise<void>;
   verifyOTPAndResetPassword: (request: { email: string; otp: string; new_password: string }) => Promise<void>;
@@ -400,6 +400,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         response.message || 'Check your email for password reset instructions',
         4000
       );
+      
+      // Return the response so the calling component knows it succeeded
+      return response;
     } catch (error) {
       console.log('💥 Forgot password error:', error);
       

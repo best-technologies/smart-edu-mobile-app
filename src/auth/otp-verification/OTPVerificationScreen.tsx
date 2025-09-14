@@ -264,9 +264,9 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
                     style={{ transform: [{ scale: iconScale }] }}
                     className="mb-6"
                   >
-                    <View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20">
+                    <Animated.View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20">
                       <Ionicons name="shield-checkmark" size={48} color="#14b8a6" />
-                    </View>
+                    </Animated.View>
                   </Animated.View>
                   
                   <Text className="text-2xl font-bold text-white mb-3 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>

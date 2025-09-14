@@ -7,50 +7,59 @@ import { useEffect, useRef } from 'react';
 const AnimatedAction = ({ action }: { action: QuickAction }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.8)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    let animation: Animated.CompositeAnimation | null = null;
-    
-    if (action.isAnimated) {
-      animation = Animated.loop(
+    if (!action.isAnimated) return;
+
+    const createBreathingAnimation = () => {
+      return Animated.loop(
         Animated.sequence([
           Animated.parallel([
             Animated.timing(scaleAnim, {
-              toValue: 1.15,
-              duration: 1000,
+              toValue: 1.08,
+              duration: 2000,
               useNativeDriver: true,
             }),
             Animated.timing(opacityAnim, {
               toValue: 1,
-              duration: 1000,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 1,
+              duration: 2000,
               useNativeDriver: true,
             }),
           ]),
           Animated.parallel([
             Animated.timing(scaleAnim, {
               toValue: 1,
-              duration: 1000,
+              duration: 2000,
               useNativeDriver: true,
             }),
             Animated.timing(opacityAnim, {
-              toValue: 0.7,
-              duration: 1000,
+              toValue: 0.8,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 0,
+              duration: 2000,
               useNativeDriver: true,
             }),
           ]),
-        ]),
-        { iterations: -1 }
+        ])
       );
-      
-      animation.start();
-    }
+    };
+
+    const animation = createBreathingAnimation();
+    animation.start();
 
     return () => {
-      if (animation) {
-        animation.stop();
-      }
+      animation.stop();
     };
-  }, [action.isAnimated, scaleAnim, opacityAnim]);
+  }, [action.isAnimated, scaleAnim, opacityAnim, glowAnim]);
 
   if (action.isAnimated) {
     return (
@@ -65,19 +74,26 @@ const AnimatedAction = ({ action }: { action: QuickAction }) => {
           activeOpacity={0.7}
           className="items-center"
         >
-          <View 
+          <Animated.View 
             className="h-16 w-16 items-center justify-center rounded-full mb-2"
             style={{ 
               backgroundColor: `${action.color}15`,
               shadowColor: action.color,
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
+              shadowOpacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.6],
+              }),
+              shadowRadius: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [4, 8],
+              }),
               elevation: 5,
+              transform: [{ scale: scaleAnim }],
             }}
           >
             <Ionicons name={action.icon as any} size={24} color={action.color} />
-          </View>
+          </Animated.View>
           <Text 
             className="text-sm font-semibold text-center text-gray-900 dark:text-gray-100"
           >

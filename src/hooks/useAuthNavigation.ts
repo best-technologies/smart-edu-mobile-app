@@ -80,12 +80,36 @@ export function useAuthNavigation() {
     // Update last state
     lastNavigationState.current = currentState;
 
+    console.log('🔍 Auth state changed:', {
+      isAuthenticated,
+      requiresOTP,
+      userEmail: user?.email,
+      userRole: user?.role,
+      stateChanged
+    });
+
     // Handle logout - redirect to login if not authenticated
     if (!isAuthenticated && !user) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      console.log('🚪 User logged out, navigating to Login screen');
+      
+      // Try multiple navigation approaches to ensure we get to the login screen
+      try {
+        // First try: Reset to login screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+        console.log('✅ Navigation reset to Login screen');
+      } catch (error) {
+        console.log('❌ Navigation reset failed, trying navigate:', error);
+        try {
+          // Fallback: Navigate to login
+          navigation.navigate('Login');
+          console.log('✅ Navigated to Login screen');
+        } catch (navigateError) {
+          console.log('❌ Navigation failed completely:', navigateError);
+        }
+      }
       return;
     }
 

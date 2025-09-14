@@ -8,7 +8,7 @@ const EXTRA_API_BASE_URL: string | undefined = extra?.apiBaseUrl;
 function resolveBaseUrl(): string {
   // Development: use local emulator/simulator hosts
   if (__DEV__) {
-    const iosSim = 'https://b34414718974.ngrok-free.app/api/v1';
+    const iosSim = 'https://14dec4277c96.ngrok-free.app/api/v1';
     // const iosSim = 'http://localhost:1000/api/v1';
     const androidEmu = 'http://10.0.2.2:1000/api/v1';
     return Platform.OS === 'android' ? androidEmu : iosSim;

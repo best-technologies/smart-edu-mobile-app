@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,69 +29,25 @@ export default function Toast({
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
-  const isVisible = useRef(false);
-
-  const hideToast = useCallback(() => {
-    if (!isVisible.current) return;
-    
-    isVisible.current = false;
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 0.8,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
-  }, [translateY, opacity, scale, onClose]);
 
   useEffect(() => {
     if (visible) {
-      isVisible.current = true;
-      // Show animation
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scale, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      console.log('Toast showing:', { type, title, message });
+      
+      // Set initial values immediately
+      translateY.setValue(0);
+      opacity.setValue(1);
+      scale.setValue(1);
 
       // Auto hide after duration
       const timer = setTimeout(() => {
-        hideToast();
+        console.log('Auto hiding toast after duration');
+        onClose();
       }, duration);
 
       return () => clearTimeout(timer);
-    } else {
-      // Only hide if we're transitioning from visible to not visible
-      if (isVisible.current) {
-        hideToast();
-      }
     }
-  }, [visible, duration, hideToast]);
+  }, [visible, duration, translateY, opacity, scale, onClose]);
 
   const getToastConfig = () => {
     switch (type) {
@@ -137,70 +93,83 @@ export default function Toast({
 
   if (!visible) return null;
 
+  console.log('Rendering toast with visible=true');
+
   return (
-    <Animated.View
+    <View
       style={{
         position: 'absolute',
-        top: 50,
+        top: 100,
         left: 16,
         right: 16,
-        zIndex: 999999,
-        elevation: 999999,
-        transform: [{ translateY }, { scale }],
-        opacity,
+        zIndex: 9999999,
+        elevation: 9999999,
+        borderRadius: 16,
+        overflow: 'hidden',
       }}
     >
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={onPress ? 0.8 : 1}
+      <LinearGradient
+        colors={config.colors as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={{
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          elevation: 999999,
-          zIndex: 999999,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: config.borderColor,
+          padding: 16,
         }}
       >
-        <LinearGradient
-          colors={config.colors as any}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: config.borderColor,
-            overflow: 'hidden',
-          }}
-        >
-          <View className="flex-row items-start p-4">
-            {/* Icon */}
-            <View className="mr-3 mt-0.5">
-              <Ionicons name={config.icon as any} size={24} color={config.iconColor} />
-            </View>
-
-            {/* Content */}
-            <View className="flex-1 mr-2">
-              <Text className="text-white font-bold text-base mb-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                {title}
-              </Text>
-              {message && (
-                <Text className="text-white/90 text-sm leading-5" style={{ textShadowColor: 'rgba(0, 0, 0, 0.1)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 }}>
-                  {message}
-                </Text>
-              )}
-            </View>
-
-            {/* Close Button */}
-            <TouchableOpacity
-              onPress={hideToast}
-              className="w-6 h-6 items-center justify-center rounded-full bg-white/20"
-            >
-              <Ionicons name="close" size={16} color="#ffffff" />
-            </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          {/* Icon */}
+          <View style={{ marginRight: 12, marginTop: 2 }}>
+            <Ionicons name={config.icon as any} size={24} color={config.iconColor} />
           </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </Animated.View>
+
+          {/* Content */}
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={{ 
+              color: 'white', 
+              fontSize: 16, 
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.2)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 2,
+            }}>
+              {title}
+            </Text>
+            {message && (
+              <Text style={{ 
+                color: 'rgba(255, 255, 255, 0.9)', 
+                fontSize: 14, 
+                marginTop: 4,
+                textShadowColor: 'rgba(0, 0, 0, 0.1)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 1,
+              }}>
+                {message}
+              </Text>
+            )}
+          </View>
+
+          {/* Close Button */}
+          <TouchableOpacity
+            onPress={() => {
+              console.log('Manual close button pressed');
+              onClose();
+            }}
+            style={{
+              width: 24,
+              height: 24,
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="close" size={16} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }

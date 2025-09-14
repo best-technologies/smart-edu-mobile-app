@@ -8,6 +8,12 @@ export default function ToastContainer() {
 
   // Only show the most recent toast to prevent overlapping
   const latestToast = toasts[toasts.length - 1];
+  
+  console.log('ToastContainer render:', { toastsCount: toasts.length, latestToast });
+
+  if (!latestToast) {
+    return null;
+  }
 
   return (
     <View style={{ 
@@ -15,21 +21,21 @@ export default function ToastContainer() {
       top: 0, 
       left: 0, 
       right: 0, 
-      zIndex: 999999,
-      elevation: 999999,
+      bottom: 0,
+      zIndex: 9999999,
+      elevation: 9999999,
+      pointerEvents: 'box-none',
     }}>
-      {latestToast && (
-        <Toast
-          key={latestToast.id}
-          visible={true}
-          type={latestToast.type}
-          title={latestToast.title}
-          message={latestToast.message}
-          duration={latestToast.duration}
-          onClose={() => removeToast(latestToast.id)}
-          onPress={latestToast.onPress}
-        />
-      )}
+      <Toast
+        key={latestToast.id}
+        visible={true}
+        type={latestToast.type}
+        title={latestToast.title}
+        message={latestToast.message}
+        duration={latestToast.duration}
+        onClose={() => removeToast(latestToast.id)}
+        onPress={latestToast.onPress}
+      />
     </View>
   );
 }

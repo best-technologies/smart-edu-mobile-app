@@ -53,6 +53,14 @@ export default function StudentDashboardScreen() {
 
   const quickActions = [
     {
+      id: 'ai-assistance',
+      title: 'AI Assistance',
+      icon: 'sparkles' as const,
+      color: '#8B5CF6',
+      onPress: () => navigation.navigate('AIChatMain'),
+      isAnimated: true,
+    },
+    {
       id: '1',
       title: 'Assessments',
       icon: 'document-text-outline' as const,
@@ -79,13 +87,6 @@ export default function StudentDashboardScreen() {
       icon: 'calendar-outline' as const,
       color: '#EC4899',
       onPress: () => navigation.navigate('Schedules'),
-    },
-    {
-      id: '5',
-      title: 'Assessments',
-      icon: 'list-outline' as const,
-      color: '#EF4444',
-      onPress: () => navigation.navigate('Assessments'),
     },
   ];
 
