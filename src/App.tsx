@@ -14,6 +14,37 @@ import { ToastContainer } from '@/components';
 import './utils/reanimatedConfig'; // Disable Reanimated warnings
 import { pushNotificationService } from './services/pushNotificationService';
 
+// Suppress known warnings at app level
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  const message = args[0];
+  if (typeof message === 'string') {
+    // Suppress expo-notifications warnings
+    if (message.includes('expo-notifications') || 
+        message.includes('Android Push notifications') ||
+        message.includes('functionality is not fully supported in Expo Go')) {
+      return;
+    }
+    
+    // Suppress Reanimated warnings
+    if (message.includes('[Reanimated]') && 
+        message.includes('react-native-reanimated/plugin')) {
+      return;
+    }
+    
+    // Suppress SafeAreaView deprecation warnings
+    if (message.includes('SafeAreaView has been deprecated')) {
+      return;
+    }
+    
+    // Suppress expo-av deprecation warnings
+    if (message.includes('[expo-av]: Expo AV has been deprecated')) {
+      return;
+    }
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
 
 // Keep the native splash screen visible for a moment so it's noticeable
 SplashScreen.preventAutoHideAsync().catch(() => {
