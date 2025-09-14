@@ -79,14 +79,10 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
       await forgotPassword(email.trim());
       
       // Show success toast
-      console.log('Showing success toast...');
       showSuccess('Reset Code Sent', `Reset code sent successfully to ${email.trim()}`);
       
-      // Navigate to password reset OTP screen after a short delay to allow toast to show
-      setTimeout(() => {
-        console.log('Navigating to PasswordResetOTP...');
-        navigation.navigate('PasswordResetOTP', { email: email.trim() });
-      }, 1000);
+      // Navigate immediately - toast will show during navigation
+      navigation.navigate('PasswordResetOTP', { email: email.trim() });
     } catch (error) {
       // Error is handled by the context
     } finally {
@@ -153,89 +149,92 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
               </View>
 
               {/* Form */}
-              <View className="space-y-8">
-                {/* Email Input */}
-                <View>
-                  <Text className="text-gray-700 font-semibold text-sm mb-2">
-                    Email Address
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={email}
-                      onChangeText={handleEmailChange}
-                      placeholder="Enter your email address"
-                      placeholderTextColor="#9ca3af"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      autoComplete="email"
-                      textContentType="emailAddress"
-                      className={`w-full h-14 bg-white rounded-xl px-4 text-gray-900 text-base border ${
-                        emailError ? 'border-red-500' : 'border-gray-200'
+              {!isLoading && !isValidating ? (
+                <View className="space-y-8">
+                  {/* Email Input */}
+                  <View>
+                    <Text className="text-gray-700 font-semibold text-sm mb-2">
+                      Email Address
+                    </Text>
+                    <View className="relative">
+                      <TextInput
+                        value={email}
+                        onChangeText={handleEmailChange}
+                        placeholder="Enter your email address"
+                        placeholderTextColor="#9ca3af"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="email"
+                        textContentType="emailAddress"
+                        className={`w-full h-14 bg-white rounded-xl px-4 text-gray-900 text-base border ${
+                          emailError ? 'border-red-500' : 'border-gray-200'
+                        }`}
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.05,
+                          shadowRadius: 2,
+                          elevation: 2,
+                        }}
+                      />
+                      <View className="absolute right-4 top-0 bottom-0 justify-center">
+                        <Ionicons name="mail-outline" size={20} color="#9ca3af" />
+                      </View>
+                    </View>
+                    {emailError && (
+                      <Text className="text-red-500 text-sm mt-2 ml-1">
+                        {emailError}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Send Email Button */}
+                  <View className="mt-8">
+                    <TouchableOpacity
+                      onPress={handleButtonPress}
+                      disabled={isLoading || isValidating}
+                      className={`w-full h-14 rounded-xl items-center justify-center ${
+                        isLoading || isValidating ? 'opacity-60' : ''
                       }`}
                       style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 2,
-                        elevation: 2,
-                      }}
-                    />
-                    <View className="absolute right-4 top-0 bottom-0 justify-center">
-                      <Ionicons name="mail-outline" size={20} color="#9ca3af" />
-                    </View>
-                  </View>
-                  {emailError && (
-                    <Text className="text-red-500 text-sm mt-2 ml-1">
-                      {emailError}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Send Email Button */}
-                <View className="mt-8">
-                  <TouchableOpacity
-                    onPress={handleButtonPress}
-                    disabled={isLoading || isValidating}
-                    className={`w-full h-14 rounded-xl items-center justify-center ${
-                      isLoading || isValidating ? 'opacity-60' : ''
-                    }`}
-                    style={{
-                      shadowColor: '#3b82f6',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.2,
-                      shadowRadius: 8,
-                      elevation: 8,
-                    }}
-                  >
-                    <LinearGradient
-                      colors={['#3b82f6', '#2563eb']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRadius: 12,
+                        shadowColor: '#3b82f6',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 8,
+                        elevation: 8,
                       }}
                     >
-                      {isLoading || isValidating ? (
-                        <View className="flex-row items-center">
-                          <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
-                          <Text className="text-white font-semibold text-base">
-                            Sending...
-                          </Text>
-                        </View>
-                      ) : (
+                      <LinearGradient
+                        colors={['#3b82f6', '#2563eb']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 12,
+                        }}
+                      >
                         <Text className="text-white font-semibold text-base">
                           Send Reset Code
                         </Text>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              ) : (
+                /* Loading State */
+                <View className="space-y-8">
+                  <View className="items-center py-8">
+                    <View className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full mb-4" />
+                    <Text className="text-gray-600 text-center text-base">
+                      Sending reset code...
+                    </Text>
+                  </View>
+                </View>
+              )}
 
               {/* Footer */}
               <View className="items-center mt-12 w-full">

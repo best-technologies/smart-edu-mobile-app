@@ -93,8 +93,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
       duration,
       onPress,
     };
-
-    console.log('Adding toast:', toast);
     dispatch({ type: 'ADD_TOAST', payload: toast });
   };
 
@@ -115,7 +113,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
   };
 
   const removeToast = (id: string) => {
-    console.log('Removing toast:', id);
     dispatch({ type: 'REMOVE_TOAST', payload: id });
   };
 

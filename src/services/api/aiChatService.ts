@@ -199,8 +199,6 @@ export class AIChatService {
         requestData,
         true
       );
-      
-      console.log('📥 API Response:', response);
       return response as ApiResponse<SendMessageResponse>;
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -210,15 +208,6 @@ export class AIChatService {
 
   async uploadDocument(file: any, title?: string, description?: string): Promise<ApiResponse<UploadedDocumentResponse>> {
     try {
-    //   console.log('🔧 AIChatService.uploadDocument called with file:', {
-    //     name: file?.name,
-    //     type: file?.type,
-    //     size: file?.size,
-    //     uri: file?.uri
-    //   });
-      
-      // Log file size for debugging
-    //   console.log('📊 File size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
       
       const formData = new FormData();
       

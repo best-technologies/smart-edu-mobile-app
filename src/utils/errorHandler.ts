@@ -11,7 +11,6 @@ export class ErrorHandler {
    * Convert technical API errors to user-friendly messages
    */
   static getFriendlyError(error: any): UserFriendlyError {
-    console.log('🔍 Processing error for user-friendly message:', error);
 
     // Handle ApiError instances
     if (error instanceof ApiError) {
@@ -221,16 +220,13 @@ export class ErrorHandler {
    * Get specific error messages for authentication flows
    */
   static getAuthError(error: any, action: 'login' | 'otp' | 'logout' | 'forgot-password'): UserFriendlyError {
-    console.log('🔍 ErrorHandler.getAuthError called with:', { error, action });
     const friendlyError = this.getFriendlyError(error);
-    console.log('🔍 Friendly error from getFriendlyError:', friendlyError);
 
     // Override with action-specific messages
     switch (action) {
       case 'login':
         // Handle specific password mismatch error
         if (error instanceof ApiError && error.message && error.message.toLowerCase().includes('passwords do not match')) {
-          console.log('🔍 Handling password mismatch error');
           return {
             title: 'Login Failed',
             message: 'Your email or password is incorrect. Please check your credentials and try again.',

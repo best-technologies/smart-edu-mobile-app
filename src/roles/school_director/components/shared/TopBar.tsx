@@ -101,14 +101,14 @@ export function TopBar({
               <Text className="text-white text-xs font-bold">3</Text>
             </View>
           </TouchableOpacity>
-          {/* <TouchableOpacity
+          <TouchableOpacity
             onPress={handleLogout}
             activeOpacity={0.7}
             className="p-2 rounded-full bg-red-50 dark:bg-red-900/20"
             accessibilityLabel="Logout"
           >
             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
       </View>
       <View className="mt-4">

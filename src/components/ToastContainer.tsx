@@ -8,8 +8,6 @@ export default function ToastContainer() {
 
   // Only show the most recent toast to prevent overlapping
   const latestToast = toasts[toasts.length - 1];
-  
-  console.log('ToastContainer render:', { toastsCount: toasts.length, latestToast });
 
   if (!latestToast) {
     return null;

@@ -22,7 +22,7 @@ export default function Toast({
   type,
   title,
   message,
-  duration = 4000,
+  duration = 4000, // 4 seconds
   onClose,
   onPress,
 }: ToastProps) {
@@ -32,7 +32,6 @@ export default function Toast({
 
   useEffect(() => {
     if (visible) {
-      console.log('Toast showing:', { type, title, message });
       
       // Set initial values immediately
       translateY.setValue(0);
@@ -41,7 +40,6 @@ export default function Toast({
 
       // Auto hide after duration
       const timer = setTimeout(() => {
-        console.log('Auto hiding toast after duration');
         onClose();
       }, duration);
 
@@ -92,8 +90,6 @@ export default function Toast({
   const config = getToastConfig();
 
   if (!visible) return null;
-
-  console.log('Rendering toast with visible=true');
 
   return (
     <View

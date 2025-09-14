@@ -271,6 +271,7 @@ export default function AIChatScreen() {
   // Handle waiting for response changes
   useEffect(() => {
     if (isWaitingForResponse || isTyping) {
+      setTypingText('');
       scrollToBottom(true, 100);
     }
   }, [isWaitingForResponse, isTyping]);

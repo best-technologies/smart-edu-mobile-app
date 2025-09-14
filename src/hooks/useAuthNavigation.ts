@@ -80,13 +80,13 @@ export function useAuthNavigation() {
     // Update last state
     lastNavigationState.current = currentState;
 
-    console.log('🔍 Auth state changed:', {
-      isAuthenticated,
-      requiresOTP,
-      userEmail: user?.email,
-      userRole: user?.role,
-      stateChanged
-    });
+    // console.log('🔍 Auth state changed:', {
+    //   isAuthenticated,
+    //   requiresOTP,
+    //   userEmail: user?.email,
+    //   userRole: user?.role,
+    //   stateChanged
+    // });
 
     // Handle logout - redirect to login if not authenticated
     if (!isAuthenticated && !user) {

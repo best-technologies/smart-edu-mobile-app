@@ -33,7 +33,7 @@ class PushNotificationService {
   // Register device for push notifications
   async registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-      console.log('Push notifications only work on physical devices');
+      // console.log('Push notifications only work on physical devices');
       return null;
     }
 
