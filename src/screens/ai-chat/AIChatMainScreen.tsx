@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -28,9 +28,10 @@ export default function AIChatMainScreen() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [usageLimits, setUsageLimits] = useState<UsageLimits | null>(null);
   const [isLoadingLimits, setIsLoadingLimits] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Use TanStack Query hook for conversations
-  const { conversations, isLoading, error } = useAIChatConversations();
+  const { conversations, isLoading, error, refreshConversations } = useAIChatConversations();
 
   // Fetch usage limits on component mount
   useEffect(() => {
@@ -103,6 +104,24 @@ export default function AIChatMainScreen() {
     });
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh conversations
+      await refreshConversations();
+      
+      // Refresh usage limits
+      const response = await aiChatService.initiateAIChat('teacher');
+      if (response.success && response.data) {
+        setUsageLimits(response.data.usageLimits);
+      }
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const formatLastActivity = (lastActivity: string) => {
     const date = new Date(lastActivity);
     const now = new Date();
@@ -167,7 +186,19 @@ export default function AIChatMainScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      <ScrollView className="flex-1 px-6 py-4">
+      <ScrollView 
+        className="flex-1 px-6 py-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={['#8B5CF6']} // Android
+            tintColor="#8B5CF6" // iOS
+            title="Refreshing..."
+            titleColor="#6B7280"
+          />
+        }
+      >
         {/* Header Section */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">

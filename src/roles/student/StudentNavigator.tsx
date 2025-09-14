@@ -5,7 +5,7 @@ import StudentVideoScreen from './screens/StudentVideoScreen';
 import AssessmentInstructionsScreen from './screens/AssessmentInstructionsScreen';
 import AssessmentTakingScreen from './screens/AssessmentTakingScreen';
 import AssessmentResultsScreen from './screens/AssessmentResultsScreen';
-import { AIChatScreen, AIChatMainScreen } from '@/screens/ai-chat';
+import { AIChatScreen, AIChatMainScreen, ChatWithExistingScreen } from '@/screens/ai-chat';
 
 export type StudentStackParamList = {
   StudentTabs: undefined;
@@ -32,6 +32,7 @@ export type StudentStackParamList = {
     assessmentTitle: string;
   };
   AIChatMain: undefined;
+  ChatWithExisting: undefined;
   AIChat: {
     materialTitle?: string;
     materialDescription?: string;
@@ -61,6 +62,7 @@ export default function StudentNavigator() {
       <Stack.Screen name="AssessmentTaking" component={AssessmentTakingScreen} />
       <Stack.Screen name="AssessmentResults" component={AssessmentResultsScreen} />
       <Stack.Screen name="AIChatMain" component={AIChatMainScreen} />
+      <Stack.Screen name="ChatWithExisting" component={ChatWithExistingScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
     </Stack.Navigator>
   );

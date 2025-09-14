@@ -5,7 +5,7 @@ import AllTeachersListScreen from './screens/teachers/AllTeachersListScreen';
 import AllSubjectsListScreen from './screens/subjects/AllSubjectsListScreen';
 import NotificationsListScreen from './screens/notifications/NotificationsListScreen';
 import NotificationDetailScreen from './screens/notifications/NotificationDetailScreen';
-import { AIChatScreen, AIChatMainScreen } from '@/screens/ai-chat';
+import { AIChatScreen, AIChatMainScreen, ChatWithExistingScreen } from '@/screens/ai-chat';
 
 export type SchoolDirectorStackParamList = {
   SchoolDirectorTabs: undefined;
@@ -15,6 +15,7 @@ export type SchoolDirectorStackParamList = {
   NotificationsList: undefined;
   NotificationDetail: { notification: any };
   AIChatMain: undefined;
+  ChatWithExisting: undefined;
   AIChat: {
     materialTitle?: string;
     materialDescription?: string;
@@ -43,6 +44,7 @@ export default function SchoolDirectorNavigator() {
       <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
       <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
       <Stack.Screen name="AIChatMain" component={AIChatMainScreen} />
+      <Stack.Screen name="ChatWithExisting" component={ChatWithExistingScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
     </Stack.Navigator>
   );
