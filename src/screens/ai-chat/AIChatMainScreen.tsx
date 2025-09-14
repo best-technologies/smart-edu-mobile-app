@@ -272,20 +272,22 @@ export default function AIChatMainScreen() {
           {conversations && conversations.length > 0 ? (
             <View className="space-y-3">
               {conversations.slice(0, 3).map((conversation) => (
-                <TouchableOpacity
+                <View
                   key={conversation.id}
-                  onPress={() => {
-                    // Navigate to chat with this conversation
-                    navigation.navigate('AIChat', {
-                      conversationId: conversation.id,
-                      conversationTitle: conversation.title,
-                      materialId: conversation.materialId
-                    });
-                  }}
                   className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700"
                 >
                   <View className="flex-row items-center justify-between">
-                    <View className="flex-1">
+                    <TouchableOpacity
+                      onPress={() => {
+                        // Navigate to chat with this conversation
+                        navigation.navigate('AIChat', {
+                          conversationId: conversation.id,
+                          conversationTitle: conversation.title,
+                          materialId: conversation.materialId
+                        });
+                      }}
+                      className="flex-1"
+                    >
                       <View className="flex-row items-center mb-2">
                         <View className="w-6 h-6 bg-purple-100 dark:bg-purple-900 rounded-full items-center justify-center mr-3">
                           <Ionicons name="chatbubble" size={12} color="#8B5CF6" />
@@ -297,24 +299,47 @@ export default function AIChatMainScreen() {
                       <Text className="text-xs text-gray-500 dark:text-gray-500 ml-9">
                         {conversation.totalMessages} messages • {formatLastActivity(conversation.lastActivity)}
                       </Text>
-                    </View>
-                    <View className="items-end">
-                      <View className={`px-2 py-1 rounded-full ${
-                        conversation.status === 'ACTIVE' 
-                          ? 'bg-green-100 dark:bg-green-900/30' 
-                          : 'bg-gray-100 dark:bg-gray-700'
-                      }`}>
-                        <Text className={`text-xs font-medium ${
-                          conversation.status === 'ACTIVE' 
-                            ? 'text-green-700 dark:text-green-400' 
-                            : 'text-gray-600 dark:text-gray-400'
-                        }`}>
-                          {conversation.status}
-                        </Text>
-                      </View>
+                    </TouchableOpacity>
+                    
+                    {/* Action Buttons */}
+                    <View className="flex-row items-center ml-3">
+                      <TouchableOpacity
+                        onPress={() => {
+                          console.log('Edit chat title pressed for conversation:', conversation.id);
+                        }}
+                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center mr-2"
+                      >
+                        <Ionicons name="pencil" size={12} color="#6B7280" />
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        onPress={() => {
+                          console.log('Delete chat pressed for conversation:', conversation.id);
+                        }}
+                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="trash" size={12} color="#EF4444" />
+                      </TouchableOpacity>
                     </View>
                   </View>
-                </TouchableOpacity>
+                  
+                  {/* Status Badge */}
+                  <View className="flex-row justify-end mt-2">
+                    <View className={`px-2 py-1 rounded-full ${
+                      conversation.status === 'ACTIVE' 
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      <Text className={`text-xs font-medium ${
+                        conversation.status === 'ACTIVE' 
+                          ? 'text-green-700 dark:text-green-400' 
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {conversation.status}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               ))}
               
               {conversations.length > 3 && (

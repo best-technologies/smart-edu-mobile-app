@@ -1,71 +1,39 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAIChatConversations } from '../../hooks/useAIChatConversations';
 
 export default function ChatWithExistingScreen() {
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('All');
+  
+  // Use TanStack Query hook for conversations
+  const { conversations, isLoading, error } = useAIChatConversations();
 
-  const subjects = [
-    { id: 'all', name: 'All', count: 12 },
-    { id: 'mathematics', name: 'Mathematics', count: 4 },
-    { id: 'physics', name: 'Physics', count: 3 },
-    { id: 'chemistry', name: 'Chemistry', count: 2 },
-    { id: 'biology', name: 'Biology', count: 3 },
-  ];
 
-  const materials = [
-    {
-      id: '1',
-      title: 'Advanced Calculus - Chapter 5',
-      subject: 'Mathematics',
-      type: 'PDF',
-      size: '2.4 MB',
-      lastUsed: '2 days ago',
-      pages: 24,
-      color: '#3B82F6',
-    },
-    {
-      id: '2',
-      title: 'Organic Chemistry Reactions',
-      subject: 'Chemistry',
-      type: 'PDF',
-      size: '1.8 MB',
-      lastUsed: '1 week ago',
-      pages: 18,
-      color: '#10B981',
-    },
-    {
-      id: '3',
-      title: 'Physics Lab Manual',
-      subject: 'Physics',
-      type: 'DOC',
-      size: '3.2 MB',
-      lastUsed: '3 days ago',
-      pages: 32,
-      color: '#F59E0B',
-    },
-    {
-      id: '4',
-      title: 'Cell Biology Notes',
-      subject: 'Biology',
-      type: 'PDF',
-      size: '4.1 MB',
-      lastUsed: '5 days ago',
-      pages: 28,
-      color: '#8B5CF6',
-    },
-  ];
-
-  const handleStartChat = (material: any) => {
-    // Navigate to chat interface
-    console.log('Starting chat with:', material.title);
+  const handleStartChat = (conversation: any) => {
+    // Navigate to chat interface with conversation data
+    navigation.navigate('AIChat', {
+      conversationId: conversation.id,
+      conversationTitle: conversation.title,
+      materialId: conversation.materialId
+    });
   };
 
-  const renderMaterial = ({ item }: { item: any }) => (
+  const formatLastActivity = (lastActivity: string) => {
+    const date = new Date(lastActivity);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const renderConversation = ({ item }: { item: any }) => (
     <TouchableOpacity
       onPress={() => handleStartChat(item)}
       activeOpacity={0.8}
@@ -79,15 +47,8 @@ export default function ChatWithExistingScreen() {
       }}
     >
       <View className="flex-row items-start">
-        <View 
-          className="w-12 h-12 rounded-xl items-center justify-center mr-4"
-          style={{ backgroundColor: `${item.color}15` }}
-        >
-          <Ionicons 
-            name={item.type === 'PDF' ? 'document-text' : 'document'} 
-            size={24} 
-            color={item.color} 
-          />
+        <View className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="chatbubble" size={24} color="#8B5CF6" />
         </View>
         
         <View className="flex-1">
@@ -95,23 +56,28 @@ export default function ChatWithExistingScreen() {
             {item.title}
           </Text>
           <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            {item.subject} • {item.pages} pages
+            {item.totalMessages} messages • {formatLastActivity(item.lastActivity)}
           </Text>
           
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Text className="text-xs text-gray-500 dark:text-gray-500 mr-4">
-                {item.size}
-              </Text>
               <Text className="text-xs text-gray-500 dark:text-gray-500">
-                Used {item.lastUsed}
+                Material ID: {item.materialId}
               </Text>
             </View>
             
             <View className="flex-row items-center">
-              <View className="bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full mr-2">
-                <Text className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                  Ready
+              <View className={`px-2 py-1 rounded-full mr-2 ${
+                item.status === 'ACTIVE' 
+                  ? 'bg-green-100 dark:bg-green-900/30' 
+                  : 'bg-gray-100 dark:bg-gray-700'
+              }`}>
+                <Text className={`text-xs font-medium ${
+                  item.status === 'ACTIVE' 
+                    ? 'text-green-700 dark:text-green-400' 
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {item.status}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
@@ -158,56 +124,58 @@ export default function ChatWithExistingScreen() {
           </View>
         </View>
 
-        {/* Subject Filter */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Filter by Subject
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row space-x-3">
-              {subjects.map((subject) => (
-                <TouchableOpacity
-                  key={subject.id}
-                  onPress={() => setSelectedSubject(subject.name)}
-                  className={`px-4 py-2 rounded-full ${
-                    selectedSubject === subject.name
-                      ? 'bg-purple-600'
-                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      selectedSubject === subject.name
-                        ? 'text-white'
-                        : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {subject.name} ({subject.count})
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
 
-        {/* Materials List */}
+        {/* Conversations List */}
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              Your Materials
+              Your Conversations
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-500">
-              {materials.length} documents
+              {conversations?.length || 0} conversations
             </Text>
           </View>
 
-          <FlatList
-            data={materials}
-            renderItem={renderMaterial}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-          />
+          {isLoading ? (
+            <View className="items-center py-8">
+              <ActivityIndicator size="large" color="#8B5CF6" />
+              <Text className="text-gray-600 dark:text-gray-400 mt-2">
+                Loading conversations...
+              </Text>
+            </View>
+          ) : error ? (
+            <View className="items-center py-8">
+              <View className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full items-center justify-center mb-4">
+                <Ionicons name="alert-circle" size={32} color="#EF4444" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Failed to Load
+              </Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                {error}
+              </Text>
+            </View>
+          ) : conversations && conversations.length > 0 ? (
+            <FlatList
+              data={conversations}
+              renderItem={renderConversation}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View className="items-center py-8">
+              <View className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full items-center justify-center mb-4">
+                <Ionicons name="chatbubbles-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                No Conversations Yet
+              </Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                Start a conversation to see it appear here
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Quick Actions */}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, SafeAreaView, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard } from 'react-native';
+import { View, Text, SafeAreaView, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import Markdown from 'react-native-markdown-display';
+import { setStringAsync } from 'expo-clipboard';
 import { aiChatService, Conversation, ChatMessage as ApiChatMessage } from '../../services/api/aiChatService';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAIChatConversations } from '../../hooks/useAIChatConversations';
@@ -37,6 +38,48 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// Function to convert markdown to plain text
+const markdownToPlainText = (markdown: string): string => {
+  return markdown
+    // Remove headers
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove bold/italic
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove code blocks
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove links but keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove horizontal rules
+    .replace(/^[-*_]{3,}$/gm, '')
+    // Remove list markers
+    .replace(/^[\s]*[-*+]\s+/gm, '• ')
+    .replace(/^[\s]*\d+\.\s+/gm, '')
+    // Remove blockquotes
+    .replace(/^>\s*/gm, '')
+    // Clean up extra whitespace
+    .replace(/\n\s*\n/g, '\n\n')
+    .trim();
+};
+
+// Function to safely decode URL-encoded titles
+const safeDecodeTitle = (title: string | null | undefined): string | null => {
+  if (!title) return null;
+  try {
+    // Check if the title contains URL-encoded characters
+    if (title.includes('%')) {
+      return decodeURIComponent(title);
+    }
+    return title;
+  } catch (error) {
+    console.warn('Failed to decode title:', error);
+    return title;
+  }
+};
+
 export default function AIChatScreen() {
   const route = useRoute<AIChatRouteProp>();
   const { userProfile } = useUserProfile();
@@ -69,7 +112,7 @@ export default function AIChatScreen() {
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
-  const [currentChatTitle, setCurrentChatTitle] = useState<string | null>(conversationTitle || null);
+  const [currentChatTitle, setCurrentChatTitle] = useState<string | null>(safeDecodeTitle(conversationTitle));
   const scrollViewRef = useRef<FlatList<ChatMessage>>(null);
   const messagesLoadedRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
@@ -118,25 +161,26 @@ export default function AIChatScreen() {
 
   // Typewriter effect for AI responses
   const typewriterEffect = (text: string, callback?: () => void) => {
-    setIsTyping(true);
+    // Ensure clean start
     setTypingText('');
+    setIsTyping(true);
     
     let index = 0;
-  const interval = setInterval(() => {
-    if (index < text.length) {
-      // Add 2-3 characters at once instead of 1
-      const nextChars = text.slice(index, index + 5);
-      setTypingText(prev => prev + nextChars);
-      index += 5;
-      scrollToBottom(true);
-    } else {
-      clearInterval(interval);
-      setIsTyping(false);
-      callback?.();
-    }
-  }, 3); // 3ms with 5 chars = much faster
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        // Add 2-3 characters at once instead of 1
+        const nextChars = text.slice(index, index + 5);
+        setTypingText(prev => prev + nextChars);
+        index += 5;
+        scrollToBottom(true);
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+        callback?.();
+      }
+    }, 3); // 3ms with 5 chars = much faster
 
-  return interval;
+    return interval;
   };
 
   // Load conversation messages and update state
@@ -279,7 +323,7 @@ export default function AIChatScreen() {
           
           // Update chat title if provided in response (for general chat)
           if (response.data.chatTitle && !currentChatTitle) {
-            setCurrentChatTitle(response.data.chatTitle);
+            setCurrentChatTitle(safeDecodeTitle(response.data.chatTitle));
           }
           
           // Clear local messages and refresh from API
@@ -291,7 +335,10 @@ export default function AIChatScreen() {
           // Start typewriter effect for the latest AI response
           const latestMessage = response.data.content;
           if (latestMessage) {
-            typewriterEffect(latestMessage);
+            // Small delay to ensure clean typewriter start
+            setTimeout(() => {
+              typewriterEffect(latestMessage);
+            }, 100);
           }
         } else {
           console.error('Failed to send message:', response.message);
@@ -454,7 +501,7 @@ export default function AIChatScreen() {
           <View className="flex-1">
             {(currentChatTitle || documentTitle || materialTitle) && (
               <Text className="text-sm font-medium text-purple-600 dark:text-purple-400" numberOfLines={1}>
-                {currentChatTitle || documentTitle || materialTitle}
+                {safeDecodeTitle(currentChatTitle) || documentTitle || materialTitle}
               </Text>
             )}
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -527,11 +574,99 @@ export default function AIChatScreen() {
                     </View>
                   )}
                 </View>
-                <Text className={`text-xs text-gray-500 dark:text-gray-400 mt-1 ${
-                  msg.isUser ? 'text-right' : 'text-left'
-                }`}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+                <View className="flex-row items-center justify-end mt-1">
+                  <Text className="text-xs text-gray-500 dark:text-gray-400 mr-2">
+                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                  
+                  {/* Action Buttons for AI Messages */}
+                  {!msg.isUser && (
+                    <View className="flex-row items-center space-x-1">
+                      <TouchableOpacity
+                        onPress={() => {
+                          Alert.alert(
+                            'Copy Message',
+                            'Do you want to copy this response to clipboard?',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                              },
+                              {
+                                text: 'Copy',
+                                onPress: async () => {
+                                  try {
+                                    const plainText = markdownToPlainText(msg.text);
+                                    await setStringAsync(plainText);
+                                    Alert.alert('Copied!', 'Message copied to clipboard');
+                                  } catch (error) {
+                                    console.error('Failed to copy message:', error);
+                                    Alert.alert('Error', 'Failed to copy message');
+                                  }
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="copy" size={12} color="#6B7280" />
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        onPress={() => {
+                          Alert.alert(
+                            'Download as PDF',
+                            'Do you want to download this response as a PDF file? (Coming Soon)',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                              },
+                              {
+                                text: 'Download',
+                                onPress: () => {
+                                  console.log('Download PDF pressed for:', msg.id);
+                                  // TODO: Implement PDF download functionality
+                                  Alert.alert('Coming Soon', 'PDF download feature will be available soon!');
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="document-text" size={12} color="#6B7280" />
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        onPress={() => {
+                          Alert.alert(
+                            'Listen to Voice',
+                            'Do you want to listen to this message as voice? (Coming Soon)',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                              },
+                              {
+                                text: 'Listen',
+                                onPress: () => {
+                                  console.log('Speak message pressed for:', msg.id);
+                                  // TODO: Implement text-to-speech functionality
+                                  Alert.alert('Coming Soon', 'Voice playback feature will be available soon!');
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="volume-high" size={12} color="#6B7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
             );
           }}
@@ -549,7 +684,7 @@ export default function AIChatScreen() {
                   <Text className="text-gray-600 dark:text-gray-400 text-center text-sm leading-6">
                     {currentChatTitle ? (
                       <>
-                        Continuing conversation: <Text className="font-semibold text-purple-600 dark:text-purple-400">"{currentChatTitle}"</Text>
+                        Continuing conversation: <Text className="font-semibold text-purple-600 dark:text-purple-400">"{safeDecodeTitle(currentChatTitle)}"</Text>
                         {'\n\n'}You can continue asking questions or start a new topic.
                       </>
                     ) : documentTitle ? (

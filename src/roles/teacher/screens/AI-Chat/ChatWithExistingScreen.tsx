@@ -1,126 +1,188 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAIChatConversations } from '../../../../hooks/useAIChatConversations';
+import { aiChatService, UploadedDocument } from '../../../../services/api/aiChatService';
 
 export default function ChatWithExistingScreen() {
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('All');
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Use TanStack Query hook for conversations
+  const { conversations } = useAIChatConversations();
+  
+  // Load uploaded documents
+  React.useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        setIsLoading(true);
+        const response = await aiChatService.initiateAIChat('teacher');
+        if (response.success && response.data) {
+          setDocuments(response.data.uploadedDocuments || []);
+        } else {
+          setError(response.message || 'Failed to load documents');
+        }
+      } catch (err) {
+        setError('Failed to load documents');
+        console.error('Error loading documents:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDocuments();
+  }, []);
 
-  const subjects = [
-    { id: 'all', name: 'All', count: 12 },
-    { id: 'mathematics', name: 'Mathematics', count: 4 },
-    { id: 'physics', name: 'Physics', count: 3 },
-    { id: 'chemistry', name: 'Chemistry', count: 2 },
-    { id: 'biology', name: 'Biology', count: 3 },
-  ];
-
-  const materials = [
-    {
-      id: '1',
-      title: 'Advanced Calculus - Chapter 5',
-      subject: 'Mathematics',
-      type: 'PDF',
-      size: '2.4 MB',
-      lastUsed: '2 days ago',
-      pages: 24,
-      color: '#3B82F6',
-    },
-    {
-      id: '2',
-      title: 'Organic Chemistry Reactions',
-      subject: 'Chemistry',
-      type: 'PDF',
-      size: '1.8 MB',
-      lastUsed: '1 week ago',
-      pages: 18,
-      color: '#10B981',
-    },
-    {
-      id: '3',
-      title: 'Physics Lab Manual',
-      subject: 'Physics',
-      type: 'DOC',
-      size: '3.2 MB',
-      lastUsed: '3 days ago',
-      pages: 32,
-      color: '#F59E0B',
-    },
-    {
-      id: '4',
-      title: 'Cell Biology Notes',
-      subject: 'Biology',
-      type: 'PDF',
-      size: '4.1 MB',
-      lastUsed: '5 days ago',
-      pages: 28,
-      color: '#8B5CF6',
-    },
-  ];
-
-  const handleStartChat = (material: any) => {
-    // Navigate to chat interface
-    console.log('Starting chat with:', material.title);
+  const handleStartChat = (document: any) => {
+    // Check if there's an existing conversation for this document
+    const existingConversation = conversations?.find(conv => 
+      conv.materialId === document.id
+    );
+    
+    if (existingConversation) {
+      // Navigate to existing conversation
+      navigation.navigate('AIChat', {
+        conversationId: existingConversation.id,
+        conversationTitle: existingConversation.title,
+        materialId: existingConversation.materialId
+      });
+    } else {
+      // Navigate to new chat with document data
+      navigation.navigate('AIChat', {
+        documentId: document.id,
+        documentTitle: document.title,
+        documentUrl: document.url,
+        fileType: document.fileType,
+        processingStatus: document.status,
+        originalName: document.originalName,
+        size: document.size
+      });
+    }
   };
 
-  const renderMaterial = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      onPress={() => handleStartChat(item)}
-      activeOpacity={0.8}
-      className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 border border-gray-200 dark:border-gray-700"
-      style={{
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-      }}
-    >
-      <View className="flex-row items-start">
-        <View 
-          className="w-12 h-12 rounded-xl items-center justify-center mr-4"
-          style={{ backgroundColor: `${item.color}15` }}
-        >
-          <Ionicons 
-            name={item.type === 'PDF' ? 'document-text' : 'document'} 
-            size={24} 
-            color={item.color} 
-          />
-        </View>
-        
-        <View className="flex-1">
-          <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            {item.title}
-          </Text>
-          <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            {item.subject} • {item.pages} pages
-          </Text>
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const getFileIcon = (fileType: string) => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return 'document-text';
+      case 'docx':
+      case 'doc':
+        return 'document';
+      case 'pptx':
+      case 'ppt':
+        return 'easel';
+      case 'xlsx':
+      case 'xls':
+        return 'grid';
+      case 'txt':
+        return 'document-text';
+      case 'rtf':
+        return 'document';
+      default:
+        return 'document';
+    }
+  };
+
+  const getFileColor = (fileType: string) => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return '#EF4444';
+      case 'docx':
+      case 'doc':
+        return '#2563EB';
+      case 'pptx':
+      case 'ppt':
+        return '#F59E0B';
+      case 'xlsx':
+      case 'xls':
+        return '#10B981';
+      case 'txt':
+        return '#6B7280';
+      case 'rtf':
+        return '#8B5CF6';
+      default:
+        return '#6B7280';
+    }
+  };
+
+  const renderDocument = ({ item }: { item: any }) => {
+    const fileColor = getFileColor(item.fileType);
+    const fileIcon = getFileIcon(item.fileType);
+    const decodedTitle = decodeURIComponent(item.title);
+    
+    return (
+      <TouchableOpacity
+        onPress={() => handleStartChat(item)}
+        activeOpacity={0.8}
+        className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 border border-gray-200 dark:border-gray-700"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-start">
+          <View 
+            className="w-12 h-12 rounded-xl items-center justify-center mr-4"
+            style={{ backgroundColor: `${fileColor}15` }}
+          >
+            <Ionicons name={fileIcon} size={24} color={fileColor} />
+          </View>
           
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <Text className="text-xs text-gray-500 dark:text-gray-500 mr-4">
-                {item.size}
-              </Text>
-              <Text className="text-xs text-gray-500 dark:text-gray-500">
-                Used {item.lastUsed}
-              </Text>
-            </View>
+          <View className="flex-1">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1" numberOfLines={2}>
+              {decodedTitle}
+            </Text>
+            <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              {item.fileType.toUpperCase()} • {item.size}
+            </Text>
             
-            <View className="flex-row items-center">
-              <View className="bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full mr-2">
-                <Text className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                  Ready
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Text className="text-xs text-gray-500 dark:text-gray-500">
+                  Uploaded {formatDate(item.createdAt)}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              
+              <View className="flex-row items-center">
+                <View className={`px-2 py-1 rounded-full mr-2 ${
+                  item.isProcessed 
+                    ? 'bg-green-100 dark:bg-green-900/30' 
+                    : 'bg-yellow-100 dark:bg-yellow-900/30'
+                }`}>
+                  <Text className={`text-xs font-medium ${
+                    item.isProcessed 
+                      ? 'text-green-700 dark:text-green-400' 
+                      : 'text-yellow-700 dark:text-yellow-400'
+                  }`}>
+                    {item.isProcessed ? 'Ready' : 'Processing'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -158,56 +220,57 @@ export default function ChatWithExistingScreen() {
           </View>
         </View>
 
-        {/* Subject Filter */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Filter by Subject
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row space-x-3">
-              {subjects.map((subject) => (
-                <TouchableOpacity
-                  key={subject.id}
-                  onPress={() => setSelectedSubject(subject.name)}
-                  className={`px-4 py-2 rounded-full ${
-                    selectedSubject === subject.name
-                      ? 'bg-purple-600'
-                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      selectedSubject === subject.name
-                        ? 'text-white'
-                        : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {subject.name} ({subject.count})
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Materials List */}
+        {/* Documents List */}
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Your Materials
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-500">
-              {materials.length} documents
+              {documents?.length || 0} documents
             </Text>
           </View>
 
-          <FlatList
-            data={materials}
-            renderItem={renderMaterial}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-          />
+          {isLoading ? (
+            <View className="items-center py-8">
+              <ActivityIndicator size="large" color="#8B5CF6" />
+              <Text className="text-gray-600 dark:text-gray-400 mt-2">
+                Loading documents...
+              </Text>
+            </View>
+          ) : error ? (
+            <View className="items-center py-8">
+              <View className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full items-center justify-center mb-4">
+                <Ionicons name="alert-circle" size={32} color="#EF4444" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Failed to Load
+              </Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                {error}
+              </Text>
+            </View>
+          ) : documents && documents.length > 0 ? (
+            <FlatList
+              data={documents}
+              renderItem={renderDocument}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View className="items-center py-8">
+              <View className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full items-center justify-center mb-4">
+                <Ionicons name="document-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                No Documents Yet
+              </Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                Upload documents to start chatting with them
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Quick Actions */}
