@@ -19,6 +19,12 @@ interface DocumentUploadModalProps {
   onSuccess: (document: any) => void;
   supportedTypes?: string[];
   maxSize?: string;
+  usageLimits?: {
+    filesUploadedThisMonth: number;
+    maxFilesPerMonth: number;
+    totalStorageUsedMB: number;
+    maxStorageMB: number;
+  } | null;
 }
 
 const { width } = Dimensions.get('window');
@@ -28,7 +34,8 @@ export default function DocumentUploadModal({
   onClose, 
   onSuccess,
   supportedTypes = ['pdf', 'docx', 'txt', 'rtf'],
-  maxSize = '50MB'
+  maxSize = '50MB',
+  usageLimits = null
 }: DocumentUploadModalProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -40,6 +47,27 @@ export default function DocumentUploadModal({
 
 
   const handleFileSelection = async () => {
+    // Check usage limits before allowing file selection
+    if (usageLimits) {
+      if (usageLimits.filesUploadedThisMonth >= usageLimits.maxFilesPerMonth) {
+        Alert.alert(
+          'Upload Limit Reached',
+          `You have reached your monthly upload limit of ${usageLimits.maxFilesPerMonth} files. Please try again next month.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      if (usageLimits.totalStorageUsedMB >= usageLimits.maxStorageMB) {
+        Alert.alert(
+          'Storage Limit Reached',
+          `You have reached your storage limit of ${usageLimits.maxStorageMB}MB. Please delete some files to free up space.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
@@ -85,20 +113,6 @@ export default function DocumentUploadModal({
       console.error('Error selecting file:', error);
       Alert.alert('Error', 'Failed to select file. Please try again.');
     }
-  };
-
-  const handleTestFileSelection = () => {
-    // Use a test file from assets for testing
-    const testFile = {
-      uri: 'file:///Users/macbook/Desktop/B-Tech/projects/mobile-apps/smart-edu-mobile-app/assets/test-files/test-document.txt',
-      name: 'test-document.txt',
-      type: 'text/plain',
-      size: 50
-    };
-    setSelectedFile(testFile);
-    setUploadStatus('idle');
-    setUploadProgress(0);
-    setUploadMessage('');
   };
 
   const startUpload = async () => {
@@ -242,19 +256,6 @@ export default function DocumentUploadModal({
                 </Text>
                 <Text className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                   Supported: {supportedTypes.join(', ').toUpperCase()} • Max {maxSize}
-                </Text>
-              </TouchableOpacity>
-              
-              {/* Test Button */}
-              <TouchableOpacity
-                onPress={handleTestFileSelection}
-                className="bg-green-100 dark:bg-green-900 rounded-xl p-4 items-center mb-6"
-              >
-                <Text className="text-green-800 dark:text-green-200 font-semibold">
-                  🧪 Use Test File (for debugging)
-                </Text>
-                <Text className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  Small text file to test upload
                 </Text>
               </TouchableOpacity>
             </>

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { aiChatService, ChatMessage as ApiChatMessage } from '@/services/api/aiChatService';
+import { aiChatService, ChatMessage as ApiChatMessage, UsageLimits } from '@/services/api/aiChatService';
 
 interface ChatMessage {
   id: string;
@@ -10,6 +10,7 @@ interface ChatMessage {
 
 interface UseConversationMessagesReturn {
   messages: ChatMessage[];
+  usageLimits: UsageLimits | null;
   isLoading: boolean;
   error: string | null;
   refreshMessages: () => Promise<void>;
@@ -29,7 +30,7 @@ export const useConversationMessages = (conversationId: string | null): UseConve
 
   // Use TanStack Query for messages
   const {
-    data: messages = [],
+    data: queryData,
     isLoading,
     error,
     refetch
@@ -43,16 +44,19 @@ export const useConversationMessages = (conversationId: string | null): UseConve
       const response = await aiChatService.getConversationMessages(conversationId, 20, 0);
       if (response.success && response.data) {
         // Convert API messages to local format and sort by creation time (oldest first)
-        const apiMessages = response.data.sort((a, b) => 
+        const apiMessages = response.data.conversationHistory.sort((a, b) => 
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
         
-        return apiMessages.map(msg => ({
-          id: msg.id,
-          text: msg.content,
-          isUser: msg.role === 'USER',
-          timestamp: new Date(msg.createdAt)
-        }));
+        return {
+          messages: apiMessages.map(msg => ({
+            id: msg.id,
+            text: msg.content,
+            isUser: msg.role === 'USER',
+            timestamp: new Date(msg.createdAt)
+          })),
+          usageLimits: response.data.usageLimits
+        };
       }
       throw new Error(response.message || 'Failed to fetch messages');
     },
@@ -61,6 +65,9 @@ export const useConversationMessages = (conversationId: string | null): UseConve
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
+
+  const messages = queryData?.messages || [];
+  const usageLimits = queryData?.usageLimits || null;
 
   // Manual refresh function
   const refreshMessages = async () => {
@@ -74,6 +81,7 @@ export const useConversationMessages = (conversationId: string | null): UseConve
 
   return {
     messages,
+    usageLimits,
     isLoading,
     error: error?.message || null,
     refreshMessages,

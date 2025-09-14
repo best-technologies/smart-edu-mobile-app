@@ -1,18 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAIChatConversations } from '@/hooks/useAIChatConversations';
+import { aiChatService, UsageLimits } from '@/services/api/aiChatService';
 // import TopBar from '../components/shared/TopBar';
 import DocumentUploadModal from './components/DocumentUploadModal';
+
+// Function to safely decode URL-encoded titles
+const safeDecodeTitle = (title: string | null | undefined): string | null => {
+  if (!title) return null;
+  try {
+    // Check if the title contains URL-encoded characters
+    if (title.includes('%')) {
+      return decodeURIComponent(title);
+    }
+    return title;
+  } catch (error) {
+    console.warn('Failed to decode title:', error);
+    return title;
+  }
+};
 
 export default function AIChatMainScreen() {
   const navigation = useNavigation<any>();
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [usageLimits, setUsageLimits] = useState<UsageLimits | null>(null);
+  const [isLoadingLimits, setIsLoadingLimits] = useState(true);
 
   // Use TanStack Query hook for conversations
   const { conversations, isLoading, error } = useAIChatConversations();
+
+  // Fetch usage limits on component mount
+  useEffect(() => {
+    const fetchUsageLimits = async () => {
+      try {
+        setIsLoadingLimits(true);
+        const response = await aiChatService.initiateAIChat('teacher');
+        if (response.success && response.data) {
+          setUsageLimits(response.data.usageLimits);
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage limits:', error);
+      } finally {
+        setIsLoadingLimits(false);
+      }
+    };
+
+    fetchUsageLimits();
+  }, []);
 
   const handleChatWithExisting = () => {
     navigation.navigate('ChatWithExisting');
@@ -20,6 +57,27 @@ export default function AIChatMainScreen() {
 
   const handleUploadNew = () => {
     setShowUploadModal(true);
+  };
+
+  // Helper functions for usage limits
+  const canUploadFile = () => {
+    if (!usageLimits) return true;
+    return usageLimits.filesUploadedThisMonth < usageLimits.maxFilesPerMonth;
+  };
+
+  const canUseStorage = () => {
+    if (!usageLimits) return true;
+    return usageLimits.totalStorageUsedMB < usageLimits.maxStorageMB;
+  };
+
+  const getStorageUsagePercentage = () => {
+    if (!usageLimits) return 0;
+    return (usageLimits.totalStorageUsedMB / usageLimits.maxStorageMB) * 100;
+  };
+
+  const getFileUsagePercentage = () => {
+    if (!usageLimits) return 0;
+    return (usageLimits.filesUploadedThisMonth / usageLimits.maxFilesPerMonth) * 100;
   };
 
   const handleUploadSuccess = (document: any) => {
@@ -122,7 +180,7 @@ export default function AIChatMainScreen() {
                   AI Assistant
                 </Text>
                 <Text className="text-sm text-gray-600 dark:text-gray-400">
-                  Chat with your teaching materials using AI
+                  Chat with documents using AI
                 </Text>
               </View>
             </View>
@@ -134,6 +192,63 @@ export default function AIChatMainScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Usage Limits Display */}
+        {usageLimits && (
+          <View className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Usage Limits
+              </Text>
+              <View className="flex-row items-center space-x-2">
+                <View className={`w-2 h-2 rounded-full ${canUploadFile() ? 'bg-green-500' : 'bg-red-500'}`} />
+                <Text className="text-xs text-gray-600 dark:text-gray-400">
+                  {canUploadFile() ? 'Can upload' : 'Upload limit reached'}
+                </Text>
+              </View>
+            </View>
+            
+            {/* File Upload Progress */}
+            <View className="mb-3">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-xs text-gray-600 dark:text-gray-400">Files this month</Text>
+                <Text className="text-xs text-gray-600 dark:text-gray-400">
+                  {usageLimits.filesUploadedThisMonth}/{usageLimits.maxFilesPerMonth}
+                </Text>
+              </View>
+              <View className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <View 
+                  className={`h-2 rounded-full ${getFileUsagePercentage() >= 100 ? 'bg-red-500' : getFileUsagePercentage() >= 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                  style={{ width: `${Math.min(getFileUsagePercentage(), 100)}%` }}
+                />
+              </View>
+            </View>
+
+            {/* Storage Usage Progress */}
+            <View className="mb-2">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-xs text-gray-600 dark:text-gray-400">Storage used</Text>
+                <Text className="text-xs text-gray-600 dark:text-gray-400">
+                  {usageLimits.totalStorageUsedMB}MB/{usageLimits.maxStorageMB}MB
+                </Text>
+              </View>
+              <View className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <View 
+                  className={`h-2 rounded-full ${getStorageUsagePercentage() >= 100 ? 'bg-red-500' : getStorageUsagePercentage() >= 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                  style={{ width: `${Math.min(getStorageUsagePercentage(), 100)}%` }}
+                />
+              </View>
+            </View>
+
+            {/* Token Usage (small indicator) */}
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs text-gray-600 dark:text-gray-400">Tokens today</Text>
+              <Text className="text-xs text-gray-600 dark:text-gray-400">
+                {usageLimits.tokensUsedThisWeek}/{usageLimits.maxTokensPerDay}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Help Section */}
         <View className="mb-6">
@@ -205,30 +320,57 @@ export default function AIChatMainScreen() {
 
           {/* Upload New Material */}
           <TouchableOpacity
-            onPress={handleUploadNew}
-            activeOpacity={0.8}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mt-4"
+            onPress={canUploadFile() && canUseStorage() ? handleUploadNew : undefined}
+            activeOpacity={canUploadFile() && canUseStorage() ? 0.8 : 1}
+            className={`rounded-2xl p-6 border mt-4 ${
+              canUploadFile() && canUseStorage() 
+                ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' 
+                : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+            }`}
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
+              shadowOpacity: canUploadFile() && canUseStorage() ? 0.1 : 0.05,
               shadowRadius: 8,
-              elevation: 3,
+              elevation: canUploadFile() && canUseStorage() ? 3 : 1,
             }}
           >
             <View className="flex-row items-center mb-4">
-              <View className="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-xl items-center justify-center mr-4">
-                <Ionicons name="cloud-upload" size={28} color="#10B981" />
+              <View className={`w-14 h-14 rounded-xl items-center justify-center mr-4 ${
+                canUploadFile() && canUseStorage() 
+                  ? 'bg-green-100 dark:bg-green-900' 
+                  : 'bg-gray-100 dark:bg-gray-600'
+              }`}>
+                <Ionicons 
+                  name="cloud-upload" 
+                  size={28} 
+                  color={canUploadFile() && canUseStorage() ? "#10B981" : "#9CA3AF"} 
+                />
               </View>
               <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <Text className={`text-lg font-bold mb-1 ${
+                  canUploadFile() && canUseStorage() 
+                    ? 'text-gray-900 dark:text-gray-100' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
                   Upload New Material
                 </Text>
-                <Text className="text-sm text-gray-600 dark:text-gray-400">
-                  Add documents to chat with AI assistant
+                <Text className={`text-sm ${
+                  canUploadFile() && canUseStorage() 
+                    ? 'text-gray-600 dark:text-gray-400' 
+                    : 'text-gray-500 dark:text-gray-500'
+                }`}>
+                  {canUploadFile() && canUseStorage() 
+                    ? 'Add documents to chat with AI assistant'
+                    : !canUploadFile() 
+                      ? 'Monthly upload limit reached'
+                      : 'Storage limit reached'
+                  }
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              {canUploadFile() && canUseStorage() && (
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              )}
             </View>
             
             <View className="flex-row items-center">
@@ -282,7 +424,7 @@ export default function AIChatMainScreen() {
                         // Navigate to chat with this conversation
                         navigation.navigate('AIChat', {
                           conversationId: conversation.id,
-                          conversationTitle: conversation.title,
+                          conversationTitle: safeDecodeTitle(conversation.title),
                           materialId: conversation.materialId
                         });
                       }}
@@ -293,7 +435,7 @@ export default function AIChatMainScreen() {
                           <Ionicons name="chatbubble" size={12} color="#8B5CF6" />
                         </View>
                         <Text className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1" numberOfLines={1}>
-                          {conversation.title}
+                          {safeDecodeTitle(conversation.title)}
                         </Text>
                       </View>
                       <Text className="text-xs text-gray-500 dark:text-gray-500 ml-9">
@@ -382,6 +524,7 @@ export default function AIChatMainScreen() {
         onSuccess={handleUploadSuccess}
         supportedTypes={['pdf', 'docx', 'txt', 'rtf']}
         maxSize="50MB"
+        usageLimits={usageLimits}
       />
     </SafeAreaView>
   );

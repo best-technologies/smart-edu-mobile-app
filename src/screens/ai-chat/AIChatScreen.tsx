@@ -119,7 +119,7 @@ export default function AIChatScreen() {
 
   // Use TanStack Query hooks
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
-  const { messages, isLoading: messagesLoading, refreshMessages } = useConversationMessages(currentConversationId);
+  const { messages, usageLimits, isLoading: messagesLoading, refreshMessages } = useConversationMessages(currentConversationId);
   
   // Combined loading state
   const isLoading = conversationsLoading || messagesLoading;
@@ -227,6 +227,23 @@ export default function AIChatScreen() {
     }
   }, [documentId, documentTitle, processingStatus, conversationId]);
 
+  // Helper functions for usage limits
+  const canSendMessage = () => {
+    if (!usageLimits) return true;
+    const remainingTokens = usageLimits.maxTokensPerDay - usageLimits.tokensUsedThisDay;
+    return remainingTokens >= 2000; // Need at least 2000 tokens remaining
+  };
+
+  const getTokenUsagePercentage = () => {
+    if (!usageLimits) return 0;
+    return (usageLimits.tokensUsedThisDay / usageLimits.maxTokensPerDay) * 100;
+  };
+
+  const getRemainingTokens = () => {
+    if (!usageLimits) return 0;
+    return usageLimits.maxTokensPerDay - usageLimits.tokensUsedThisDay;
+  };
+
   // Handle messages loading and auto-scroll - AGGRESSIVE
   useEffect(() => {
     if (displayMessages.length > 0) {
@@ -275,6 +292,16 @@ export default function AIChatScreen() {
   }, []);
 
   const handleSendMessage = async () => {
+    // Check token limits before allowing message send
+    if (!canSendMessage()) {
+      Alert.alert(
+        'Daily Token Limit Reached',
+        `You have used ${usageLimits?.tokensUsedThisDay || 0} tokens today. You need at least 2000 tokens remaining to send messages. Please try again tomorrow.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     if (message.trim() && !isWaitingForResponse && (currentMaterialId || isGeneralChat)) {
       const messageText = message.trim();
       setMessage('');
@@ -520,6 +547,36 @@ export default function AIChatScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Token Usage Indicator */}
+      {usageLimits && (
+        <View className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Ionicons 
+                name="flash" 
+                size={14} 
+                color={getTokenUsagePercentage() >= 80 ? "#ef4444" : getTokenUsagePercentage() >= 60 ? "#f59e0b" : "#10b981"} 
+              />
+              <Text className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                Tokens today: {usageLimits.tokensUsedThisDay}/{usageLimits.maxTokensPerDay}
+              </Text>
+            </View>
+            <Text className="text-xs text-gray-500 dark:text-gray-500">
+              {getRemainingTokens()} remaining
+            </Text>
+          </View>
+          <View className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
+            <View 
+              className={`h-1 rounded-full ${
+                getTokenUsagePercentage() >= 80 ? 'bg-red-500' : 
+                getTokenUsagePercentage() >= 60 ? 'bg-yellow-500' : 'bg-green-500'
+              }`}
+              style={{ width: `${Math.min(getTokenUsagePercentage(), 100)}%` }}
+            />
+          </View>
+        </View>
+      )}
 
       {/* Chat Messages Area */}
       <KeyboardAvoidingView 
@@ -789,12 +846,22 @@ export default function AIChatScreen() {
             <TextInput
               value={message}
               onChangeText={handleTextChange}
-              placeholder={isWaitingForResponse ? "typing..." : "Type your message..."}
-              placeholderTextColor="#9ca3af"
-              className="flex-1 text-gray-900 dark:text-gray-100 text-base max-h-20"
+              placeholder={
+                !canSendMessage() 
+                  ? "Daily token limit reached" 
+                  : isWaitingForResponse 
+                    ? "typing..." 
+                    : "Type your message..."
+              }
+              placeholderTextColor={!canSendMessage() ? "#ef4444" : "#9ca3af"}
+              className={`flex-1 text-base max-h-20 ${
+                !canSendMessage() 
+                  ? 'text-gray-500 dark:text-gray-500' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}
               multiline
               style={{ textAlignVertical: 'center' }}
-              editable={!isWaitingForResponse}
+              editable={!isWaitingForResponse && canSendMessage()}
               onFocus={() => {
                 // Gentle scroll when input gets focus, with delay for keyboard
                 setTimeout(() => scrollToBottom(true), 300);
@@ -825,9 +892,9 @@ export default function AIChatScreen() {
             <TouchableOpacity
               onPress={handleSendMessage}
               activeOpacity={0.7}
-              disabled={!message.trim() || isWaitingForResponse}
+              disabled={!message.trim() || isWaitingForResponse || !canSendMessage()}
               className={`w-8 h-8 rounded-full items-center justify-center ${
-                message.trim() && !isWaitingForResponse
+                message.trim() && !isWaitingForResponse && canSendMessage()
                   ? 'bg-purple-600' 
                   : 'bg-gray-300 dark:bg-gray-600'
               }`}

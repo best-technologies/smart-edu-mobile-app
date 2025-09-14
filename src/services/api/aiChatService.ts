@@ -70,12 +70,34 @@ export interface SendMessageResponse {
   chatTitle?: string; // Include generated title
 }
 
+export interface UsageLimits {
+  filesUploadedThisMonth: number;
+  totalFilesUploadedAllTime: number;
+  totalStorageUsedMB: number;
+  maxFilesPerMonth: number;
+  maxFileSizeMB: number;
+  maxStorageMB: number;
+  tokensUsedThisWeek: number;
+  tokensUsedThisDay: number;
+  tokensUsedAllTime: number;
+  maxTokensPerWeek: number;
+  maxTokensPerDay: number;
+  lastFileResetDate: string;
+  lastTokenResetDate: string;
+}
+
 export interface InitiateAIChatResponse {
   userRole: string;
+  usageLimits: UsageLimits;
   documentCount: number;
   supportedDocumentTypes: SupportedDocumentType[];
   uploadedDocuments: UploadedDocument[];
   conversations: Conversation[];
+}
+
+export interface ConversationMessagesResponse {
+  conversationHistory: ChatMessage[];
+  usageLimits: UsageLimits;
 }
 
 export interface UploadSessionResponse {
@@ -134,7 +156,7 @@ export class AIChatService {
     conversationId: string, 
     limit: number = 25, 
     offset: number = 0
-  ): Promise<ApiResponse<ChatMessage[]>> {
+  ): Promise<ApiResponse<ConversationMessagesResponse>> {
     try {
       // Ensure parameters are integers
       const limitParam = Math.floor(limit);
@@ -146,7 +168,7 @@ export class AIChatService {
         null,
         true
       );
-      return response as ApiResponse<ChatMessage[]>;
+      return response as ApiResponse<ConversationMessagesResponse>;
     } catch (error) {
       console.error('Failed to fetch conversation messages:', error);
       throw error;
