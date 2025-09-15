@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/services/types/apiTypes';
 import { CenteredLoader, InlineSpinner } from '@/components';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
+import OTPInput from '@/components/OTPInput';
 
 type OTPVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 
@@ -219,20 +220,6 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
         </View>
 
         <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
-          {/* Back Button */}
-          <TouchableOpacity
-            onPress={handleGoBack}
-            className="absolute top-12 left-6 z-10 w-10 h-10 bg-white/10 rounded-full items-center justify-center border border-white/20"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="arrow-back" size={20} color="white" />
-          </TouchableOpacity>
 
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -285,39 +272,13 @@ export default function OTPVerificationScreen({ navigation }: OTPVerificationScr
 
                 {/* OTP Input */}
                 <View className="mb-8">
-                  <View className="flex-row justify-between space-x-3">
-                    {otp.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={(ref) => {
-                          if (ref) otpRefs.current[index] = ref;
-                        }}
-                        style={{
-                          width: 45,
-                          height: 55,
-                          backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: digit ? '#14b8a6' : 'rgba(255, 255, 255, 0.3)',
-                          textAlign: 'center',
-                          fontSize: 20,
-                          fontWeight: 'bold',
-                          color: '#ffffff',
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          elevation: 3,
-                        }}
-                        value={digit}
-                        onChangeText={(value) => handleOtpChange(value, index)}
-                        onKeyPress={(e) => handleKeyPress(e, index)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        autoFocus={index === 0}
-                      />
-                    ))}
-                  </View>
+                <OTPInput 
+                    value={otp}
+                    onChange={setOtp}
+                    onComplete={() => {}}
+                    length={6}
+                    filledColor="#14b8a6"
+                  />
                 </View>
 
                 {/* Verify Button */}

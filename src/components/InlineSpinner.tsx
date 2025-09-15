@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ViewStyle, TextStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, ViewStyle, TextStyle, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface InlineSpinnerProps {
@@ -19,6 +19,21 @@ export default function InlineSpinner({
   style,
   textStyle,
 }: InlineSpinnerProps) {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const spinAnimation = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spinAnimation.start();
+    return () => spinAnimation.stop();
+  }, [spinValue]);
+
   const getSize = () => {
     switch (size) {
       case 'small':
@@ -41,15 +56,23 @@ export default function InlineSpinner({
     }
   };
 
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
     <View className="flex-row items-center" style={style}>
-      <View 
-        className="border-2 border-t-transparent rounded-full animate-spin mr-2"
+      <Animated.View
         style={{
           width: getSize(),
           height: getSize(),
+          borderWidth: 2,
           borderColor: color,
           borderTopColor: 'transparent',
+          borderRadius: 9999,
+          marginRight: 8,
+          transform: [{ rotate: spin }],
         }}
       />
       {text && (

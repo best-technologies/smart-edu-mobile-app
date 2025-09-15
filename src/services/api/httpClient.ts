@@ -86,24 +86,33 @@ export class HttpClient {
         }
       }
       
-      // Add timeout - longer for file uploads and AI chat
-      const controller = new AbortController();
+      // Add timeout - much longer for file uploads; optionally disable for large uploads
+      let controller: AbortController | null = new AbortController();
       let timeout = 10000; // Default 10s
-      
+
+      const isUploadEndpoint = endpoint.includes('/upload-document') || endpoint.includes('/start-upload');
+
       if (data instanceof FormData) {
-        timeout = 60000; // 60s for file uploads
+        // Give large files ample time (10 minutes)
+        timeout = 10 * 60 * 1000;
+      }
+      if (isUploadEndpoint) {
+        // Explicitly extend for upload endpoints
+        timeout = Math.max(timeout, 10 * 60 * 1000);
       } else if (endpoint.includes('/ai-chat/')) {
-        timeout = 30000; // 30s for AI chat requests
+        timeout = Math.max(timeout, 30000); // 30s for other AI chat requests
+      }
+
+      let timeoutId: NodeJS.Timeout | null = null;
+      if (timeout > 0) {
+        timeoutId = setTimeout(() => {
+          controller?.abort();
+        }, timeout);
+        requestConfig.signal = controller.signal;
       }
       
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, timeout);
-      
-      requestConfig.signal = controller.signal;
-      
       const response = await fetch(url, requestConfig);
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
