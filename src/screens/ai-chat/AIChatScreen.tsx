@@ -215,7 +215,7 @@ export default function AIChatScreen() {
     if (conversationId) {
       loadConversationMessages(conversationId);
     } else if (documentId) {
-      // For new conversations with uploaded documents, set materialId
+      // For new conversations with uploaded documents, set materialId (documentId carries materialId)
       setCurrentMaterialId(documentId);
     }
     
@@ -298,6 +298,7 @@ export default function AIChatScreen() {
 
   const handleSendMessage = async () => {
     // Check token limits before allowing message send
+
     if (!canSendMessage()) {
       Alert.alert(
         'Daily Token Limit Reached',
@@ -314,10 +315,15 @@ export default function AIChatScreen() {
       setFailedMessage(null); // Clear any previous failed message
       setIsWaitingForResponse(true);
       
-      // Explicitly clear the TextInput
+      // Explicitly clear the TextInput (cover both controlled and native cases)
       if (textInputRef.current) {
-        textInputRef.current.clear();
+        try { textInputRef.current.clear(); } catch {}
+        try { textInputRef.current.setNativeProps({ text: '' }); } catch {}
+        try { textInputRef.current.blur(); } catch {}
       }
+      try { Keyboard.dismiss(); } catch {}
+
+      setMessage('');
       
       // Add user message immediately (optimistic UI)
       const userMessage: ChatMessage = {
@@ -407,6 +413,10 @@ export default function AIChatScreen() {
   };
 
   const handleTextChange = (text: string) => {
+    // Ignore late input events while waiting for AI to respond
+    if (isWaitingForResponse) {
+      return;
+    }
     setMessage(text);
     // Auto-scroll when user starts typing
     if (text.length > 0) {

@@ -44,6 +44,7 @@ export default function DocumentUploadModal({
   const [selectedFile, setSelectedFile] = useState<any>(null);
   
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  const progressSubscriptionRef = useRef<{ close: () => void } | null>(null);
 
 
   const handleFileSelection = async () => {
@@ -97,13 +98,6 @@ export default function DocumentUploadModal({
           type: fileType
         };
         
-        console.log('📁 Selected file:', {
-          name: fileWithType.name,
-          type: fileWithType.type,
-          size: fileWithType.size,
-          uri: fileWithType.uri
-        });
-        
         setSelectedFile(fileWithType);
         setUploadStatus('idle');
         setUploadProgress(0);
@@ -116,69 +110,123 @@ export default function DocumentUploadModal({
   };
 
   const startUpload = async () => {
-    console.log('🚀 startUpload called, selectedFile:', selectedFile);
     if (!selectedFile) {
       console.log('❌ No file selected, returning early');
       return;
     }
 
     try {
-      console.log('🔄 Starting upload process...');
+      console.log('🔄 Starting upload process (session-based)...');
       setIsUploading(true);
       setUploadStatus('uploading');
+      setUploadMessage('Starting upload session...');
+      setUploadProgress(0);
+
+      // 1) Create upload session
+      const sessionRes = await ApiService.aiChat.startUpload(selectedFile);
+      if (!sessionRes.success || !sessionRes.data) {
+        throw new Error(sessionRes.message || 'Unable to start upload session');
+      }
+
+      const sessionId = (sessionRes.data as any).sessionId;
+      const progressEndpoint = (sessionRes.data as any).progressEndpoint;
+      // console.log('🆔 Upload session started:', sessionId, 'endpoint:', progressEndpoint);
       setUploadMessage('Uploading document...');
 
-      // Simple upload without progress tracking
-      console.log('📤 Uploading document to: /api/v1/ai-chat/upload-document');
-      const response = await ApiService.aiChat.uploadDocument(selectedFile);
-      
-      if (response.success && response.data) {
-        setUploadStatus('completed');
-        setUploadMessage('Upload completed successfully!');
-        setUploadProgress(100);
+      // 2) Subscribe to progress polling using endpoint path if provided
+      const subscription = await ApiService.aiChat.trackUploadProgress(progressEndpoint || sessionId);
+      progressSubscriptionRef.current = subscription;
 
-        // Animate progress bar to 100%
-        Animated.timing(progressAnimation, {
-          toValue: 100,
-          duration: 500,
-          useNativeDriver: false,
-        }).start();
+      subscription.onmessage((event) => {
+        try {
+          // console.log('📡 Progress event:', event.data);
+          const data = JSON.parse(event.data);
+          // data conforms to UploadProgressData
+          const rawProgress = (typeof data.progress === 'number') ? data.progress : parseFloat(data.progress);
+          const nextProgress = Number.isFinite(rawProgress) ? Math.max(0, Math.min(100, Math.round(rawProgress))) : uploadProgress;
+          // Map backend "stage" to our UI statuses
+          const stage = (data.stage || '').toString();
+          const nextStatus: typeof uploadStatus = 
+            stage === 'completed' ? 'completed' :
+            stage === 'failed' ? 'failed' :
+            stage === 'processing' ? 'processing' :
+            'uploading';
 
-        // Show success for 2 seconds then close
-        setTimeout(() => {
-          // Decode URL-encoded titles
-          const decodedTitle = response.data?.title ? decodeURIComponent(response.data.title) : selectedFile.name;
-          const decodedOriginalName = response.data?.originalName ? decodeURIComponent(response.data.originalName) : selectedFile.name;
-          
-          onSuccess({
-            id: response.data?.id || 'unknown',
-            title: decodedTitle,
-            status: response.data?.status || 'completed',
-            // Pass full upload response data for AI chat
-            documentId: response.data?.id,
-            documentTitle: decodedTitle,
-            documentUrl: response.data?.url,
-            fileType: response.data?.fileType,
-            processingStatus: response.data?.processing_status,
-            originalName: decodedOriginalName,
-            size: response.data?.size
-          });
-          handleClose();
-        }, 2000);
-      } else {
-        throw new Error(response.message || 'Failed to upload document');
-      }
+          setUploadProgress(nextProgress);
+          setUploadStatus(nextStatus);
+          setUploadMessage(data.message || (nextStatus === 'processing' ? 'Processing document...' : 'Uploading document...'));
+
+          Animated.timing(progressAnimation, {
+            toValue: nextProgress,
+            duration: 300,
+            useNativeDriver: false,
+          }).start();
+
+          if (nextStatus === 'completed') {
+            // Finalize success
+            setIsUploading(false);
+            setUploadMessage('Upload completed successfully!');
+            Animated.timing(progressAnimation, {
+              toValue: 100,
+              duration: 300,
+              useNativeDriver: false,
+            }).start();
+
+            // Close after brief pause
+            setTimeout(() => {
+              onSuccess({
+                id: data.materialId || data.sessionId || sessionId,
+                title: selectedFile.name,
+                status: 'completed',
+                documentId: data.materialId || '',
+                documentTitle: selectedFile.name,
+                documentUrl: '',
+                fileType: selectedFile.type,
+                processingStatus: 'completed',
+                originalName: selectedFile.name,
+                size: String(selectedFile.size || ''),
+                materialId: data.materialId || '',
+              });
+              handleClose();
+            }, 1200);
+          } else if (nextStatus === 'failed') {
+            setIsUploading(false);
+            setUploadMessage(data.message || 'Upload failed. Please try again.');
+            Alert.alert('Upload Failed', data.message || 'Failed to upload document.');
+          }
+        } catch (e) {
+          console.log('Progress parse error:', e);
+        }
+      });
+
+      subscription.onerror((err) => {
+        console.error('Progress tracking error:', err);
+        setIsUploading(false);
+        setUploadStatus('failed');
+        setUploadMessage('Upload failed or was interrupted.');
+        // Do not spam alerts repeatedly; show a single alert and stop polling
+        try { subscription.close(); } catch {}
+        if (progressSubscriptionRef.current) {
+          progressSubscriptionRef.current = null;
+          Alert.alert('Upload Interrupted', 'Progress tracking stopped due to connection issues. You can retry.');
+        }
+      });
     } catch (error) {
       console.error('Upload error:', error);
       setUploadStatus('failed');
       setUploadMessage('Upload failed. Please try again.');
       Alert.alert('Upload Failed', 'Failed to upload document. Please try again.');
     } finally {
-      setIsUploading(false);
+      // isUploading will be flipped by progress events; keep true during active polling
     }
   };
 
   const handleClose = () => {
+    // Stop any progress polling
+    try {
+      progressSubscriptionRef.current?.close();
+    } catch {}
+    progressSubscriptionRef.current = null;
     setSelectedFile(null);
     setUploadProgress(0);
     setUploadStatus('idle');

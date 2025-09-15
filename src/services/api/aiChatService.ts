@@ -1,5 +1,5 @@
 import { HttpClient } from './httpClient';
-import { API_ENDPOINTS } from '../config/apiConfig';
+import { API_CONFIG, API_ENDPOINTS } from '../config/apiConfig';
 import { ApiResponse } from '../types/apiTypes';
 
 export interface SupportedDocumentType {
@@ -101,9 +101,9 @@ export interface ConversationMessagesResponse {
 }
 
 export interface UploadSessionResponse {
-  uploadId: string;
-  uploadUrl: string;
-  expiresAt: string;
+  sessionId: string;
+  uploadUrl?: string;
+  expiresAt?: string;
   progressEndpoint: string;
 }
 
@@ -262,58 +262,100 @@ export class AIChatService {
     }
   }
 
-  async trackUploadProgress(sessionId: string): Promise<{ onmessage: (callback: (event: { data: string }) => void) => void; onerror: (callback: (error: any) => void) => void; close: () => void }> {
+  async trackUploadProgress(sessionIdOrEndpoint: string): Promise<{ onmessage: (callback: (event: { data: string }) => void) => void; onerror: (callback: (error: any) => void) => void; close: () => void }> {
     try {
       const token = await this.httpClient.getAccessToken();
-      const url = `${API_ENDPOINTS.AI_CHAT.UPLOAD_PROGRESS}/${sessionId}`;
+      // Accept either a full progress endpoint path or a raw sessionId
+      let url = sessionIdOrEndpoint;
+      if (sessionIdOrEndpoint.startsWith('/')) {
+        // If endpoint already includes /api/... then use the host origin only
+        const baseHost = API_CONFIG.BASE_URL.replace(/\/api\/.*$/, '');
+        url = `${baseHost}${sessionIdOrEndpoint}`;
+      } else if (!sessionIdOrEndpoint.startsWith('http')) {
+        url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.AI_CHAT.UPLOAD_PROGRESS}/${sessionIdOrEndpoint}`;
+      }
+
+      // Convert SSE progress endpoint to JSON status endpoint for polling
+      let pollingUrl = url.replace('/upload-progress/', '/upload-status/');
       
       // Use polling instead of EventSource for React Native
       let intervalId: NodeJS.Timeout;
       let isClosed = false;
+      let consecutiveErrors = 0;
+      let errorNotified = false;
       
       const pollProgress = async () => {
         if (isClosed) return;
         
         try {
-          const response = await fetch(url, {
+          console.log('🌐 GET', pollingUrl);
+          const response = await fetch(pollingUrl, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
+              // Request JSON status; avoid SSE streaming here
+              'Accept': 'application/json',
             },
           });
           
           if (response.ok) {
-            const data = await response.text();
-            if (data && data !== '') {
-              // Parse the data to check if upload is completed
-              try {
-                const progressData = JSON.parse(data);
-                
-                // Stop polling if upload is completed or failed
-                if (progressData.status === 'completed' || progressData.status === 'failed') {
+            let rawBody: any = null;
+            let payload: any = null;
+            try {
+              rawBody = await response.json();
+            } catch (_e) {
+              rawBody = await response.text();
+            }
+            console.log('⬅️ Progress raw response:', rawBody);
+
+            // Normalize payload to the inner progress object
+            if (rawBody) {
+              if (typeof rawBody === 'string') {
+                try { payload = JSON.parse(rawBody); } catch { payload = null; }
+              } else if (rawBody && typeof rawBody === 'object') {
+                payload = rawBody.data ?? rawBody; // unwrap { success, data }
+              }
+            }
+
+            if (payload) {
+              console.log('📈 Progress payload:', payload);
+              // Stop polling if completed/failed
+              const stage = (payload.stage || '').toString();
+              const progressNum = typeof payload.progress === 'number' ? payload.progress : parseFloat(payload.progress);
+              if (stage === 'completed' || stage === 'failed' || progressNum === 100) {
                   isClosed = true;
                   if (intervalId) {
                     clearInterval(intervalId);
                   }
                 }
-              } catch (parseError) {
-                console.error('Progress data parse error:', parseError);
-              }
-              
-              // Simulate EventSource message event
+              // Simulate EventSource message event with normalized JSON string
               if (onMessageCallback) {
-                onMessageCallback({ data });
+                onMessageCallback({ data: JSON.stringify(payload) });
               }
+              // reset error counter on success
+              consecutiveErrors = 0;
+              errorNotified = false;
             }
           } else {
-            if (onErrorCallback) {
-              onErrorCallback(new Error(`HTTP ${response.status}: ${response.statusText}`));
+            consecutiveErrors += 1;
+            if (consecutiveErrors >= 3 && !errorNotified) {
+              errorNotified = true;
+              isClosed = true;
+              if (intervalId) clearInterval(intervalId);
+              if (onErrorCallback) {
+                onErrorCallback(new Error(`HTTP ${response.status}: ${response.statusText}`));
+              }
             }
           }
         } catch (error) {
-          if (onErrorCallback) {
-            onErrorCallback(error);
+          consecutiveErrors += 1;
+          if (consecutiveErrors >= 3 && !errorNotified) {
+            errorNotified = true;
+            isClosed = true;
+            if (intervalId) clearInterval(intervalId);
+            if (onErrorCallback) {
+              onErrorCallback(error);
+            }
           }
         }
       };
@@ -321,7 +363,8 @@ export class AIChatService {
       let onMessageCallback: ((event: { data: string }) => void) | null = null;
       let onErrorCallback: ((error: any) => void) | null = null;
       
-      // Start polling every 1 second
+      // Initial hit then poll every 1 second
+      pollProgress();
       intervalId = setInterval(pollProgress, 1000);
       
       return {

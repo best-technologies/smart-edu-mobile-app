@@ -21,9 +21,9 @@ const queryClient = new QueryClient({
       // Time in milliseconds that data is cached
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
       // Retry failed requests 3 times
-      retry: 3,
+      retry: 1,
       // Retry delay increases exponentially
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), //
       // Refetch on window focus (useful for keeping data fresh)
       refetchOnWindowFocus: false,
       // Refetch on reconnect

@@ -82,11 +82,10 @@ export default function AIChatMainScreen() {
   };
 
   const handleUploadSuccess = (document: any) => {
-    console.log('✅ Document uploaded successfully:', document);
     
     // Navigate to AI chat screen with document data
     navigation.navigate('AIChat', {
-      documentId: document.documentId,
+      documentId: document.materialId || document.documentId,
       documentTitle: document.documentTitle,
       documentUrl: document.documentUrl,
       fileType: document.fileType,
@@ -97,7 +96,6 @@ export default function AIChatMainScreen() {
   };
 
   const handleGeneralChat = () => {
-    console.log('General chat button pressed');
     // Navigate to AI chat screen for general chat (no material/document)
     navigation.navigate('AIChat', {
       isGeneralChat: true

@@ -53,7 +53,25 @@ export default function ChatWithExistingScreen() {
         
         <View className="flex-1">
           <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            {item.title}
+            {(() => {
+              const title = typeof item.title === 'string' ? item.title : '';
+              if (!title) return '';
+              try {
+                // If it contains percent-encoding, decode safely
+                if (title.includes('%')) {
+                  return decodeURIComponent(title);
+                }
+                return title;
+              } catch {
+                // Fallback: normalize double-percent like %%20 -> %20
+                try {
+                  const normalized = title.replace(/%%/g, '%');
+                  return decodeURIComponent(normalized);
+                } catch {
+                  return title;
+                }
+              }
+            })()}
           </Text>
           <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2">
             {item.totalMessages} messages • {formatLastActivity(item.lastActivity)}
