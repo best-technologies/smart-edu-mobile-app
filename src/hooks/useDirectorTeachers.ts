@@ -15,7 +15,7 @@ export function useDirectorTeachers() {
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch teachers data');
       }
-      return response.data;
+      return response.data!;
     },
     // Keep data fresh for 5 minutes
     staleTime: 5 * 60 * 1000,
@@ -40,7 +40,7 @@ export function useRefreshDirectorTeachers() {
       if (!response.success) {
         throw new Error(response.message || 'Failed to refresh teachers data');
       }
-      return response.data;
+      return response.data!;
     },
     onSuccess: (data) => {
       // Update the cache with fresh data
@@ -66,7 +66,7 @@ export function usePrefetchDirectorTeachers() {
         if (!response.success) {
           throw new Error(response.message || 'Failed to fetch teachers data');
         }
-        return response.data;
+        return response.data!;
       },
       staleTime: 5 * 60 * 1000,
     });

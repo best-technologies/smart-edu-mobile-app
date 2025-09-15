@@ -43,7 +43,6 @@ export function useTeacherSubjects(): UseTeacherSubjectsReturn {
       setIsLoading(true);
       setError(null);
 
-      console.log('🔍 Making API request to:', API_ENDPOINTS.TEACHER.SUBJECTS_DASHBOARD);
       const response = await httpClient.makeRequest<SubjectsResponse>(API_ENDPOINTS.TEACHER.SUBJECTS_DASHBOARD, 'GET');
       
       // console.log('🔍 Full API response:', JSON.stringify(response, null, 2));

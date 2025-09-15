@@ -45,7 +45,6 @@ export default function StudentVideoScreen() {
       <StudentVideoPlayer
         videoUri={selectedVideoUri}
         videoTitle={videoTitle}
-        videoDescription={videoDescription}
         topicTitle={topicTitle}
         topicDescription={topicDescription}
         topicInstructions={topicInstructions}

@@ -3,6 +3,11 @@ import { TouchableOpacity, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// Create animated View component with forwardRef
+const AnimatedView = React.forwardRef<View, any>((props, ref) => (
+  <View ref={ref} {...props} />
+));
+
 interface AddClassButtonProps {
   onPress: () => void;
   disabled?: boolean;
@@ -98,7 +103,7 @@ export default function AddClassButton({
         >
           <View className="flex-row items-center justify-center">
             {loading ? (
-              <View className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              <AnimatedView className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
             ) : (
               <Ionicons 
                 name="add-circle" 
@@ -139,7 +144,7 @@ export default function AddClassButton({
     >
       <View className="flex-row items-center justify-center">
         {loading ? (
-          <View className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
+          <AnimatedView className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
         ) : (
           <Ionicons 
             name="add-circle" 

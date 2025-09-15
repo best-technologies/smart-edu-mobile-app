@@ -1,3 +1,4 @@
+import React from 'react';
 import { ScrollView, Text, View, RefreshControl, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -12,7 +13,7 @@ import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDi
 import { CenteredLoader } from '@/components';
 
 // Animated Action Component
-const AnimatedAction = ({ action }: { action: any }) => {
+const AnimatedAction = React.forwardRef<View, { action: any }>(({ action }, ref) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.8)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -72,6 +73,7 @@ const AnimatedAction = ({ action }: { action: any }) => {
   if (action.isAnimated) {
     return (
       <Animated.View
+        ref={ref}
         style={{
           transform: [{ scale: scaleAnim }],
           opacity: opacityAnim,
@@ -127,7 +129,7 @@ const AnimatedAction = ({ action }: { action: any }) => {
       </Text>
     </TouchableOpacity>
   );
-};
+});
 
 export default function DirectorDashboardScreen() {
   const navigation = useNavigation();

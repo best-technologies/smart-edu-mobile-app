@@ -1,6 +1,6 @@
 import "../global.css";
 import { StatusBar } from 'react-native';
-import { SafeAreaView, View } from 'react-native';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigator from '@/navigation/RootNavigator';
 import { useEffect, useState } from 'react';
@@ -16,13 +16,18 @@ import { pushNotificationService } from './services/pushNotificationService';
 
 // Suppress known warnings at app level
 const originalConsoleWarn = console.warn;
+const originalConsoleLog = console.log;
+
 console.warn = (...args) => {
   const message = args[0];
   if (typeof message === 'string') {
     // Suppress expo-notifications warnings
     if (message.includes('expo-notifications') || 
         message.includes('Android Push notifications') ||
-        message.includes('functionality is not fully supported in Expo Go')) {
+        message.includes('functionality is not fully supported in Expo Go') ||
+        message.includes('Use a development build instead of Expo Go') ||
+        message.includes('We recommend you instead use a development build') ||
+        message.includes('expo-notifications: Android Push notifications')) {
       return;
     }
     
@@ -32,17 +37,34 @@ console.warn = (...args) => {
       return;
     }
     
-    // Suppress SafeAreaView deprecation warnings
-    if (message.includes('SafeAreaView has been deprecated')) {
-      return;
-    }
-    
     // Suppress expo-av deprecation warnings
     if (message.includes('[expo-av]: Expo AV has been deprecated')) {
       return;
     }
+    
+    // Suppress SafeAreaView deprecation warnings
+    if (message.includes('SafeAreaView has been deprecated')) {
+      return;
+    }
   }
   originalConsoleWarn.apply(console, args);
+};
+
+console.log = (...args) => {
+  const message = args[0];
+  if (typeof message === 'string') {
+    // Suppress Reanimated warnings that come through console.log
+    if (message.includes('[Reanimated]') && 
+        message.includes('react-native-reanimated/plugin')) {
+      return;
+    }
+    
+    // Suppress other unwanted logs
+    if (message.includes('SafeAreaView has been deprecated')) {
+      return;
+    }
+  }
+  originalConsoleLog.apply(console, args);
 };
 
 

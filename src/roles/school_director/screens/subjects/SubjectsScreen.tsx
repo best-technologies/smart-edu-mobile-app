@@ -95,26 +95,6 @@ export default function SubjectsScreen() {
           />
         }
       >
-        {/* Manual Refresh Button */}
-        {/* <View className="flex-row justify-end mb-4">
-          <TouchableOpacity 
-            onPress={handleRefresh}
-            disabled={isLoading}
-            className="flex-row items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name="refresh" 
-              size={16} 
-              color={isLoading ? "#9ca3af" : "#3b82f6"} 
-            />
-            <Text className={`text-sm font-medium ${
-              isLoading ? "text-gray-400" : "text-blue-600 dark:text-blue-400"
-            }`}>
-              {isLoading ? "Refreshing..." : "Refresh"}
-            </Text>
-          </TouchableOpacity>
-        </View> */}
 
         <Section 
           title="Overview"
@@ -198,12 +178,7 @@ export default function SubjectsScreen() {
         onSuccess={() => {
           setAddSubjectModalVisible(false);
           refetch();
-        }}
-        onShowSuccess={(message) => {
-          showSuccess('Subject Created', message);
-        }}
-        onShowError={(message) => {
-          showError('Subject Creation Failed', message);
+          showSuccess('Subject Created', 'Subject has been created successfully');
         }}
       />
 

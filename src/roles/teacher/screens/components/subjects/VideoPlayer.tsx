@@ -3,9 +3,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // TODO: Migrate to expo-video when stable API is available
 // @ts-ignore - expo-av is deprecated but expo-video API is not yet stable
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';

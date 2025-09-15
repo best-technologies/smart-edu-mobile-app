@@ -47,7 +47,7 @@ export function ClassSelector({
                   key={item}
                   className="mr-2 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800"
                 >
-                  <View className="w-10 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <View className="w-10 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
                 </View>
               ))}
             </View>

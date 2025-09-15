@@ -163,7 +163,7 @@ export default function AllSubjectsListScreen() {
 
   const renderClassFilter = () => {
     // Calculate total subjects for "All" option
-    const totalSubjects = classes.reduce((sum, classItem) => sum + classItem.subject_count, 0);
+    const totalSubjects = classes.reduce((sum, classItem) => sum + classItem.student_count, 0);
     
     return (
       <View className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -245,7 +245,7 @@ export default function AllSubjectsListScreen() {
                         : 'text-gray-600 dark:text-gray-400'
                     }`}
                   >
-                    {classItem.subject_count}
+                    {(classItem as any).subject_count || 0}
                   </Text>
                 </View>
               </View>

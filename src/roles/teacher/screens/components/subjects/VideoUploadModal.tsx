@@ -53,7 +53,7 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
     const checkSimulator = async () => {
       try {
         const deviceType = await Device.getDeviceTypeAsync();
-        setIsSimulator(deviceType === Device.DeviceType.SIMULATOR);
+        setIsSimulator(deviceType === 2 || deviceType === 3); // 2 = iOS Simulator, 3 = Android Emulator
       } catch (error) {
         // Fallback to platform check
         setIsSimulator(Platform.OS === 'ios' && !Device.isDevice);

@@ -176,7 +176,7 @@ export default function AssessmentInstructionsScreen({ route, navigation }: Asse
                   <View>
                     <Text className="text-xs text-gray-500 dark:text-gray-400">Attempts</Text>
                     <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {assessment.student_attempts + 1} of {assessment.max_attempts}
+                      {Number(assessment.student_attempts || 0) + 1} of {assessment.max_attempts}
                     </Text>
                   </View>
                 </View>
@@ -305,7 +305,7 @@ export default function AssessmentInstructionsScreen({ route, navigation }: Asse
           </View>
 
           {/* Additional Guidelines */}
-          {assessment.instructions && (
+          {(assessment as any).instructions && (
             <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
               <View className="flex-row items-center gap-3 mb-4">
                 <Ionicons name="document-text" size={24} color="#8b5cf6" />
@@ -314,7 +314,7 @@ export default function AssessmentInstructionsScreen({ route, navigation }: Asse
                 </Text>
               </View>
               <Text className="text-sm text-gray-600 dark:text-gray-400 leading-6">
-                {assessment.instructions}
+                {(assessment as any).instructions}
               </Text>
             </View>
           )}

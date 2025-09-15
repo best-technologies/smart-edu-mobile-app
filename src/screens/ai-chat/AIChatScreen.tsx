@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, SafeAreaView, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert } from 'react-native';
+import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import Markdown from 'react-native-markdown-display';
@@ -116,6 +117,7 @@ export default function AIChatScreen() {
   const scrollViewRef = useRef<FlatList<ChatMessage>>(null);
   const messagesLoadedRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
+  const textInputRef = useRef<TextInput>(null);
 
   // Use TanStack Query hooks
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
@@ -219,11 +221,11 @@ export default function AIChatScreen() {
     
     if (documentId) {
       // Document was uploaded, check processing status
-      console.log('📄 Loading uploaded document:', {
-        id: documentId,
-        title: documentTitle,
-        status: processingStatus
-      });
+      // console.log('📄 Loading uploaded document:', {
+      //   id: documentId,
+      //   title: documentTitle,
+      //   status: processingStatus
+      // });
     }
   }, [documentId, documentTitle, processingStatus, conversationId]);
 
@@ -292,6 +294,8 @@ export default function AIChatScreen() {
     };
   }, []);
 
+  const minimumRequiredTokensToSendMessage = 2000;
+
   const handleSendMessage = async () => {
     // Check token limits before allowing message send
     if (!canSendMessage()) {
@@ -306,8 +310,14 @@ export default function AIChatScreen() {
     if (message.trim() && !isWaitingForResponse && (currentMaterialId || isGeneralChat)) {
       const messageText = message.trim();
       setMessage('');
+      setTypingText('');
       setFailedMessage(null); // Clear any previous failed message
       setIsWaitingForResponse(true);
+      
+      // Explicitly clear the TextInput
+      if (textInputRef.current) {
+        textInputRef.current.clear();
+      }
       
       // Add user message immediately (optimistic UI)
       const userMessage: ChatMessage = {
@@ -334,7 +344,6 @@ export default function AIChatScreen() {
           conversationId: conversationIdToUse,
           isGeneralChat: isGeneralChat
         };
-        console.log('📤 Sending to backend:', requestData);
         
         // Send message to API
         const response = await aiChatService.sendMessage(
@@ -845,6 +854,7 @@ export default function AIChatScreen() {
             
             {/* Text Input */}
             <TextInput
+              ref={textInputRef}
               value={message}
               onChangeText={handleTextChange}
               placeholder={

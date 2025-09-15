@@ -145,16 +145,16 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
 
   return (
     <>
-      <TouchableOpacity activeOpacity={0.8} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-4">
-        <View className="flex-row items-start gap-3">
+      <TouchableOpacity activeOpacity={0.8} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 mb-2">
+        <View className="flex-row items-center gap-3">
           {/* Subject Icon with Color */}
           <View 
-            className="h-12 w-12 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${subject.color}20` }}
+            className="h-10 w-10 items-center justify-center rounded-lg"
+            style={{ backgroundColor: `${subject.color}15` }}
           >
             <Ionicons 
               name="book-outline" 
-              size={24} 
+              size={20} 
               color={subject.color} 
             />
           </View>
@@ -162,66 +162,71 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
           {/* Subject Info */}
           <View className="flex-1">
             {/* Header with Update Button */}
-            <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center justify-between mb-1">
               <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <Text className="text-base font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1}>
                   {formatSubjectName(subject.name)}
                 </Text>
-                <Text className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                  {subject.code}
+                <Text className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  {subject.code.toUpperCase()}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={handleUpdateClick}
-                className="bg-blue-500 px-3 py-1.5 rounded-lg"
+                className="bg-blue-500 px-2.5 py-1 rounded-md"
                 activeOpacity={0.7}
               >
-                <Text className="text-white text-sm font-medium">Update</Text>
+                <Text className="text-white text-xs font-medium">Edit</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Description */}
-            <Text className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+            {/* Description - Compact */}
+            <Text className="text-xs text-gray-600 dark:text-gray-300 mb-2" numberOfLines={2}>
               {subject.description}
             </Text>
 
-            {/* Class Info */}
-            <View className="flex-row items-center gap-4 mb-3">
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="school-outline" size={14} color="#6b7280" />
-                <Text className="text-sm text-gray-600 dark:text-gray-300">
-                  {subject.class ? `Class ${subject.class.name}` : 'No class assigned'}
-                </Text>
+            {/* Info Row - Class and Teachers */}
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                {/* Class Info */}
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="school-outline" size={12} color="#6b7280" />
+                  <Text className="text-xs text-gray-600 dark:text-gray-300">
+                    {subject.class ? subject.class.name : 'No class'}
+                  </Text>
+                </View>
+
+                {/* Teachers Count */}
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="people-outline" size={12} color="#6b7280" />
+                  <Text className="text-xs text-gray-600 dark:text-gray-300">
+                    {subject.teachers.length} teacher{subject.teachers.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Teachers Count */}
-            <View className="flex-row items-center gap-1 mb-3">
-              <Ionicons name="people-outline" size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 dark:text-gray-300">
-                {subject.teachers.length} teacher{subject.teachers.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
-
-            {/* Teachers List */}
-            {subject.teachers.length > 0 && (
-              <View className="mt-3">
-                <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">Assigned Teachers:</Text>
-                <View className="gap-1">
-                  {subject.teachers.map((teacher, index) => (
-                    <View key={teacher.id} className="flex-row items-center gap-2">
-                      <View className="h-2 w-2 rounded-full" style={{ backgroundColor: subject.color }} />
-                      <Text className="text-sm text-gray-700 dark:text-gray-300">
-                        {teacher.name}
+              {/* Teachers Preview - Show first 2 teachers */}
+              {subject.teachers.length > 0 && (
+                <View className="flex-row items-center gap-1">
+                  {subject.teachers.slice(0, 2).map((teacher, index) => (
+                    <View key={teacher.id} className="flex-row items-center">
+                      <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: subject.color }} />
+                      <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                        {teacher.name.split(' ')[0]}
                       </Text>
-                      {index < subject.teachers.length - 1 && (
-                        <Text className="text-gray-400">•</Text>
+                      {index < Math.min(subject.teachers.length, 2) - 1 && (
+                        <Text className="text-gray-400 text-xs mx-1">•</Text>
                       )}
                     </View>
                   ))}
+                  {subject.teachers.length > 2 && (
+                    <Text className="text-xs text-gray-400 ml-1">
+                      +{subject.teachers.length - 2}
+                    </Text>
+                  )}
                 </View>
-              </View>
-            )}
+              )}
+            </View>
           </View>
         </View>
       </TouchableOpacity>
