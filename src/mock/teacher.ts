@@ -33,10 +33,21 @@ export type DayClasses = {
   classes: ClassSchedule[];
 };
 
+export type Notification = {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  comingUpOn: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type TeacherDashboardData = {
   quickActions: QuickAction[];
   quickStats: QuickStat[];
   upcomingClasses: DayClasses[];
+  notifications: Notification[];
 };
 
 export const teacherDashboardData: TeacherDashboardData = {
@@ -194,5 +205,43 @@ export const teacherDashboardData: TeacherDashboardData = {
         }
       ]
     }
+  ],
+  notifications: [
+    {
+      id: 'notif_teacher_1',
+      title: 'Staff Meeting',
+      description: 'Monthly staff meeting scheduled for tomorrow at 10:00 AM in the conference room.',
+      type: 'all',
+      comingUpOn: 'Tomorrow, 10:00 AM',
+      createdAt: '2 hours ago',
+      updatedAt: '2 hours ago',
+    },
+    {
+      id: 'notif_teacher_2',
+      title: 'Exam Schedule',
+      description: 'Mid-term exams starting next week. Please prepare your students accordingly.',
+      type: 'teachers',
+      comingUpOn: 'Next week',
+      createdAt: '1 day ago',
+      updatedAt: '1 day ago',
+    },
+    {
+      id: 'notif_teacher_3',
+      title: 'Parent-Teacher Conference',
+      description: 'Annual parent-teacher conference scheduled for next month.',
+      type: 'teachers',
+      comingUpOn: 'Next month',
+      createdAt: '3 days ago',
+      updatedAt: '3 days ago',
+    },
+    {
+      id: 'notif_teacher_4',
+      title: 'New Student Enrollment',
+      description: 'Steve has been enrolled in JSS2 Mathematics class. Please update your records.',
+      type: 'teachers',
+      comingUpOn: '',
+      createdAt: '1 week ago',
+      updatedAt: '1 week ago',
+    },
   ]
 };

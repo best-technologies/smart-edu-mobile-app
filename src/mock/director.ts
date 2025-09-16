@@ -22,11 +22,15 @@ export const directorDashboardData: DashboardPayload = {
     students: { totalStudents: 520, activeStudents: 500, suspendedStudents: 20 },
     finance: { totalRevenue: 1250000, outstandingFees: 150000, totalExpenses: 300000, netBalance: 950000 },
     ongoingClasses: [
-      { className: 'grade10a', subject: 'mathematics', teacher: 'Ada Lovelace', startTime: '10:00', endTime: '11:00' },
+      { className: 'JSS1', subject: 'Mathematics', teacher: 'Mayowa', startTime: '10:00', endTime: '11:00' },
+      { className: 'JSS2', subject: 'Physics', teacher: 'Olayemi', startTime: '11:30', endTime: '12:30' },
+      { className: 'SS1', subject: 'Chemistry', teacher: 'Esther', startTime: '14:00', endTime: '15:00' },
     ],
     notifications: [
-      { id: 'notif_abc123', title: 'Staff Meeting', description: 'Monthly staff meeting in the hall', type: 'school_director', comingUpOn: 'Aug 16, 2025, 9:00 AM', createdAt: 'Aug 15, 2025, 4:12 PM' },
-      { id: 'notif_def456', title: 'Fee Reminder', description: 'Send outstanding fee reminders', type: 'all', comingUpOn: null, createdAt: 'Aug 14, 2025, 8:30 AM' },
+      { id: 'notif_abc123', title: 'Staff Meeting', description: 'Monthly staff meeting in the hall', type: 'school_director', comingUpOn: 'Tomorrow, 9:00 AM', createdAt: '2 hours ago' },
+      { id: 'notif_def456', title: 'Fee Collection Update', description: '85% of monthly fees collected. 15% pending from 23 students.', type: 'all', comingUpOn: null, createdAt: '1 day ago' },
+      { id: 'notif_ghi789', title: 'New Teacher Onboarding', description: 'Vanilla completed onboarding and will start teaching SS2 English next week.', type: 'school_director', comingUpOn: null, createdAt: '3 days ago' },
+      { id: 'notif_jkl012', title: 'Parent-Teacher Conference', description: 'Scheduled for next Friday. Ensure all grade reports ready by Thursday evening.', type: 'all', comingUpOn: 'Next Friday, 2:00 PM', createdAt: '1 week ago' },
     ],
   },
   statusCode: 200,

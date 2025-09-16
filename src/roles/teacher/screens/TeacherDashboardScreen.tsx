@@ -11,7 +11,7 @@ import UpcomingClasses from './components/dashboard/UpcomingClasses';
 import FloatingActionButton from './components/shared/FloatingActionButton';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useTeacherDashboard, useRefreshTeacherDashboard } from '@/hooks/useDirectorDashboard';
-import { DayClasses } from '@/mock/teacher';
+import { DayClasses, teacherDashboardData } from '@/mock/teacher';
 import { formatClassName, formatSubjectName, formatRoomName, formatTime, formatDay } from '@/utils/textFormatter';
 
 export default function TeacherDashboardScreen() {
@@ -43,36 +43,8 @@ export default function TeacherDashboardScreen() {
   const notifications = dashboardData ? (
     dashboardData.recent_notifications.length > 0 
       ? dashboardData.recent_notifications 
-      : [
-          // {
-          //   id: 'mock-1',
-          //   title: 'Staff Meeting',
-          //   description: 'Monthly staff meeting scheduled for tomorrow at 10:00 AM in the conference room.',
-          //   type: 'all',
-          //   comingUpOn: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          //   createdAt: new Date().toISOString(),
-          //   updatedAt: new Date().toISOString(),
-          // },
-          // {
-          //   id: 'mock-2',
-          //   title: 'Exam Schedule',
-          //   description: 'Mid-term exams starting next week. Please prepare your students accordingly.',
-          //   type: 'teachers',
-          //   comingUpOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          //   createdAt: new Date().toISOString(),
-          //   updatedAt: new Date().toISOString(),
-          // },
-          // {
-          //   id: 'mock-3',
-          //   title: 'Parent-Teacher Conference',
-          //   description: 'Annual parent-teacher conference scheduled for next month.',
-          //   type: 'teachers',
-          //   comingUpOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          //   createdAt: new Date().toISOString(),
-          //   updatedAt: new Date().toISOString(),
-          // }
-        ]
-  ) : [];
+      : teacherDashboardData.notifications
+  ) : teacherDashboardData.notifications;
 
   const upcomingClasses: DayClasses[] = dashboardData ? [
     {
@@ -117,7 +89,7 @@ export default function TeacherDashboardScreen() {
         color: item.subject.color,
       })),
     },
-  ] : [];
+  ] : teacherDashboardData.upcomingClasses;
 
   const quickActions = [
     {
