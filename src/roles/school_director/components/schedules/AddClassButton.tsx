@@ -103,7 +103,7 @@ export default function AddClassButton({
         >
           <View className="flex-row items-center justify-center">
             {loading ? (
-              <AnimatedView className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              <AnimatedView className="w-4 h-4 border-2 border-white border-t-transparent rounded-full  mr-2" />
             ) : (
               <Ionicons 
                 name="add-circle" 
@@ -144,7 +144,7 @@ export default function AddClassButton({
     >
       <View className="flex-row items-center justify-center">
         {loading ? (
-          <AnimatedView className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
+          <AnimatedView className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full  mr-2" />
         ) : (
           <Ionicons 
             name="add-circle" 

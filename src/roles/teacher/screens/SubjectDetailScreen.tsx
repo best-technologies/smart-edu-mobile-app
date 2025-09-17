@@ -401,7 +401,7 @@ export default function SubjectDetailScreen() {
         {/* Loading State - Only for Topics tab */}
         {activeTab === 'topics' && isLoading && (
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-8 items-center">
-            <View className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
+            <View className="rounded-full h-12 w-12 border-b-2 border-purple-600" />
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
               Loading Topics...
             </Text>

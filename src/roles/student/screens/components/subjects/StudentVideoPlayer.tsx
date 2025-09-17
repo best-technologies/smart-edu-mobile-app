@@ -216,7 +216,7 @@ export function StudentVideoPlayer({
             <View className="absolute inset-0 bg-black/50 items-center justify-center" style={{ zIndex: 15 }}>
               <View className="bg-black/80 rounded-2xl p-6 items-center">
                 {/* YouTube-style spinner */}
-                <View className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4">
+                <View className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full  mb-4">
                   {/* Custom spinner animation */}
                 </View>
                 <Text className="text-white text-lg font-medium mb-2">
@@ -298,7 +298,7 @@ export function StudentVideoPlayer({
               <View className="flex-1 items-center justify-center">
                 {isBuffering ? (
                   <View className="items-center">
-                    <View className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-2">
+                    <View className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full  mb-2">
                       {/* Small buffering spinner */}
                     </View>
                     <Text className="text-white text-sm opacity-80">Buffering...</Text>

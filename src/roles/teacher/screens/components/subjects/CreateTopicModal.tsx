@@ -247,7 +247,7 @@ export function CreateTopicModal({
               >
                 {isSubmitting ? (
                   <View className="flex-row items-center justify-center gap-2">
-                    <View className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <View className=" rounded-full h-4 w-4 border-b-2 border-white" />
                     <Text className="text-center font-semibold text-white">Creating...</Text>
                   </View>
                 ) : (

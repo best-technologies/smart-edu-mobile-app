@@ -118,7 +118,7 @@ export function StudentTopicContentTabs({
     if (isLoading) {
       return (
         <View className="py-8 items-center">
-          <View className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <View className=" rounded-full h-8 w-8 border-b-2 border-blue-600" />
           <Text className="text-gray-500 dark:text-gray-400 text-sm mt-2">Loading videos...</Text>
         </View>
       );
@@ -242,7 +242,7 @@ export function StudentTopicContentTabs({
     if (isLoading) {
       return (
         <View className="py-8 items-center">
-          <View className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+          <View className=" rounded-full h-8 w-8 border-b-2 border-green-600" />
           <Text className="text-gray-500 dark:text-gray-400 text-sm mt-2">Loading materials...</Text>
         </View>
       );

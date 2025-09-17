@@ -51,7 +51,7 @@ export default function InlineLoader({
     >
       {/* Animated Spinner */}
       <View 
-        className="border-2 border-t-transparent rounded-full animate-spin"
+        className="border-2 border-t-transparent rounded-full "
         style={{
           width: getSpinnerSize(),
           height: getSpinnerSize(),

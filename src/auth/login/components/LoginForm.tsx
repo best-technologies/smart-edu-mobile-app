@@ -113,7 +113,7 @@ export default function LoginForm({
       >
         {isLoading ? (
           <View className="flex-row items-center">
-            <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+            <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full  mr-2" />
             <Text className="text-white font-semibold text-base">
               Signing In...
             </Text>

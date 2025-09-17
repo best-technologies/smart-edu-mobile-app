@@ -66,7 +66,7 @@ export default function StudentSubjectDetailsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
         <View className="flex-1 items-center justify-center">
-          <View className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <View className="rounded-full h-12 w-12 border-b-2 border-blue-600" />
           <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4">
             Loading Subject Details...
           </Text>
