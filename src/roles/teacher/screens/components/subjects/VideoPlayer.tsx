@@ -155,7 +155,7 @@ export function VideoPlayer({
 
   if (!selectedVideoUri) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
         <View className="flex-1 items-center justify-center p-6">
           <View className="items-center mb-8">
             <Ionicons name="videocam-outline" size={80} color="#6b7280" />
@@ -179,7 +179,7 @@ export function VideoPlayer({
             </TouchableOpacity>
           )}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -190,7 +190,7 @@ export function VideoPlayer({
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View style={containerStyle}>
         {/* Video Container */}
         <View className="flex-1 relative">
@@ -202,8 +202,10 @@ export function VideoPlayer({
             resizeMode={ResizeMode.CONTAIN}
             isLooping={false}
             onPlaybackStatusUpdate={handleVideoStatusUpdate}
-            shouldPlay={false}
+            shouldPlay={true}
             volume={volume}
+            onLoadStart={() => setIsLoading(true)}
+            onLoad={() => setIsLoading(false)}
           />
 
           {/* Loading Overlay */}
@@ -276,17 +278,18 @@ export function VideoPlayer({
           {showControls && (
             <View className="absolute inset-0 bg-black/30" style={{ zIndex: 10 }}>
               {/* Top Controls */}
-              <View className="flex-row items-center justify-between p-4">
+              <View className="flex-row items-center justify-between p-4 pt-2">
                 <TouchableOpacity
                   onPress={(e) => {
                     e.stopPropagation();
                     onClose?.();
                   }}
                   activeOpacity={0.7}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-black/50 ml-0"
                 >
-                  <Ionicons name="close" size={24} color="white" />
+                  <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
+                <View className="flex-1" />
               </View>
 
               {/* Center Play Button */}
@@ -485,7 +488,7 @@ export function VideoPlayer({
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
