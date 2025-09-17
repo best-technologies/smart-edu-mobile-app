@@ -45,12 +45,6 @@ export function useTeacherSubjects(): UseTeacherSubjectsReturn {
 
       const response = await httpClient.makeRequest<SubjectsResponse>(API_ENDPOINTS.TEACHER.SUBJECTS_DASHBOARD, 'GET');
       
-      // console.log('🔍 Full API response:', JSON.stringify(response, null, 2));
-      // console.log('🔍 Response.data:', response.data);
-      // console.log('🔍 Response.data.data:', response.data?.data);
-      // console.log('🔍 Response.data.subjects:', (response.data as any)?.subjects);
-      // console.log('🔍 Response.data.managedClasses:', (response.data as any)?.managedClasses);
-      
       if (!response.data) {
         throw new Error('No data received from server');
       }

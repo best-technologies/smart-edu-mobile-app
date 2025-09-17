@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Modal, 
   View, 
@@ -45,8 +45,9 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
     videoUri: '',
     thumbnailUri: ''
   });
-  const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [isSimulator, setIsSimulator] = useState(false);
+  const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
+  const videoRef = useRef<Video | null>(null);
   
   // Detect if running on simulator
   useEffect(() => {
@@ -114,6 +115,8 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
           videoFile: asset,
           videoUri: asset.uri
         });
+        // Reset any previous video load error
+        setVideoLoadError(null);
         Alert.alert('Success', 'Video selected from gallery!');
       }
     } catch (error) {
@@ -138,17 +141,26 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
   const pickFromFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'video/*',
+        // Broadest compatibility: allow any file; we'll validate extension after pick
+        type: ['*/*', 'public.item', 'public.data', 'public.content', 'public.movie', 'video/*'],
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        const filename = (asset as any).name || (asset as any).fileName || asset.uri.split('/').pop() || 'video';
+        const ext = (filename.split('.').pop() || '').toLowerCase();
+        const allowed = ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'];
+        if (!allowed.includes(ext)) {
+          Alert.alert('Unsupported File', 'Please select a video file (mp4, mov, m4v, webm, mkv, avi).');
+          return;
+        }
         setFormData({
           ...formData,
           videoFile: asset,
           videoUri: asset.uri
         });
+        setVideoLoadError(null);
         Alert.alert('Success', 'Video selected from files!');
       }
     } catch (error) {
@@ -223,6 +235,17 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
     }
   };
 
+  const confirmChangeVideo = () => {
+    Alert.alert(
+      'Change Video',
+      'Do you want to select a different video?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Change', style: 'destructive', onPress: handleUploadVideo },
+      ]
+    );
+  };
+
   const handleUploadThumbnail = async () => {
     try {
       // Request permission first
@@ -282,6 +305,10 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
       Alert.alert('Error', 'Please select a video file');
       return;
     }
+    if (!formData.thumbnail && !formData.thumbnailUri) {
+      Alert.alert('Error', 'Thumbnail is required');
+      return;
+    }
 
     try {
       // Create FormData for multipart upload
@@ -290,20 +317,44 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
       formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('subject_id', subjectId);
       formDataToSend.append('topic_id', topic?.id || '');
+      // Infer mime type and filename from uri or provided metadata so MKV and others work
+      const inferVideoMeta = (uri: string, fallbackName?: string, fallbackType?: string) => {
+        try {
+          const cleanUri = uri.split('?')[0];
+          const parts = cleanUri.split('/');
+          const last = parts[parts.length - 1] || fallbackName || 'video';
+          const nameFromUri = last.includes('.') ? last : fallbackName || 'video.mp4';
+          const ext = (nameFromUri.split('.').pop() || '').toLowerCase();
+          let mime = fallbackType || 'video/*';
+          if (ext === 'mp4') mime = 'video/mp4';
+          else if (ext === 'mov') mime = 'video/quicktime';
+          else if (ext === 'm4v') mime = 'video/x-m4v';
+          else if (ext === 'webm') mime = 'video/webm';
+          else if (ext === 'mkv') mime = 'video/x-matroska';
+          else if (ext === 'avi') mime = 'video/x-msvideo';
+          return { name: nameFromUri, mime };
+        } catch {
+          return { name: fallbackName || 'video.mp4', mime: fallbackType || 'video/*' };
+        }
+      };
+
+      const providedName = (formData.videoFile as any)?.name || (formData.videoFile as any)?.fileName;
+      const providedType = (formData.videoFile as any)?.mimeType || (formData.videoFile as any)?.type;
+      const { name: videoName, mime: videoMime } = inferVideoMeta(formData.videoFile.uri, providedName, providedType);
+
       formDataToSend.append('video', {
         uri: formData.videoFile.uri,
-        type: 'video/mp4', // You might want to detect this dynamically
-        name: 'video.mp4'
+        type: videoMime,
+        name: videoName,
       } as any);
 
-      // Add thumbnail if selected
-      if (formData.thumbnail) {
-        formDataToSend.append('thumbnail', {
-          uri: formData.thumbnail.uri,
-          type: 'image/jpeg',
-          name: 'thumbnail.jpg'
-        } as any);
-      }
+      // Add required thumbnail
+      const thumbnailUri = (formData as any).thumbnail?.uri || formData.thumbnailUri || (typeof formData.thumbnail === 'string' ? formData.thumbnail : '');
+      formDataToSend.append('thumbnail', {
+        uri: thumbnailUri,
+        type: 'image/jpeg',
+        name: 'thumbnail.jpg'
+      } as any);
 
       // TODO: Replace with actual API call
       console.log('Uploading video with payload:', formDataToSend);
@@ -326,7 +377,7 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
                 videoUri: '',
                 thumbnailUri: ''
               });
-              setShowVideoPreview(false);
+              // Reset inline preview by clearing URIs
             }
           }
         ]
@@ -374,175 +425,67 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
         )}
 
         <ScrollView className="flex-1 px-6 py-4">
-          {/* Video Upload Section - Compact Design */}
+          {/* Media Selection Section */}
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Video File
+              Select Media
             </Text>
-            
-            <View className="space-y-3">
-              {/* Compact Video Upload Area */}
+
+            {/* Side-by-side squares for Video and Thumbnail */}
+            <View className="flex-row gap-3">
+              {/* Video square */}
+              {formData.videoUri ? (
+                <TouchableOpacity
+                  onPress={confirmChangeVideo}
+                  activeOpacity={0.8}
+                  className="flex-1 h-44 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 items-center justify-center"
+                >
+                  <Text className="text-gray-800 dark:text-gray-200 font-semibold">Video Selected</Text>
+                  <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tap to change</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleUploadVideo}
+                  activeOpacity={0.8}
+                  className="flex-1 h-44 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 items-center justify-center"
+                >
+                  <Ionicons name="videocam-outline" size={32} color="#9ca3af" />
+                  <Text className="text-gray-500 dark:text-gray-400 mt-1 text-center text-sm">
+                    Tap to upload video
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Thumbnail square (required) */}
               <TouchableOpacity
-                onPress={handleUploadVideo}
+                onPress={pickThumbnail}
                 activeOpacity={0.8}
-                className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 items-center justify-center"
+                className="flex-1 h-44 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden"
               >
-                {formData.videoUri ? (
-                  <View className="items-center">
-                    <Ionicons name="checkmark-circle" size={32} color="#10b981" />
-                    <Text className="text-green-600 dark:text-green-400 mt-1 text-center font-medium text-sm">
-                      ✓ Video Selected
-                    </Text>
-                  </View>
+                {formData.thumbnailUri ? (
+                  <Image 
+                    source={{ uri: formData.thumbnailUri }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
                 ) : (
-                  <View className="items-center">
-                    <Ionicons name="videocam-outline" size={32} color="#9ca3af" />
+                  <View className="h-full items-center justify-center">
+                    <Ionicons name="image-outline" size={28} color="#9ca3af" />
                     <Text className="text-gray-500 dark:text-gray-400 mt-1 text-center text-sm">
-                      Tap to upload video
+                      Tap to add thumbnail
                     </Text>
+                    <Text className="text-red-500 dark:text-red-400 text-xs mt-1">Required</Text>
                   </View>
                 )}
               </TouchableOpacity>
-
-              {/* Quick Upload Buttons - More Compact */}
-              <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={pickFromGallery}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-blue-600 py-2 px-3 rounded-lg flex-row items-center justify-center"
-                >
-                  <Ionicons name="images-outline" size={16} color="white" />
-                  <Text className="text-white font-medium text-sm ml-1">
-                    {isSimulator ? 'Gallery (Limited)' : 'Gallery'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={pickFromFiles}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-gray-600 py-2 px-3 rounded-lg flex-row items-center justify-center"
-                >
-                  <Ionicons name="folder-outline" size={16} color="white" />
-                  <Text className="text-white font-medium text-sm ml-1">Files</Text>
-                </TouchableOpacity>
-              </View>
             </View>
+
+            {/* Close flex-row container */}
           </View>
 
-          {/* Video Preview Section */}
-          {formData.videoUri && (
-            <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Video Preview
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowVideoPreview(!showVideoPreview)}
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-lg"
-                >
-                  <Ionicons 
-                    name={showVideoPreview ? 'eye-off' : 'eye'} 
-                    size={14} 
-                    color="#3b82f6" 
-                  />
-                  <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    {showVideoPreview ? 'Hide' : 'Preview'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+          {/* Inline preview already shown inside upload square */}
 
-              {showVideoPreview ? (
-                <View className="h-32 bg-black rounded-xl overflow-hidden">
-                  <Video
-                    source={{ uri: formData.videoUri }}
-                    style={{ flex: 1 }}
-                    useNativeControls={true}
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
-                    shouldPlay={false}
-                  />
-                </View>
-              ) : (
-                <View className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 items-center justify-center">
-                  <View className="items-center">
-                    <Ionicons name="play-circle" size={32} color="#3b82f6" />
-                    <Text className="text-blue-600 dark:text-blue-400 mt-1 text-center font-medium text-sm">
-                      Video Ready
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-              <View className="mt-3 flex-row gap-2">
-                <TouchableOpacity
-                  onPress={() => setShowVideoPreview(!showVideoPreview)}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-blue-600 py-2 px-3 rounded-lg flex-row items-center justify-center"
-                >
-                  <Ionicons name="play" size={16} color="white" />
-                  <Text className="text-white font-medium text-sm ml-1">
-                    {showVideoPreview ? 'Hide' : 'Preview'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setFormData({
-                      ...formData,
-                      videoFile: null,
-                      videoUri: ''
-                    });
-                    setShowVideoPreview(false);
-                  }}
-                  activeOpacity={0.7}
-                  className="bg-red-600 py-2 px-3 rounded-lg flex-row items-center justify-center"
-                >
-                  <Ionicons name="trash" size={16} color="white" />
-                  <Text className="text-white font-medium text-sm ml-1">Remove</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Thumbnail Section - Compact Design */}
-          <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Thumbnail (Optional)
-              </Text>
-              {formData.thumbnailUri && (
-                <TouchableOpacity
-                  onPress={() => setFormData({ ...formData, thumbnail: null, thumbnailUri: '' })}
-                  activeOpacity={0.7}
-                  className="bg-red-100 dark:bg-red-900/20 px-2 py-1 rounded-lg"
-                >
-                  <Ionicons name="trash" size={14} color="#dc2626" />
-                </TouchableOpacity>
-              )}
-            </View>
-            
-            <TouchableOpacity
-              onPress={pickThumbnail}
-              activeOpacity={0.8}
-              className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 items-center justify-center"
-            >
-              {formData.thumbnailUri ? (
-                <Image 
-                  source={{ uri: formData.thumbnailUri }} 
-                  className="w-full h-full rounded-xl"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="items-center">
-                  <Ionicons name="camera-outline" size={24} color="#9ca3af" />
-                  <Text className="text-gray-500 dark:text-gray-400 mt-1 text-center text-xs">
-                    Tap to add thumbnail
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+          {/* Thumbnail handled in media selection above */}
 
           {/* Video Details */}
           <View className="bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-gray-800 p-4 mb-4">

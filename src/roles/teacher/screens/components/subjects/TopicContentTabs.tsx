@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, ActivityIndicator, Animated, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Image, ScrollView, ActivityIndicator, Animated, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { capitalizeWords } from '@/utils/textFormatter';
@@ -32,8 +32,8 @@ interface TopicContentTabsProps {
 
 // Animated AI Icon Component
 const AnimatedAIIcon = ({ onPress }: { onPress: () => void }) => {
-  const scaleAnim = new Animated.Value(1);
-  const opacityAnim = new Animated.Value(0.8);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     const createBreathingAnimation = () => {
@@ -66,7 +66,11 @@ const AnimatedAIIcon = ({ onPress }: { onPress: () => void }) => {
     };
 
     createBreathingAnimation();
-  }, []);
+    return () => {
+      scaleAnim.stopAnimation();
+      opacityAnim.stopAnimation();
+    };
+  }, [opacityAnim, scaleAnim]);
 
   return (
     <Animated.View
@@ -75,9 +79,8 @@ const AnimatedAIIcon = ({ onPress }: { onPress: () => void }) => {
         opacity: opacityAnim,
       }}
     >
-      <TouchableOpacity
+      <Pressable
         onPress={onPress}
-        activeOpacity={0.8}
         className="w-10 h-10 bg-white dark:bg-gray-100 rounded-full items-center justify-center shadow-lg border-2 border-purple-200 dark:border-purple-300"
         style={{
           shadowColor: '#8B5CF6',
@@ -88,7 +91,7 @@ const AnimatedAIIcon = ({ onPress }: { onPress: () => void }) => {
         }}
       >
         <Ionicons name="sparkles" size={20} color="#8B5CF6" />
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 };
@@ -245,22 +248,20 @@ export function TopicContentTabs({
         <Text className="text-red-500 dark:text-red-400 mt-2 text-center">
           Failed to load topic content
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={() => refetch()}
-          activeOpacity={0.7}
           className="mt-3 bg-blue-600 py-2 px-4 rounded-lg"
         >
           <Text className="text-white font-medium">Retry</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   }
 
   const renderTabButton = (tab: typeof tabs[0]) => (
-    <TouchableOpacity
+    <Pressable
       key={tab.key}
       onPress={() => setActiveTab(tab.key)}
-      activeOpacity={0.7}
       className={`py-3 px-4 rounded-lg flex-row items-center justify-center min-w-fit ${
         activeTab === tab.key 
           ? 'bg-blue-100 dark:bg-blue-900/40' 
@@ -286,7 +287,7 @@ export function TopicContentTabs({
           </Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const renderVideosTab = () => (
@@ -296,23 +297,21 @@ export function TopicContentTabs({
           Videos ({videos.length})
         </Text>
         <View className="flex-row items-center gap-2">
-          <TouchableOpacity
+          <Pressable
             onPress={handleRefresh}
-            activeOpacity={0.7}
             className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             <Ionicons name="refresh" size={16} color="#6b7280" />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={onAddVideo}
-            activeOpacity={0.7}
             className="flex-row items-center gap-1 bg-blue-100 dark:bg-blue-900/40 px-3 py-2 rounded-lg"
           >
             <Ionicons name="add" size={14} color="#3b82f6" />
             <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Add Video
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -326,10 +325,9 @@ export function TopicContentTabs({
             .sort((a: TopicContentVideo, b: TopicContentVideo) => (a.order || 0) - (b.order || 0))
             .map((video: TopicContentVideo, index: number) => {
             return (
-              <TouchableOpacity
+              <Pressable
                 key={video.id}
                 onPress={() => handleVideoPress(video)}
-                activeOpacity={0.8}
                 className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative ${
                   index === 0 ? 'ml-0' : 'ml-3'
                 }`}
@@ -384,7 +382,7 @@ export function TopicContentTabs({
                     </Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>
@@ -407,23 +405,21 @@ export function TopicContentTabs({
           Materials ({materials.length})
         </Text>
         <View className="flex-row items-center gap-2">
-          <TouchableOpacity
+          <Pressable
             onPress={handleRefresh}
-            activeOpacity={0.7}
             className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             <Ionicons name="refresh" size={16} color="#6b7280" />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={onAddMaterial}
-            activeOpacity={0.7}
             className="flex-row items-center gap-1 bg-green-100 dark:bg-green-900/40 px-3 py-2 rounded-lg"
           >
             <Ionicons name="add" size={14} color="#10b981" />
             <Text className="text-sm font-medium text-green-600 dark:text-green-400">
               Add Material
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -437,10 +433,9 @@ export function TopicContentTabs({
             .sort((a: TopicContentMaterial, b: TopicContentMaterial) => (a.order || 0) - (b.order || 0))
             .map((material: TopicContentMaterial, index: number) => {
             return (
-              <TouchableOpacity
+              <Pressable
                 key={material.id}
                 onPress={() => handleMaterialPress(material)}
-                activeOpacity={0.8}
                 className={`w-48 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative ${
                   index === 0 ? 'ml-0' : 'ml-3'
                 }`}
@@ -488,12 +483,11 @@ export function TopicContentTabs({
                         {material.size || 'Unknown size'}
                       </Text>
                     </View>
-                    <TouchableOpacity 
-                      activeOpacity={0.7}
+                    <Pressable 
                       className="p-1 rounded-full bg-gray-100 dark:bg-gray-700"
                     >
                       <Ionicons name="download-outline" size={14} color="#6b7280" />
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                   
                   {/* Upload Date */}
@@ -501,7 +495,7 @@ export function TopicContentTabs({
                     {material.createdAt ? new Date(material.createdAt).toLocaleDateString() : 'Unknown date'}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>
@@ -523,16 +517,15 @@ export function TopicContentTabs({
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Assignments ({assignments.length})
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={onAddAssignment}
-          activeOpacity={0.7}
           className="flex-row items-center gap-1 bg-orange-100 dark:bg-orange-900/40 px-3 py-2 rounded-lg"
         >
           <Ionicons name="add" size={14} color="#f59e0b" />
           <Text className="text-sm font-medium text-orange-600 dark:text-orange-400">
             Add Assignment
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {assignments.length > 0 ? (
@@ -584,16 +577,15 @@ export function TopicContentTabs({
           <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
             Quizzes ({quizzes.length})
           </Text>
-          <TouchableOpacity
+          <Pressable
             onPress={onAddQuiz}
-            activeOpacity={0.7}
             className="flex-row items-center gap-1 bg-purple-100 dark:bg-purple-900/40 px-3 py-1 rounded-lg"
           >
             <Ionicons name="add" size={14} color="#8b5cf6" />
             <Text className="text-sm font-medium text-purple-600 dark:text-purple-400">
               Add Quiz
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {quizzes.length > 0 ? (
