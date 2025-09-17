@@ -56,6 +56,9 @@ export const API_ENDPOINTS = {
     SCHEDULES: '/teacher/schedules',
     STUDENT_TAB: '/teachers/student-tab',
     SCHEDULES_TAB: '/teachers/schedules-tab',
+    UPLOAD_VIDEO_START: '/teachers/topics/upload-video/start',
+    UPLOAD_PROGRESS: '/teachers/topics/upload-progress',
+    UPLOAD_PROGRESS_POLL: '/teachers/topics/video-upload-progress',
   },
   DIRECTOR: {
     DASHBOARD: '/director/dashboard',

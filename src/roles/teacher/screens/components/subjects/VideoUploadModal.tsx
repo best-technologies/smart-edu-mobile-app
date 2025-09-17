@@ -12,12 +12,15 @@ import {
   Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ApiService } from '@/services/api';
+import { useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Device from 'expo-device';
 // TODO: Migrate to expo-video when stable API is available
 // @ts-ignore - expo-av is deprecated but expo-video API is not yet stable
 import { Video, ResizeMode } from 'expo-av';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Topic {
   id: string;
@@ -48,6 +51,18 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
   const [isSimulator, setIsSimulator] = useState(false);
   const [videoLoadError, setVideoLoadError] = useState<string | null>(null);
   const videoRef = useRef<Video | null>(null);
+  const [uploadSessionId, setUploadSessionId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadStage, setUploadStage] = useState<string>('');
+  const [uploadMessage, setUploadMessage] = useState<string>('');
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+  const canUpload =
+    formData.title.trim().length > 0 &&
+    formData.description.trim().length > 0 &&
+    !!formData.videoFile &&
+    (!!(formData as any).thumbnail?.uri || !!formData.thumbnailUri || typeof formData.thumbnail === 'string');
   
   // Detect if running on simulator
   useEffect(() => {
@@ -117,7 +132,7 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
         });
         // Reset any previous video load error
         setVideoLoadError(null);
-        Alert.alert('Success', 'Video selected from gallery!');
+        showSuccess('Video selected from gallery!');
       }
     } catch (error) {
       console.error('Gallery picker error:', error);
@@ -161,7 +176,7 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
           videoUri: asset.uri
         });
         setVideoLoadError(null);
-        Alert.alert('Success', 'Video selected from files!');
+        showSuccess('Video selected from files!');
       }
     } catch (error) {
       console.error('File picker error:', error);
@@ -355,36 +370,82 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
         type: 'image/jpeg',
         name: 'thumbnail.jpg'
       } as any);
+      setIsUploading(true);
+      setUploadProgress(0);
+      setUploadSessionId(null);
 
-      // TODO: Replace with actual API call
-      console.log('Uploading video with payload:', formDataToSend);
-      
-      // For now, show success message
-      Alert.alert(
-        'Video Uploaded Successfully!',
-        `"${formData.title}" has been uploaded to ${topic?.title}.\n\nYou can now view and manage this video in your subject content.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onClose();
-              // Reset form data
-              setFormData({
-                title: '',
-                description: '',
-                thumbnail: null,
-                videoFile: null,
-                videoUri: '',
-                thumbnailUri: ''
-              });
-              // Reset inline preview by clearing URIs
+      const startRes = await ApiService.teacher.startVideoUpload(formDataToSend);
+      const sessionId = (startRes as any)?.data?.sessionId || (startRes as any)?.sessionId;
+      if (!sessionId) {
+        setIsUploading(false);
+        showError('No sessionId returned');
+        throw new Error('No sessionId returned');
+      }
+      setUploadSessionId(sessionId);
+
+      // Poll progress every 1s
+      const pollInterval = 1500;
+      await new Promise<void>((resolve, reject) => {
+        let timer: NodeJS.Timeout | null = null;
+        let consecutiveFailures = 0;
+        const poll = async () => {
+          try {
+            // Prefer JSON polling endpoint to avoid SSE text/event-stream parsing
+            const progressRes = await ApiService.teacher.getUploadProgressJSON(sessionId);
+            const pct = Math.max(0, Math.min(100, Number(progressRes.progress || 0)));
+            setUploadProgress(pct);
+            setUploadStage((progressRes as any).stage || 'uploading');
+            setUploadMessage((progressRes as any).message || 'Uploading...');
+            consecutiveFailures = 0; // reset on success
+            if (pct >= 100 || (progressRes as any).stage === 'completed') {
+              if (timer) clearInterval(timer);
+              resolve();
             }
+          } catch (e: any) {
+            const msg = e?.message || '';
+            // Count failures; ignore one-off timeouts/aborts
+            if (!(msg.includes('timeout') || msg.includes('AbortError'))) {
+              consecutiveFailures += 1;
+            }
+            if (consecutiveFailures >= 2) {
+              if (timer) clearInterval(timer);
+              setIsUploading(false);
+              showError('Upload progress failed');
+              resolve(); // stop polling quietly
+              return;
+            }
+            // otherwise, skip this tick and continue polling
           }
-        ]
-      );
+        };
+        timer = setInterval(poll, pollInterval);
+        // Kick off immediately
+        poll();
+      });
+
+      setIsUploading(false);
+      showSuccess('Video uploaded successfully');
+      // Silently refresh topic contents
+      try {
+        if (topic?.id) {
+          await queryClient.invalidateQueries({ queryKey: ['topicContent', topic.id] });
+          await queryClient.refetchQueries({ queryKey: ['topicContent', topic.id], type: 'active' });
+        }
+      } catch {}
+      onClose();
+      setFormData({
+        title: '',
+        description: '',
+        thumbnail: null,
+        videoFile: null,
+        videoUri: '',
+        thumbnailUri: ''
+      });
+      setUploadStage('');
+      setUploadMessage('');
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Error', 'Failed to upload video. Please try again.');
+      setIsUploading(false);
+      showError('Failed to upload video. Please try again.');
     }
   };
 
@@ -401,7 +462,7 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
             <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Upload Video
             </Text>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <TouchableOpacity onPress={!isUploading ? onClose : undefined} disabled={isUploading} activeOpacity={0.7} className={`${isUploading ? 'opacity-40' : ''}`}>
               <Ionicons name="close" size={24} color="#6b7280" />
             </TouchableOpacity>
           </View>
@@ -588,9 +649,10 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
         <View className="bg-white dark:bg-black px-6 py-4 border-t border-gray-200 dark:border-gray-800">
           <View className="flex-row gap-3">
             <TouchableOpacity
-              onPress={onClose}
+              onPress={!isUploading ? onClose : undefined}
+              disabled={isUploading}
               activeOpacity={0.7}
-              className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg"
+              className={`flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg ${isUploading ? 'opacity-50' : ''}`}
             >
               <Text className="text-center font-medium text-gray-700 dark:text-gray-300">
                 Cancel
@@ -599,14 +661,34 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
             <TouchableOpacity
               onPress={handleSave}
               activeOpacity={0.7}
-              className="flex-1 py-3 px-4 bg-blue-600 rounded-lg"
+              disabled={isUploading || !canUpload}
+              className={`flex-1 py-3 px-4 rounded-lg ${isUploading || !canUpload ? 'bg-blue-300' : 'bg-blue-600'}`}
             >
               <Text className="text-center font-medium text-white">
-                Upload Video
+                {isUploading ? 'Uploading...' : 'Upload Video'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Centered Upload Progress Overlay */}
+        {isUploading && (
+          <View className="absolute inset-0 items-center justify-center bg-black/30">
+            <View className="w-72 rounded-2xl bg-white dark:bg-gray-900 p-6 items-center shadow-xl">
+              <View className="w-24 h-24 rounded-full border-4 border-blue-200 dark:border-blue-900 items-center justify-center">
+                <View style={{ width: `${uploadProgress}%` }} className="absolute left-0 top-0 h-full bg-transparent" />
+                <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">{uploadProgress}%</Text>
+              </View>
+              <Text className="mt-3 text-sm font-medium text-gray-800 dark:text-gray-200 capitalize">{uploadStage || 'uploading'}</Text>
+              <Text className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">{uploadMessage || 'Please wait while we upload your video…'}</Text>
+              <View className="w-full mt-4">
+                <View className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <View style={{ width: `${uploadProgress}%` }} className="h-2 bg-blue-600" />
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </Modal>
   );

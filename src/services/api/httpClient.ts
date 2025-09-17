@@ -90,7 +90,7 @@ export class HttpClient {
       let controller: AbortController | null = new AbortController();
       let timeout = 10000; // Default 10s
 
-      const isUploadEndpoint = endpoint.includes('/upload-document') || endpoint.includes('/start-upload');
+      const isUploadEndpoint = endpoint.includes('/upload-document') || endpoint.includes('/start-upload') || endpoint.includes('/upload-progress');
 
       if (data instanceof FormData) {
         // Give large files ample time (10 minutes)
@@ -99,6 +99,10 @@ export class HttpClient {
       if (isUploadEndpoint) {
         // Explicitly extend for upload endpoints
         timeout = Math.max(timeout, 10 * 60 * 1000);
+        // Progress endpoints may keep connections open longer (SSE/long-poll)
+        if (endpoint.includes('/upload-progress')) {
+          timeout = Math.max(timeout, 60 * 1000); // at least 60s per poll
+        }
       } else if (endpoint.includes('/ai-chat/')) {
         timeout = Math.max(timeout, 30000); // 30s for other AI chat requests
       }

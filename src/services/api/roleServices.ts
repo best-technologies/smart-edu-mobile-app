@@ -102,6 +102,24 @@ export class TeacherService {
       `${API_ENDPOINTS.TEACHER.TOPIC_CONTENT}/${topicId}/content`
     );
   }
+
+  async startVideoUpload(payload: FormData): Promise<ApiResponse<{ sessionId: string }>> {
+    return this.httpClient.makeRequest<{ sessionId: string }>(
+      API_ENDPOINTS.TEACHER.UPLOAD_VIDEO_START,
+      'POST',
+      payload
+    );
+  }
+
+  // Polling JSON endpoint (non-SSE)
+  async getUploadProgressJSON(sessionId: string): Promise<{ sessionId: string; progress: number; stage: string; message: string; bytesUploaded: number; totalBytes: number; estimatedTimeRemaining?: number; materialId?: string; }> {
+    const res = await this.httpClient.makeRequest(
+      `${API_ENDPOINTS.TEACHER.UPLOAD_PROGRESS_POLL}/${encodeURIComponent(sessionId)}`,
+      'GET'
+    );
+    const data = (res as any)?.data || res;
+    return data as { sessionId: string; progress: number; stage: string; message: string; bytesUploaded: number; totalBytes: number; estimatedTimeRemaining?: number; materialId?: string; };
+  }
 }
 
 export class DirectorService {
