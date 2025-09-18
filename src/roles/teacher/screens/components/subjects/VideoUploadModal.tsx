@@ -125,6 +125,19 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        const filename = (asset as any).fileName || (asset as any).name || asset.uri.split('/').pop() || '';
+        const mime = (asset as any).mimeType || '';
+        const ext = (filename.split('.').pop() || '').toLowerCase();
+        const supportedExt = ['mp4'];
+        const supportedMime = ['video/mp4'];
+        const isSupported = supportedExt.includes(ext) || supportedMime.includes(mime);
+        if (!isSupported) {
+          Alert.alert(
+            'Unsupported Format',
+            'Supported format: MP4.'
+          );
+          return;
+        }
         setFormData({
           ...formData,
           videoFile: asset,
@@ -156,8 +169,8 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
   const pickFromFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        // Broadest compatibility: allow any file; we'll validate extension after pick
-        type: ['*/*', 'public.item', 'public.data', 'public.content', 'public.movie', 'video/*'],
+        // Strictly allow MP4 only at picker level
+        type: ['video/mp4'],
         copyToCacheDirectory: true,
       });
 
@@ -165,9 +178,9 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
         const asset = result.assets[0];
         const filename = (asset as any).name || (asset as any).fileName || asset.uri.split('/').pop() || 'video';
         const ext = (filename.split('.').pop() || '').toLowerCase();
-        const allowed = ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'];
+        const allowed = ['mp4'];
         if (!allowed.includes(ext)) {
-          Alert.alert('Unsupported File', 'Please select a video file (mp4, mov, m4v, webm, mkv, avi).');
+          Alert.alert('Unsupported File', 'Supported: MP4 only.');
           return;
         }
         setFormData({
@@ -342,11 +355,6 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
           const ext = (nameFromUri.split('.').pop() || '').toLowerCase();
           let mime = fallbackType || 'video/*';
           if (ext === 'mp4') mime = 'video/mp4';
-          else if (ext === 'mov') mime = 'video/quicktime';
-          else if (ext === 'm4v') mime = 'video/x-m4v';
-          else if (ext === 'webm') mime = 'video/webm';
-          else if (ext === 'mkv') mime = 'video/x-matroska';
-          else if (ext === 'avi') mime = 'video/x-msvideo';
           return { name: nameFromUri, mime };
         } catch {
           return { name: fallbackName || 'video.mp4', mime: fallbackType || 'video/*' };
@@ -553,6 +561,18 @@ export function VideoUploadModal({ visible, topic, subjectId, onClose }: VideoUp
             <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
               Video Details
             </Text>
+
+            {/* Supported Formats Notice */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Supported Formats
+              </Text>
+              <View className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 bg-gray-50 dark:bg-gray-800">
+                <Text className="text-gray-900 dark:text-gray-100">
+                  MP4 (H.264/AAC)
+                </Text>
+              </View>
+            </View>
 
             {/* Subject Info (Read-only) */}
             <View className="mb-4">

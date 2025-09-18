@@ -148,20 +148,20 @@ export function TopicContentTabs({
       icon: 'document-outline',
       count: content?.data?.contentSummary?.totalMaterials || materials.length
     },
-    { 
-      key: 'assignments', 
-      label: 'Assignments', 
-      icon: 'clipboard-outline',
-      count: content?.data?.contentSummary?.totalAssignments || assignments.length
-    },
-    { 
-      key: 'others', 
-      label: 'Others', 
-      icon: 'ellipsis-horizontal-outline',
-      count: (content?.data?.contentSummary?.totalQuizzes || quizzes.length) + 
-              (content?.data?.contentSummary?.totalLiveClasses || liveClasses.length) + 
-              (content?.data?.contentSummary?.totalLibraryResources || libraryResources.length)
-    }
+    // { 
+    //   key: 'assignments', 
+    //   label: 'Assignments', 
+    //   icon: 'clipboard-outline',
+    //   count: content?.data?.contentSummary?.totalAssignments || assignments.length
+    // },
+    // { 
+    //   key: 'others', 
+    //   label: 'Others', 
+    //   icon: 'ellipsis-horizontal-outline',
+    //   count: (content?.data?.contentSummary?.totalQuizzes || quizzes.length) + 
+    //           (content?.data?.contentSummary?.totalLiveClasses || liveClasses.length) + 
+    //           (content?.data?.contentSummary?.totalLibraryResources || libraryResources.length)
+    // }
   ];
 
   const handleVideoPress = (video: TopicContentVideo) => {

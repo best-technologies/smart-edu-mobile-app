@@ -42,22 +42,8 @@ export default function VideoDemoScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-      {/* Header */}
-      <View className="bg-white dark:bg-black px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-        <View className="flex-row items-center gap-4">
-          <TouchableOpacity onPress={handleBack} className="p-2">
-            <Ionicons name="arrow-back" size={24} color="#6b7280" />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              {videoTitle || 'Video Player'}
-            </Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
-              {videoDescription || 'Watch your video content'}
-            </Text>
-          </View>
-        </View>
-      </View>
+      {/* Header removed as per requirement */}
+      <View className="px-6 py-4" />
 
       {/* Video Player - Takes full remaining space */}
       <View className="flex-1">
@@ -65,7 +51,7 @@ export default function VideoDemoScreen() {
           videoUri={selectedVideoUri}
           videoTitle={videoTitle}
           onVideoSelected={handleVideoSelected}
-          onClose={handleBack}
+          onClose={undefined}
           topicTitle={topicTitle}
           topicDescription={topicDescription}
           topicInstructions={topicInstructions}

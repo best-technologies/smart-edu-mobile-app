@@ -33,7 +33,13 @@
       "favicon": "./assets/accessstudy-logo.png"
     },
     "plugins": [
-      "expo-video",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
       "expo-audio",
       [
         "expo-notifications",

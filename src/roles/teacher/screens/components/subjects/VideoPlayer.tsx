@@ -6,9 +6,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// TODO: Migrate to expo-video when stable API is available
-// @ts-ignore - expo-av is deprecated but expo-video API is not yet stable
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { VideoView, useVideoPlayer, VideoSource } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { capitalizeWords } from '@/utils/textFormatter';
 
@@ -37,107 +35,163 @@ export function VideoPlayer({
   onVideoSelected, 
   onClose 
 }: VideoPlayerProps) {
-  const videoRef = useRef<Video>(null);
-  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Autoplay guard
+  const autoPlayedRef = useRef(false);
   const [showControls, setShowControls] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | undefined>(videoUri);
-  const [volume, setVolume] = useState(1.0);
   const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  // Simple professional spinner animation
+  const spinnerAnim = useRef(new (require('react-native').Animated).Value(0)).current;
+  useEffect(() => {
+    const { Animated, Easing } = require('react-native');
+    const loop = Animated.loop(
+      Animated.timing(spinnerAnim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [spinnerAnim]);
+
+  // Create video player with expo-video
+  const player = useVideoPlayer(
+    videoUri
+      ? {
+          uri: videoUri,
+          // Explicitly mark as progressive MP4 and enable caching on native
+          contentType: 'progressive',
+          useCaching: true,
+        }
+      : null
+  );
+
+  // Configure player when it's ready
+  useEffect(() => {
+    if (player) {
+      // console.log('Configuring player:', { videoUri, playerStatus: player.status });
+      player.loop = false;
+      player.muted = false;
+      player.volume = 1.0;
+      // Emit frequent time updates; helps ensure UI updates while loading
+      player.timeUpdateEventInterval = 1.0;
+    }
+  }, [player, videoUri]);
+
+  // Note: Player is created with the correct source, no need to replace
+
+  // // Debug logging
+  // useEffect(() => {
+  //   console.log('VideoPlayer Debug:', {
+  //     selectedVideoUri,
+  //     playerStatus: player.status,
+  //     playerDuration: player.duration,
+  //     playerCurrentTime: player.currentTime,
+  //     isLoading,
+  //     hasError
+  //   });
+  // }, [selectedVideoUri, player.status, player.duration, player.currentTime, isLoading, hasError]);
+
   useEffect(() => {
     if (videoUri) {
-      setSelectedVideoUri(videoUri);
-      setIsLoading(true);
-      setHasError(false);
+      // console.log('Video URI received:', videoUri);
+      // Check if the URI is valid
+      if (videoUri.startsWith('http://') || videoUri.startsWith('https://')) {
+        setSelectedVideoUri(videoUri);
+        setIsLoading(true);
+        setHasError(false);
+      } else {
+        console.error('Invalid video URI format:', videoUri);
+        setHasError(true);
+        setIsLoading(false);
+      }
+    } else {
+      setSelectedVideoUri(undefined);
     }
   }, [videoUri]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    if (showControls && isPlaying) {
+    if (showControls && player.playing) {
       timeout = setTimeout(() => setShowControls(false), 3000);
     }
     return () => clearTimeout(timeout);
-  }, [showControls, isPlaying]);
+  }, [showControls, player.playing]);
 
-  const handlePlayPause = async () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        await videoRef.current.pauseAsync();
-      } else {
-        await videoRef.current.playAsync();
+  // Monitor player status for loading and error states
+  useEffect(() => {
+    // console.log('Player status changed:', player.status, 'Video URI:', videoUri);
+    if (player.status === 'loading') {
+      setIsLoading(true);
+      setHasError(false);
+    } else if (player.status === 'readyToPlay') {
+      console.log('Video is ready to play!');
+      setIsLoading(false);
+      setHasError(false);
+      // Autoplay when ready
+      if (!autoPlayedRef.current && !player.playing) {
+        try {
+          player.play();
+          autoPlayedRef.current = true;
+        } catch {}
       }
-      setIsPlaying(!isPlaying);
+    } else if (player.status === 'error') {
+      setIsLoading(false);
+      setHasError(true);
+      console.error('Video player error - status:', player.status);
+    } else if (player.status === 'idle') {
+      console.log('Player is idle');
+    }
+  }, [player.status, videoUri]);
+
+  // Heuristic buffering detection
+  useEffect(() => {
+    // Consider buffering when buffer is behind current time while playing
+    const isLikelyBuffering = player.playing && (player.bufferedPosition < player.currentTime + 0.2);
+    setIsBuffering(isLikelyBuffering);
+  }, [player.playing, player.bufferedPosition, player.currentTime]);
+
+  const handlePlayPause = () => {
+    if (player.playing) {
+      player.pause();
+    } else {
+      player.play();
     }
   };
 
-  const handleSeek = async (value: number) => {
-    if (videoRef.current && duration > 0) {
-      const newPosition = (value / 100) * duration;
-      await videoRef.current.setPositionAsync(newPosition);
-      setCurrentTime(newPosition);
+  const handleSeek = (value: number) => {
+    if (player.duration > 0) {
+      const newPosition = (value / 100) * player.duration;
+      player.currentTime = newPosition;
     }
   };
 
   const handleSeekBarPress = (event: any) => {
-    if (duration > 0) {
+    if (player.duration > 0) {
       const { locationX } = event.nativeEvent;
       const seekBarWidth = screenWidth - 32; // Account for padding
       const seekPercentage = (locationX / seekBarWidth) * 100;
-      const newPosition = (seekPercentage / 100) * duration;
+      const newPosition = (seekPercentage / 100) * player.duration;
       
-      setCurrentTime(newPosition);
-      
-      if (videoRef.current) {
-        videoRef.current.setPositionAsync(newPosition);
-      }
+      player.currentTime = newPosition;
     }
   };
 
-  const handleVolumeChange = async (newVolume: number) => {
+  const handleVolumeChange = (newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
-    setVolume(clampedVolume);
-    
-    if (videoRef.current) {
-      await videoRef.current.setVolumeAsync(clampedVolume);
-    }
+    player.volume = clampedVolume;
   };
 
   const handleDoubleTapSeek = (direction: 'forward' | 'backward') => {
-    if (videoRef.current && duration > 0) {
-      const seekAmount = 10000; // 10 seconds
-      const newPosition = direction === 'forward' 
-        ? Math.min(duration, currentTime + seekAmount)
-        : Math.max(0, currentTime - seekAmount);
-      
-      videoRef.current.setPositionAsync(newPosition);
-      setCurrentTime(newPosition);
-    }
-  };
-
-  const handleVideoStatusUpdate = (status: AVPlaybackStatus) => {
-    setStatus(status);
-    if (status.isLoaded) {
-      setIsLoading(false);
-      setIsPlaying(status.isPlaying);
-      setCurrentTime(status.positionMillis);
-      setDuration(status.durationMillis || 0);
-      
-      // Check if video is buffering
-      if (status.isBuffering) {
-        setIsBuffering(true);
-      } else {
-        setIsBuffering(false);
-      }
-    } else if (status.error) {
-      setIsLoading(false);
-      setHasError(true);
-      console.error('Video playback error:', status.error);
+    if (player.duration > 0) {
+      const seekAmount = 10; // 10 seconds
+      const seekDirection = direction === 'forward' ? seekAmount : -seekAmount;
+      player.seekBy(seekDirection);
     }
   };
 
@@ -149,8 +203,8 @@ export function VideoPlayer({
   };
 
   const getProgressPercentage = () => {
-    if (duration === 0) return 0;
-    return (currentTime / duration) * 100;
+    if (player.duration === 0) return 0;
+    return (player.currentTime / player.duration) * 100;
   };
 
   if (!selectedVideoUri) {
@@ -194,36 +248,48 @@ export function VideoPlayer({
       <View style={containerStyle}>
         {/* Video Container */}
         <View className="flex-1 relative">
-          <Video
-            ref={videoRef}
-            source={{ uri: selectedVideoUri }}
-            style={{ flex: 1 }}
-            useNativeControls={false}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping={false}
-            onPlaybackStatusUpdate={handleVideoStatusUpdate}
-            shouldPlay={true}
-            volume={volume}
-            onLoadStart={() => setIsLoading(true)}
-            onLoad={() => setIsLoading(false)}
-          />
+          {player && videoUri ? (
+            <VideoView
+              key={videoUri} // Force re-render when video changes
+              player={player}
+              style={{ flex: 1 }}
+              nativeControls={false}
+              contentFit="contain"
+              onFirstFrameRender={() => setIsLoading(false)}
+            />
+          ) : (
+            <View className="flex-1 bg-black items-center justify-center">
+              <Text className="text-white text-lg">No video available</Text>
+            </View>
+          )}
 
           {/* Loading Overlay */}
           {(isLoading || isBuffering) && (
             <View className="absolute inset-0 bg-black/50 items-center justify-center" style={{ zIndex: 15 }}>
               <View className="bg-black/80 rounded-2xl p-6 items-center">
-                {/* YouTube-style spinner */}
-                <View className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full  mb-4">
-                  {/* Custom spinner animation */}
-                </View>
-                <Text className="text-white text-lg font-medium mb-2">
-                  {isLoading ? 'Loading video...' : 'Buffering...'}
+                {(() => {
+                  const { Animated } = require('react-native');
+                  const spin = spinnerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+                  return (
+                    <Animated.View
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        borderWidth: 4,
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderTopColor: '#ffffff',
+                        transform: [{ rotate: spin }],
+                        marginBottom: 12,
+                      }}
+                    />
+                  );
+                })()}
+                <Text className="text-white text-lg font-medium mb-1">
+                  {isLoading ? 'Loading video…' : 'Buffering…'}
                 </Text>
-                <Text className="text-white/70 text-sm text-center">
-                  {isLoading 
-                    ? 'Please wait while the video loads' 
-                    : 'Loading more content...'
-                  }
+                <Text className="text-white/70 text-xs text-center">
+                  {isLoading ? 'Preparing playback' : 'Optimizing stream'}
                 </Text>
               </View>
             </View>
@@ -241,12 +307,22 @@ export function VideoPlayer({
                   Failed to load video. Please check your connection and try again.
                 </Text>
                 <TouchableOpacity
-                  onPress={() => {
+                  onPress={async () => {
                     setHasError(false);
                     setIsLoading(true);
-                    // Retry loading the video
-                    if (videoRef.current) {
-                      videoRef.current.loadAsync({ uri: selectedVideoUri }, {}, false);
+                    // Retry loading the video without blocking UI
+                    if (selectedVideoUri) {
+                      try {
+                        await player.replaceAsync({
+                          uri: selectedVideoUri,
+                          contentType: 'progressive',
+                          useCaching: true,
+                        });
+                      } catch (e) {
+                        console.error('Retry failed:', e);
+                        setHasError(true);
+                        setIsLoading(false);
+                      }
                     }
                   }}
                   activeOpacity={0.7}
@@ -277,29 +353,32 @@ export function VideoPlayer({
           {/* Overlay Controls */}
           {showControls && (
             <View className="absolute inset-0 bg-black/30" style={{ zIndex: 10 }}>
-              {/* Top Controls */}
-              <View className="flex-row items-center justify-between p-4 pt-2">
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onClose?.();
-                  }}
-                  activeOpacity={0.7}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-black/50 ml-0"
-                >
-                  <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
-                <View className="flex-1" />
-              </View>
+              {/* Top Controls (back removed as requested) */}
+              <View className="p-4 pt-2" />
 
               {/* Center Play Button */}
               <View className="flex-1 items-center justify-center">
                 {isBuffering ? (
                   <View className="items-center">
-                    <View className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full  mb-2">
-                      {/* Small buffering spinner */}
-                    </View>
-                    <Text className="text-white text-sm opacity-80">Buffering...</Text>
+                    {(() => {
+                      const { Animated } = require('react-native');
+                      const spin = spinnerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+                      return (
+                        <Animated.View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            borderWidth: 3,
+                            borderColor: 'rgba(255,255,255,0.25)',
+                            borderTopColor: '#ffffff',
+                            transform: [{ rotate: spin }],
+                            marginBottom: 6,
+                          }}
+                        />
+                      );
+                    })()}
+                    <Text className="text-white text-sm opacity-80">Buffering…</Text>
                   </View>
                 ) : (
                   <TouchableOpacity
@@ -311,7 +390,7 @@ export function VideoPlayer({
                     className="h-20 w-20 items-center justify-center rounded-full bg-black/50"
                   >
                     <Ionicons
-                      name={isPlaying ? 'pause' : 'play'}
+                      name={player.playing ? 'pause' : 'play'}
                       size={40}
                       color="white"
                     />
@@ -347,7 +426,7 @@ export function VideoPlayer({
                 {/* Time and Controls */}
                 <View className="flex-row items-center justify-between">
                   <Text className="text-white text-sm">
-                    {formatTime(currentTime)} / {formatTime(duration)}
+                    {formatTime(player.currentTime)} / {formatTime(player.duration)}
                   </Text>
 
                   <View className="flex-row items-center gap-4">
@@ -372,7 +451,7 @@ export function VideoPlayer({
                       className="h-12 w-12 items-center justify-center rounded-full bg-white/20"
                     >
                       <Ionicons
-                        name={isPlaying ? 'pause' : 'play'}
+                        name={player.playing ? 'pause' : 'play'}
                         size={24}
                         color="white"
                       />
@@ -469,13 +548,13 @@ export function VideoPlayer({
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-gray-600 dark:text-gray-400">Duration</Text>
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {formatTime(duration)}
+                  {formatTime(player.duration)}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-gray-600 dark:text-gray-400">Current Position</Text>
                 <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {formatTime(currentTime)}
+                  {formatTime(player.currentTime)}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
