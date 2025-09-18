@@ -185,9 +185,9 @@ export function TopicContentTabs({
   };
 
   const handleAIChatPress = (material: TopicContentMaterial) => {
-    // Navigate to AI Chat screen
-    console.log('AI Chat icon pressed for material:', material.title);
+    // Navigate to AI Chat screen with materialId so sending works
     (navigation as any).navigate('AIChat', { 
+      materialId: (material as any).id,
       materialTitle: material.title,
       materialDescription: material.description,
       materialUrl: material.url

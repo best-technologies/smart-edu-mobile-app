@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Modal, 
   View, 
@@ -41,6 +41,16 @@ interface MaterialUploadModalProps {
 export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClose }: MaterialUploadModalProps) {
   const { showToast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadSessionId, setUploadSessionId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{
+    progress: number;
+    stage: string | null;
+    message: string | null;
+    bytesUploaded: number | null;
+    totalBytes: number | null;
+    estimatedTimeRemaining: number | null;
+  }>({ progress: 0, stage: null, message: null, bytesUploaded: null, totalBytes: null, estimatedTimeRemaining: null });
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const httpClient = new HttpClient();
   const [formData, setFormData] = useState({
     title: '',
@@ -112,6 +122,51 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
     }
   };
 
+  const stopProgressTimer = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => stopProgressTimer();
+  }, []);
+
+  const startProgressPolling = (sessionId: string) => {
+    stopProgressTimer();
+    progressTimerRef.current = setInterval(async () => {
+      try {
+        const res: any = await httpClient.makeRequest(`/teachers/topics/video-upload-progress/${sessionId}`, 'GET');
+        if (res?.success && res?.data) {
+          const d = res.data;
+          setUploadProgress({
+            progress: typeof d.progress === 'number' ? d.progress : 0,
+            stage: d.stage || null,
+            message: d.message || null,
+            bytesUploaded: d.bytesUploaded ?? null,
+            totalBytes: d.totalBytes ?? null,
+            estimatedTimeRemaining: d.estimatedTimeRemaining ?? null,
+          });
+          if ((d.progress >= 100) || d.materialId) {
+            stopProgressTimer();
+            setIsUploading(false);
+            showToast('success', 'Material uploaded successfully!');
+            onClose();
+            setFormData({ title: '', description: '', fileType: null, file: null });
+            setUploadSessionId(null);
+          }
+        } else if (res?.success === false) {
+          throw new Error(res?.message || 'Upload failed');
+        }
+      } catch (error: any) {
+        stopProgressTimer();
+        setIsUploading(false);
+        showToast('error', error?.message || 'Failed to get upload progress');
+      }
+    }, 800);
+  };
+
   const handleSave = async () => {
     if (!formData.title.trim()) {
       showToast('error', 'Material title is required');
@@ -129,41 +184,32 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
     setIsUploading(true);
 
     try {
-      // Create FormData for file upload
+      // Create FormData for file upload (start session)
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title.trim());
-      formDataToSend.append('description', formData.description.trim());
+      if (formData.description.trim()) formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('subject_id', subjectId);
       formDataToSend.append('topic_id', topicId);
-      
-      // Append the file
       formDataToSend.append('material', {
         uri: formData.file.uri,
         type: formData.file.type,
         name: formData.file.name,
       } as any);
 
-      const response = await httpClient.makeRequest('/teachers/topics/upload-material', 'POST', formDataToSend, true);
+      const response: any = await httpClient.makeRequest('/teachers/topics/upload-material/start', 'POST', formDataToSend, true);
 
-      if (response.success) {
-        showToast('success', response.message || 'Material uploaded successfully!');
-        onClose();
-        
-        // Reset form
-        setFormData({
-          title: '',
-          description: '',
-          fileType: null,
-          file: null
-        });
+      if (response?.success && response?.data?.sessionId) {
+        const sessionId = response.data.sessionId as string;
+        setUploadSessionId(sessionId);
+        setUploadProgress({ progress: 0, stage: 'starting', message: 'Starting upload…', bytesUploaded: 0, totalBytes: formData.file.size || null, estimatedTimeRemaining: null });
+        startProgressPolling(sessionId);
       } else {
-        showToast('error', response.message || 'Failed to upload material');
+        throw new Error(response?.message || 'Failed to start upload');
       }
     } catch (error: any) {
       console.error('Error uploading material:', error);
-      const errorMessage = error.message || 'Failed to upload material';
+      const errorMessage = error?.message || 'Failed to start material upload';
       showToast('error', errorMessage);
-    } finally {
       setIsUploading(false);
     }
   };
@@ -207,7 +253,7 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
             <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Upload Material
             </Text>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => { stopProgressTimer(); onClose(); }} activeOpacity={0.7}>
               <Ionicons name="close" size={24} color="#6b7280" />
             </TouchableOpacity>
           </View>
@@ -301,6 +347,28 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
             </View>
           </View>
 
+          {/* Upload Progress */}
+          {isUploading && (
+            <View className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-4 mb-4">
+              <Text className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                Uploading… {uploadProgress.progress}%
+              </Text>
+              <View className="h-2 bg-blue-200/50 dark:bg-blue-800/40 rounded-full overflow-hidden">
+                <View className="h-full bg-blue-600 dark:bg-blue-400" style={{ width: `${Math.min(100, Math.max(0, uploadProgress.progress || 0))}%` }} />
+              </View>
+              {!!uploadProgress.message && (
+                <Text className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                  {uploadProgress.message}
+                </Text>
+              )}
+              {(uploadProgress.bytesUploaded != null && uploadProgress.totalBytes != null) && (
+                <Text className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  {formatFileSize(uploadProgress.bytesUploaded)} / {formatFileSize(uploadProgress.totalBytes)}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Upload Tips */}
           <View className="bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-4 mb-4">
             <Text className="text-lg font-semibold text-green-900 dark:text-green-100 mb-3">
@@ -340,7 +408,7 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
         <View className="bg-white dark:bg-black px-6 py-4 border-t border-gray-200 dark:border-gray-800">
           <View className="flex-row gap-3">
             <TouchableOpacity
-              onPress={onClose}
+              onPress={() => { stopProgressTimer(); onClose(); }}
               activeOpacity={0.7}
               disabled={isUploading}
               className={`flex-1 py-3 px-4 border rounded-lg ${
@@ -370,7 +438,7 @@ export function MaterialUploadModal({ visible, topic, subjectId, topicId, onClos
                   <Ionicons name="hourglass-outline" size={16} color="white" className="mr-2" />
                 )}
                 <Text className="text-center font-medium text-white">
-                  {isUploading ? 'Uploading...' : 'Upload Material'}
+                  {isUploading ? `Uploading ${uploadProgress.progress}%` : 'Upload Material'}
                 </Text>
               </View>
             </TouchableOpacity>
