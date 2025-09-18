@@ -6,7 +6,9 @@ import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import Markdown from 'react-native-markdown-display';
 import { setStringAsync } from 'expo-clipboard';
 import { aiChatService, Conversation, ChatMessage as ApiChatMessage } from '../../services/api/aiChatService';
+import { HttpClient } from '../../services/api/httpClient';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { useToast } from '../../contexts/ToastContext';
 import { useAIChatConversations } from '../../hooks/useAIChatConversations';
 import { useConversationMessages } from '../../hooks/useConversationMessages';
 import { professionalMarkdownStyles, professionalDarkMarkdownStyles } from '../../utils/markdownStyles';
@@ -84,6 +86,8 @@ const safeDecodeTitle = (title: string | null | undefined): string | null => {
 export default function AIChatScreen() {
   const route = useRoute<AIChatRouteProp>();
   const { userProfile } = useUserProfile();
+  const http = new HttpClient();
+  const { showToast } = useToast();
   const { 
     materialTitle, 
     materialDescription, 
@@ -112,12 +116,17 @@ export default function AIChatScreen() {
   const [failedMessage, setFailedMessage] = useState<string | null>(null);
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [lastTypingMessageId, setLastTypingMessageId] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [currentChatTitle, setCurrentChatTitle] = useState<string | null>(safeDecodeTitle(conversationTitle));
   const scrollViewRef = useRef<FlatList<ChatMessage>>(null);
   const messagesLoadedRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
   const textInputRef = useRef<TextInput>(null);
+  const [isProcessingDoc, setIsProcessingDoc] = useState(false);
+  const [processingInfo, setProcessingInfo] = useState<{ status?: string; progress?: number; processedChunks?: number; totalChunks?: number } | null>(null);
+  const processingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [processingError, setProcessingError] = useState<string | null>(null);
 
   // Use TanStack Query hooks
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
@@ -229,11 +238,84 @@ export default function AIChatScreen() {
     }
   }, [documentId, documentTitle, processingStatus, conversationId]);
 
+  // Trigger processing for chat when a materialId is available
+  useEffect(() => {
+    const startProcessing = async (id: string) => {
+      try {
+        setIsProcessingDoc(true);
+        setProcessingError(null);
+        setProcessingInfo({ status: 'STARTING', progress: 0 });
+        // Fire-and-forget start call; backend returns 202 even if already processed
+        await http.makeRequest(`/teachers/topics/process-for-chat/${id}`, 'POST', undefined, true);
+      } catch (e) {
+        // Even if this fails, attempt polling; backend may already be processing
+      } finally {
+        // Begin polling status until COMPLETED
+        if (processingTimerRef.current) clearInterval(processingTimerRef.current);
+        let consecutiveErrors = 0;
+        processingTimerRef.current = setInterval(async () => {
+          try {
+            const res: any = await http.makeRequest(`/ai-chat/processing-status/${id}`, 'GET');
+            const data = res?.data ?? res;
+            if (data) {
+              setProcessingInfo({
+                status: data.status,
+                progress: data.totalChunks ? Math.round(((data.processedChunks || 0) / data.totalChunks) * 100) : undefined,
+                processedChunks: data.processedChunks,
+                totalChunks: data.totalChunks,
+              });
+              if (data.status === 'COMPLETED') {
+                setIsProcessingDoc(false);
+                if (processingTimerRef.current) {
+                  clearInterval(processingTimerRef.current);
+                  processingTimerRef.current = null;
+                }
+              }
+            }
+            consecutiveErrors = 0;
+          } catch (err: any) {
+            const message = err?.message || '';
+            // Stop immediately on NOT FOUND for material processing
+            if (message.toLowerCase().includes('processing status not found')) {
+              if (processingTimerRef.current) {
+                clearInterval(processingTimerRef.current);
+                processingTimerRef.current = null;
+              }
+              setIsProcessingDoc(false);
+              setProcessingError('Processing status not found for this material.');
+              return;
+            }
+            // Otherwise back off after first error
+            consecutiveErrors += 1;
+            if (consecutiveErrors >= 1) {
+              if (processingTimerRef.current) {
+                clearInterval(processingTimerRef.current);
+                processingTimerRef.current = null;
+              }
+              setIsProcessingDoc(false);
+              setProcessingError('Failed to get processing status.');
+            }
+          }
+        }, 1000);
+      }
+    };
+
+    if (currentMaterialId) {
+      startProcessing(currentMaterialId);
+    }
+
+    return () => {
+      if (processingTimerRef.current) clearInterval(processingTimerRef.current);
+    };
+  }, [currentMaterialId]);
+
   // Helper functions for usage limits
   const canSendMessage = () => {
     if (!usageLimits) return true;
     const remainingTokens = usageLimits.maxTokensPerDay - usageLimits.tokensUsedThisDay;
-    return remainingTokens >= 2000; // Need at least 2000 tokens remaining
+    const tokensOk = remainingTokens >= 2000;
+    const processingOk = isGeneralChat || !currentMaterialId || (!isProcessingDoc && !processingError);
+    return tokensOk && processingOk; // Only allow when processing complete
   };
 
   const getTokenUsagePercentage = () => {
@@ -369,20 +451,19 @@ export default function AIChatScreen() {
             setCurrentChatTitle(safeDecodeTitle(response.data.chatTitle));
           }
           
-          // Clear local messages and refresh from API
+          // Start typewriter first and suppress full render of this AI message
+          const latestMessage = response.data.content;
+          const latestId = response.data.id;
+          if (latestMessage && latestId) {
+            setLastTypingMessageId(latestId);
+            typewriterEffect(latestMessage);
+          }
+
+          // Clear local messages and refresh from API (will include the AI message)
           setLocalMessages([]);
           await refreshMessages();
           // Refresh conversations to update recent activity
           await refreshConversations();
-
-          // Start typewriter effect for the latest AI response
-          const latestMessage = response.data.content;
-          if (latestMessage) {
-            // Small delay to ensure clean typewriter start
-            setTimeout(() => {
-              typewriterEffect(latestMessage);
-            }, 100);
-          }
         } else {
           console.error('Failed to send message:', response.message);
           setFailedMessage(messageText); // Store failed message for retry
@@ -604,6 +685,45 @@ export default function AIChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
+        {/* Blocker when processing not ready or error */}
+        {(currentMaterialId && (isProcessingDoc || processingError)) && (
+          <View className="px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+            <Text className="text-sm text-yellow-800 dark:text-yellow-300">
+              {processingError ? 'Document is not ready for chat.' : 'Preparing document for chat...'}
+            </Text>
+            {processingInfo?.progress != null && !processingError && (
+              <View className="mt-2 h-2 bg-yellow-200/60 dark:bg-yellow-800/40 rounded-full overflow-hidden">
+                <View className="h-full bg-yellow-600 dark:bg-yellow-400" style={{ width: `${processingInfo.progress}%` }} />
+              </View>
+            )}
+            {processingError && (
+              <View className="mt-2 flex-row gap-2">
+                <TouchableOpacity
+                  onPress={() => {
+                    // Retry processing
+                    if (currentMaterialId) {
+                      setProcessingError(null);
+                      setIsProcessingDoc(true);
+                      setProcessingInfo({ status: 'STARTING', progress: 0 });
+                      // restart effect
+                      (async () => {
+                        try { await http.makeRequest(`/teachers/topics/process-for-chat/${currentMaterialId}`, 'POST', undefined, true); } catch {}
+                      })();
+                      // trigger polling again by resetting state
+                      if (processingTimerRef.current) clearInterval(processingTimerRef.current);
+                      processingTimerRef.current = null;
+                      // manually run one poll cycle
+                    }
+                  }}
+                  className="bg-yellow-600 px-3 py-1 rounded-lg"
+                >
+                  <Text className="text-white text-xs font-medium">Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
         <FlatList
           ref={scrollViewRef}
           data={displayMessages.slice().reverse()}
@@ -646,7 +766,7 @@ export default function AIChatScreen() {
                         style={professionalMarkdownStyles}
                         mergeStyle={false}
                       >
-                        {shouldShowTypewriter ? typingText : msg.text}
+                        {(!msg.isUser && isTyping && lastTypingMessageId === msg.id) ? typingText : msg.text}
                       </Markdown>
                     </View>
                   )}
@@ -661,29 +781,16 @@ export default function AIChatScreen() {
                     <View className="flex-row items-center space-x-1">
                       <TouchableOpacity
                         onPress={() => {
-                          Alert.alert(
-                            'Copy Message',
-                            'Do you want to copy this response to clipboard?',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                              },
-                              {
-                                text: 'Copy',
-                                onPress: async () => {
-                                  try {
-                                    const plainText = markdownToPlainText(msg.text);
-                                    await setStringAsync(plainText);
-                                    Alert.alert('Copied!', 'Message copied to clipboard');
-                                  } catch (error) {
-                                    console.error('Failed to copy message:', error);
-                                    Alert.alert('Error', 'Failed to copy message');
-                                  }
-                                },
-                              },
-                            ]
-                          );
+                          (async () => {
+                            try {
+                              const plainText = markdownToPlainText(msg.text);
+                              await setStringAsync(plainText);
+                              showToast('success', 'Message copied');
+                            } catch (error) {
+                              console.error('Failed to copy message:', error);
+                              showToast('error', 'Copy failed');
+                            }
+                          })();
                         }}
                         className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
                       >
@@ -848,16 +955,16 @@ export default function AIChatScreen() {
         {/* Input Area */}
         <View className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <View className={`flex-row items-end rounded-2xl px-4 py-2 min-h-[44px] ${
-            isWaitingForResponse 
+            isWaitingForResponse || isProcessingDoc
               ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700' 
               : 'bg-gray-100 dark:bg-gray-800'
           }`}>
             {/* Typing Indicator in Input */}
-            {isWaitingForResponse && (
+            {(isWaitingForResponse || isProcessingDoc) && (
               <View className="flex-row items-center mr-3">
                 <ActivityIndicator size="small" color="#8B5CF6" />
                 <Text className="text-xs text-purple-600 dark:text-purple-400 ml-2 font-medium">
-                  AI is typing...
+                  {isProcessingDoc ? `Preparing document${processingInfo?.progress != null ? ` • ${processingInfo.progress}%` : ''}` : 'AI is typing...'}
                 </Text>
               </View>
             )}
@@ -869,10 +976,10 @@ export default function AIChatScreen() {
               onChangeText={handleTextChange}
               placeholder={
                 !canSendMessage() 
-                  ? "Daily token limit reached" 
+                  ? (isProcessingDoc ? 'Preparing document for chat…' : 'Daily token limit reached') 
                   : isWaitingForResponse 
-                    ? "typing..." 
-                    : "Type your message..."
+                    ? 'typing...' 
+                    : 'Type your message...'
               }
               placeholderTextColor={!canSendMessage() ? "#ef4444" : "#9ca3af"}
               className={`flex-1 text-base max-h-20 ${
