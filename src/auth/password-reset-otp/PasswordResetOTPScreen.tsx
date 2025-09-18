@@ -18,6 +18,7 @@ import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import BackButton from '@/components/BackButton';
+import OTPInput from '@/components/OTPInput';
 
 type PasswordResetOTPScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PasswordResetOTP'>;
 type PasswordResetOTPScreenRouteProp = RouteProp<RootStackParamList, 'PasswordResetOTP'>;
@@ -30,7 +31,6 @@ interface PasswordResetOTPScreenProps {
 export default function PasswordResetOTPScreen({ navigation, route }: PasswordResetOTPScreenProps) {
   const { email } = route.params;
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6-digit OTP
-  const [otpInput, setOtpInput] = useState(''); // Single input for OTP
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -110,7 +110,8 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
     setConfirmPasswordError('');
 
     // Validate OTP
-    if (otpInput.length !== 6) {
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
       setOtpError('Please enter the complete 6-digit OTP');
       return;
     }
@@ -141,7 +142,7 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
     try {
       await verifyOTPAndResetPassword({
         email,
-        otp: otpInput,
+        otp: otpString,
         new_password: newPassword
       });
       
@@ -191,17 +192,23 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
         >
           <ScrollView 
             contentContainerStyle={{ 
-              paddingBottom: 100 
+              flexGrow: 1,
+              paddingBottom: 120, // Increased padding to ensure submit button is visible
+              minHeight: '100%'
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             bounces={false}
+            style={{ flex: 1 }}
           >
             <Animated.View 
               style={{ 
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
+                flex: 1,
+                justifyContent: 'space-between',
+                minHeight: '100%'
               }}
               className="px-6 py-4"
             >
@@ -214,7 +221,8 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
               </View>
 
               {/* Main Content */}
-              <View className="items-center mb-8">
+              <View className="flex-1">
+                <View className="items-center mb-8">
                 <Animated.View 
                   style={{ transform: [{ scale: iconScale }] }}
                   className="mb-6"
@@ -238,79 +246,37 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
                   Verification Code
                 </Text>
                 
-                {/* Single OTP Input with Visual Display */}
-                <View className="items-center">
-                  {/* Hidden input for typing */}
-                  <TextInput
-                    value={otpInput}
-                    onChangeText={(value) => {
-                      // Only allow numbers and limit to 6 digits
-                      const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
-                      setOtpInput(numericValue);
-                      
-                      // Update the individual OTP array for display
-                      const newOtp = numericValue.split('').concat(Array(6 - numericValue.length).fill(''));
-                      setOtp(newOtp);
-                      setOtpError('');
-                    }}
-                    placeholder="Enter 6-digit code"
-                    placeholderTextColor="#9ca3af"
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    autoFocus={true}
-                    style={{
-                      position: 'absolute',
-                      left: -9999,
-                      opacity: 0,
-                    }}
-                  />
-                  
-                  {/* Visual OTP Display */}
-                  <View className="flex-row justify-center items-center">
-                    {otp.map((digit, index) => (
-                      <React.Fragment key={index}>
-                        <View className="items-center">
-                          <View 
-                            style={{
-                              width: 40,
-                              height: 50,
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <Text style={{
-                              fontSize: 24,
-                              fontWeight: 'bold',
-                              color: digit ? '#111827' : '#9ca3af',
-                            }}>
-                              {digit || '•'}
-                            </Text>
-                          </View>
-                          <View 
-                            style={{
-                              width: 40,
-                              height: 2,
-                              backgroundColor: digit ? '#3b82f6' : otpError ? '#ef4444' : '#d1d5db',
-                              marginTop: 8,
-                            }}
-                          />
-                        </View>
-                        {/* Add divider between digits (except for the last one) */}
-                        {index < 5 && (
-                          <View 
-                            style={{
-                              width: 1,
-                              height: 30,
-                              backgroundColor: '#e5e7eb',
-                              marginHorizontal: 12,
-                              marginTop: 10,
-                            }}
-                          />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </View>
-                </View>
+                {/* OTP Input */}
+                <OTPInput
+                  value={otp}
+                  onChange={(newOtp) => {
+                    setOtp(newOtp);
+                    setOtpError('');
+                    // Check if OTP is complete and trigger validation
+                    if (newOtp.join('').length === 6) {
+                      setTimeout(() => {
+                        const otpString = newOtp.join('');
+                        if (otpString.length === 6) {
+                          // Auto-submit when OTP is complete
+                          handleResetPassword();
+                        }
+                      }, 100); // Small delay to ensure state is updated
+                    }
+                  }}
+                  length={6}
+                  autoFocus={true}
+                  keyboardType="number-pad"
+                  containerStyle={{ marginBottom: 16 }}
+                  inputStyle={{
+                    backgroundColor: '#f3f4f6',
+                    borderColor: otpError ? '#ef4444' : '#d1d5db',
+                    borderWidth: 2,
+                    color: '#111827',
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    letterSpacing: 4,
+                  }}
+                />
                 
                 {otpError && (
                   <Text className="text-red-500 text-sm mt-4 text-center">
@@ -405,6 +371,7 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
                     {confirmPasswordError}
                   </Text>
                 )}
+                </View>
               </View>
 
               {/* Reset Password Button */}

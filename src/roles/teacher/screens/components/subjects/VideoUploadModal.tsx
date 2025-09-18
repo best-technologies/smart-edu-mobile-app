@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Device from 'expo-device';
 // TODO: Migrate to expo-video when stable API is available
 // @ts-ignore - expo-av is deprecated but expo-video API is not yet stable
-import { Video, ResizeMode } from 'expo-av';
+import { Video } from 'expo-av';
 import { useToast } from '@/contexts/ToastContext';
 
 interface Topic {

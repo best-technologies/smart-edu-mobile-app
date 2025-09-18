@@ -1,4 +1,4 @@
-import { ScrollView, View, RefreshControl, TouchableOpacity, Text } from 'react-native';
+import { ScrollView, View, RefreshControl, TouchableOpacity, Text, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -10,12 +10,14 @@ import {
   RecentNotifications 
 } from './components/dashboard';
 import { useStudentDashboard } from '@/hooks/useStudentDashboard';
+import { useAuth } from '@/contexts/AuthContext';
 import { CenteredLoader } from '@/components';
 import { useState } from 'react';
 
 export default function StudentDashboardScreen() {
   const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
+  const { logout } = useAuth();
   
   const { data: dashboardData, isLoading, error, refetch } = useStudentDashboard();
 
@@ -23,6 +25,24 @@ export default function StudentDashboardScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ]
+    );
   };
 
   if (isLoading && !dashboardData) {
@@ -33,23 +53,8 @@ export default function StudentDashboardScreen() {
     );
   }
 
-  if (error || !dashboardData) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-lg text-gray-600 dark:text-gray-400 text-center mb-4">
-            Failed to load dashboard data
-          </Text>
-          <TouchableOpacity
-            onPress={() => refetch()}
-            className="bg-blue-500 px-6 py-3 rounded-lg"
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Show basic UI even when API fails
+  const showFallbackUI = error || !dashboardData;
 
   const quickActions = [
     {
@@ -92,15 +97,22 @@ export default function StudentDashboardScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+      {/* TopBar with fallback data */}
       <TopBar 
-        name={dashboardData.general_info.student.name}
-        email={dashboardData.general_info.student.email}
-        displayPicture={dashboardData.general_info.student.display_picture?.secure_url || null}
-        classInfo={{
+        name={showFallbackUI ? "Student" : dashboardData.general_info.student.name}
+        email={showFallbackUI ? "student@school.com" : dashboardData.general_info.student.email}
+        displayPicture={showFallbackUI ? null : dashboardData.general_info.student.display_picture?.secure_url || null}
+        classInfo={showFallbackUI ? {
+          name: "Class Loading...",
+          teacher: "Teacher Loading..."
+        } : {
           name: dashboardData.general_info.student_class.name,
           teacher: dashboardData.general_info.class_teacher.name
         }}
-        academicSession={{
+        academicSession={showFallbackUI ? {
+          year: "2024-2025",
+          term: "Term 1"
+        } : {
           year: dashboardData.general_info.current_session.academic_year,
           term: dashboardData.general_info.current_session.term
         }}
@@ -121,23 +133,60 @@ export default function StudentDashboardScreen() {
           />
         }
       >
-        {/* Quick Actions Section */}
+        {/* Error Banner */}
+        {showFallbackUI && (
+          <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-red-800 dark:text-red-200 font-semibold text-sm mb-1">
+                  Connection Issue
+                </Text>
+                <Text className="text-red-600 dark:text-red-300 text-xs">
+                  Some features may not be available. Check your connection and try again.
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => refetch()}
+                className="bg-red-500 px-3 py-2 rounded-md ml-3"
+              >
+                <Text className="text-white text-xs font-semibold">Retry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Quick Actions Section - Always show */}
         <QuickActions actions={quickActions} />
         
-        {/* Subjects Enrolled */}
+        {/* Subjects Enrolled - Show with fallback data */}
         <SubjectsEnrolled 
-          subjects={dashboardData.subjects_enrolled} 
-          totalSubjects={dashboardData.stats.total_subjects}
+          subjects={showFallbackUI ? [] : dashboardData.subjects_enrolled} 
+          totalSubjects={showFallbackUI ? 0 : dashboardData.stats.total_subjects}
         />
         
-        {/* Class Schedule */}
-        <ClassSchedule classSchedule={dashboardData.class_schedule} />
+        {/* Class Schedule - Show with fallback data */}
+        <ClassSchedule classSchedule={showFallbackUI ? {
+          today: { day: 'Today', schedule: [] },
+          tomorrow: { day: 'Tomorrow', schedule: [] },
+          day_after_tomorrow: { day: 'Day After', schedule: [] }
+        } : dashboardData.class_schedule} />
         
-        {/* Recent Notifications */}
+        {/* Recent Notifications - Show with fallback data */}
         <RecentNotifications 
-          notifications={dashboardData.notifications}
-          pendingAssessments={dashboardData.stats.pending_assessments}
+          notifications={showFallbackUI ? [] : dashboardData.notifications}
+          pendingAssessments={showFallbackUI ? 0 : dashboardData.stats.pending_assessments}
         />
+
+        {/* Logout Button - Always show at bottom */}
+        {/* <View className="mt-8 mb-4">
+          <TouchableOpacity
+            onPress={handleLogout}
+            className="bg-red-500 px-6 py-4 rounded-lg flex-row items-center justify-center"
+          >
+            <Ionicons name="log-out-outline" size={20} color="white" />
+            <Text className="text-white font-semibold ml-2">Logout</Text>
+          </TouchableOpacity>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );
