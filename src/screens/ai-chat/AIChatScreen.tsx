@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,6 +68,89 @@ const markdownToPlainText = (markdown: string): string => {
     .trim();
 };
 
+// Memoized message component for better performance
+const MessageItem = memo(({ 
+  msg, 
+  index, 
+  displayMessagesLength, 
+  isTyping, 
+  lastTypingMessageId, 
+  typingText, 
+  onCopyMessage, 
+  onDownloadPDF, 
+  onSpeakMessage 
+}: {
+  msg: ChatMessage;
+  index: number;
+  displayMessagesLength: number;
+  isTyping: boolean;
+  lastTypingMessageId: string | null;
+  typingText: string;
+  onCopyMessage: (text: string) => void;
+  onDownloadPDF: (id: string) => void;
+  onSpeakMessage: (id: string) => void;
+}) => {
+  const actualIndex = displayMessagesLength - 1 - index;
+  const isLastAIMessage = !msg.isUser && actualIndex === displayMessagesLength - 1;
+  const shouldShowTypewriter = isLastAIMessage && isTyping && lastTypingMessageId === msg.id;
+
+  return (
+    <View key={msg.id} className={`mb-4 ${msg.isUser ? 'items-end' : 'items-start'}`}>
+      <View className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+        msg.isUser 
+          ? 'bg-purple-600 rounded-br-md' 
+          : 'bg-gray-100 dark:bg-gray-800 rounded-bl-md'
+      }`}>
+        {msg.isUser ? (
+          <Text className="text-sm leading-5 text-white">
+            {msg.text}
+          </Text>
+        ) : (
+          <View style={{ width: '100%' }}>
+            <Markdown 
+              style={professionalMarkdownStyles}
+              mergeStyle={false}
+            >
+              {shouldShowTypewriter ? typingText : msg.text}
+            </Markdown>
+          </View>
+        )}
+      </View>
+      <View className="flex-row items-center justify-end mt-1">
+        <Text className="text-xs text-gray-500 dark:text-gray-400 mr-2">
+          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+        
+        {/* Action Buttons for AI Messages */}
+        {!msg.isUser && (
+          <View className="flex-row items-center space-x-1">
+            <TouchableOpacity
+              onPress={() => onCopyMessage(msg.text)}
+              className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+            >
+              <Ionicons name="copy" size={12} color="#6B7280" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => onDownloadPDF(msg.id)}
+              className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+            >
+              <Ionicons name="document-text" size={12} color="#6B7280" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => onSpeakMessage(msg.id)}
+              className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+            >
+              <Ionicons name="volume-high" size={12} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+});
+
 // Function to safely decode URL-encoded titles
 const safeDecodeTitle = (title: string | null | undefined): string | null => {
   if (!title) return null;
@@ -132,8 +215,66 @@ export default function AIChatScreen() {
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
   const { messages, usageLimits, isLoading: messagesLoading, refreshMessages } = useConversationMessages(currentConversationId);
   
+  // Log conversation ID changes
+  useEffect(() => {
+    console.log('🔄 Conversation ID changed:', currentConversationId);
+  }, [currentConversationId]);
+  
+  
   // Combined loading state
   const isLoading = conversationsLoading || messagesLoading;
+  
+  // Memoized callback functions for message actions
+  const handleCopyMessage = useCallback(async (text: string) => {
+    try {
+      const plainText = markdownToPlainText(text);
+      await setStringAsync(plainText);
+      showToast('success', 'Message copied');
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+      showToast('error', 'Copy failed');
+    }
+  }, [showToast]);
+
+  const handleDownloadPDF = useCallback((id: string) => {
+    Alert.alert(
+      'Download as PDF',
+      'Do you want to download this response as a PDF file? (Coming Soon)',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Download',
+          onPress: () => {
+            console.log('Download PDF pressed for:', id);
+            Alert.alert('Coming Soon', 'PDF download feature will be available soon!');
+          },
+        },
+      ]
+    );
+  }, []);
+
+  const handleSpeakMessage = useCallback((id: string) => {
+    Alert.alert(
+      'Listen to Voice',
+      'Do you want to listen to this message as voice? (Coming Soon)',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Listen',
+          onPress: () => {
+            console.log('Speak message pressed for:', id);
+            Alert.alert('Coming Soon', 'Voice playback feature will be available soon!');
+          },
+        },
+      ]
+    );
+  }, []);
   
   // Combine API messages with local optimistic messages
   const displayMessages = [...messages, ...localMessages];
@@ -170,7 +311,7 @@ export default function AIChatScreen() {
     }
   };
 
-  // Typewriter effect for AI responses
+  // Typewriter effect for AI responses - optimized for performance
   const typewriterEffect = (text: string, callback?: () => void) => {
     // Ensure clean start
     setTypingText('');
@@ -179,27 +320,33 @@ export default function AIChatScreen() {
     let index = 0;
     const interval = setInterval(() => {
       if (index < text.length) {
-        // Add 2-3 characters at once instead of 1
-        const nextChars = text.slice(index, index + 5);
+        // Add more characters at once and reduce update frequency
+        const nextChars = text.slice(index, index + 10);
         setTypingText(prev => prev + nextChars);
-        index += 5;
-        scrollToBottom(true);
+        index += 10;
+        // Only scroll every few updates to reduce re-renders
+        if (index % 50 === 0) {
+          scrollToBottom(true);
+        }
       } else {
         clearInterval(interval);
         setIsTyping(false);
+        scrollToBottom(true); // Final scroll
         callback?.();
       }
-    }, 3); // 3ms with 5 chars = much faster
+    }, 8); // 8ms with 10 chars = much less frequent updates
 
     return interval;
   };
 
   // Load conversation messages and update state
   const loadConversationMessages = async (conversationId: string) => {
+    console.log('🔄 Loading conversation messages for ID:', conversationId);
     setCurrentConversationId(conversationId);
     
     // Find the conversation to get materialId
     const conversation = conversations.find(conv => conv.id === conversationId);
+    console.log('📋 Found conversation:', conversation);
     if (conversation) {
       setCurrentMaterialId(conversation.materialId);
     }
@@ -220,21 +367,30 @@ export default function AIChatScreen() {
 
   // Initialize chat state based on route params
   useEffect(() => {
+    console.log('🚀 Initializing chat with params:', {
+      conversationId,
+      documentId,
+      materialId,
+      showHistory
+    });
+    
     // Load conversation messages if conversationId is provided
     if (conversationId) {
+      console.log('📞 Loading conversation from route params:', conversationId);
       loadConversationMessages(conversationId);
     } else if (documentId) {
       // For new conversations with uploaded documents, set materialId (documentId carries materialId)
+      console.log('📄 Setting material ID from document:', documentId);
       setCurrentMaterialId(documentId);
     }
     
     if (documentId) {
       // Document was uploaded, check processing status
-      // console.log('📄 Loading uploaded document:', {
-      //   id: documentId,
-      //   title: documentTitle,
-      //   status: processingStatus
-      // });
+      console.log('📄 Loading uploaded document:', {
+        id: documentId,
+        title: documentTitle,
+        status: processingStatus
+      });
     }
   }, [documentId, documentTitle, processingStatus, conversationId]);
 
@@ -244,59 +400,101 @@ export default function AIChatScreen() {
       try {
         setIsProcessingDoc(true);
         setProcessingError(null);
-        setProcessingInfo({ status: 'STARTING', progress: 0 });
-        // Fire-and-forget start call; backend returns 202 even if already processed
-        await http.makeRequest(`/teachers/topics/process-for-chat/${id}`, 'POST', undefined, true);
-      } catch (e) {
-        // Even if this fails, attempt polling; backend may already be processing
-      } finally {
-        // Begin polling status until COMPLETED
-        if (processingTimerRef.current) clearInterval(processingTimerRef.current);
-        let consecutiveErrors = 0;
-        processingTimerRef.current = setInterval(async () => {
-          try {
-            const res: any = await http.makeRequest(`/ai-chat/processing-status/${id}`, 'GET');
-            const data = res?.data ?? res;
-            if (data) {
-              setProcessingInfo({
-                status: data.status,
-                progress: data.totalChunks ? Math.round(((data.processedChunks || 0) / data.totalChunks) * 100) : undefined,
-                processedChunks: data.processedChunks,
-                totalChunks: data.totalChunks,
-              });
-              if (data.status === 'COMPLETED') {
-                setIsProcessingDoc(false);
+        setProcessingInfo({ status: 'CHECKING', progress: 0 });
+        
+        // First check if there's already a conversation by calling the process endpoint
+        console.log('🔍 Checking for existing conversation for material:', id);
+        const statusRes: any = await http.makeRequest(`/teachers/topics/process-for-chat/${id}`, 'POST', undefined, true);
+        const statusData = statusRes?.data ?? statusRes;
+        
+        
+        if (statusRes.success && statusData) {
+          // Handle existing conversation case
+          if (statusData.conversationId) {
+            console.log('✅ Found existing conversation:', statusData.conversationId);
+            setIsProcessingDoc(false);
+            // Set the conversation ID to load existing messages
+            setCurrentConversationId(statusData.conversationId);
+            return;
+          }
+          
+          // Handle already processed case
+          if (statusData.status === 'COMPLETED') {
+            console.log('✅ Material already processed, no conversation found');
+            setIsProcessingDoc(false);
+            return;
+          }
+        }
+        
+        // If no existing conversation and not processed, start polling for processing status
+        if (!statusData.conversationId && statusData.status !== 'COMPLETED') {
+          setProcessingInfo({ status: 'STARTING', progress: 0 });
+          
+          // Begin polling status until COMPLETED
+          if (processingTimerRef.current) clearInterval(processingTimerRef.current);
+          let consecutiveErrors = 0;
+          processingTimerRef.current = setInterval(async () => {
+            try {
+              const res: any = await http.makeRequest(`/ai-chat/processing-status/${id}`, 'GET');
+              const data = res?.data ?? res;
+              
+              if (res.success && data) {
+                // Handle processing status case
+                if (data.status) {
+                  setProcessingInfo({
+                    status: data.status,
+                    progress: data.totalChunks ? Math.round(((data.processedChunks || 0) / data.totalChunks) * 100) : undefined,
+                    processedChunks: data.processedChunks,
+                    totalChunks: data.totalChunks,
+                  });
+                  
+                  if (data.status === 'COMPLETED') {
+                    setIsProcessingDoc(false);
+                    if (processingTimerRef.current) {
+                      clearInterval(processingTimerRef.current);
+                      processingTimerRef.current = null;
+                    }
+                  }
+                }
+              } else {
+                // Handle failure case
                 if (processingTimerRef.current) {
                   clearInterval(processingTimerRef.current);
                   processingTimerRef.current = null;
                 }
+                setIsProcessingDoc(false);
+                setProcessingError(res.message || 'Failed to get processing status.');
+              }
+              
+              consecutiveErrors = 0;
+            } catch (err: any) {
+              const message = err?.message || '';
+              // Stop immediately on NOT FOUND for material processing
+              if (message.toLowerCase().includes('processing status not found')) {
+                if (processingTimerRef.current) {
+                  clearInterval(processingTimerRef.current);
+                  processingTimerRef.current = null;
+                }
+                setIsProcessingDoc(false);
+                setProcessingError('Processing status not found for this material.');
+                return;
+              }
+              // Otherwise back off after first error
+              consecutiveErrors += 1;
+              if (consecutiveErrors >= 1) {
+                if (processingTimerRef.current) {
+                  clearInterval(processingTimerRef.current);
+                  processingTimerRef.current = null;
+                }
+                setIsProcessingDoc(false);
+                setProcessingError('Failed to get processing status.');
               }
             }
-            consecutiveErrors = 0;
-          } catch (err: any) {
-            const message = err?.message || '';
-            // Stop immediately on NOT FOUND for material processing
-            if (message.toLowerCase().includes('processing status not found')) {
-              if (processingTimerRef.current) {
-                clearInterval(processingTimerRef.current);
-                processingTimerRef.current = null;
-              }
-              setIsProcessingDoc(false);
-              setProcessingError('Processing status not found for this material.');
-              return;
-            }
-            // Otherwise back off after first error
-            consecutiveErrors += 1;
-            if (consecutiveErrors >= 1) {
-              if (processingTimerRef.current) {
-                clearInterval(processingTimerRef.current);
-                processingTimerRef.current = null;
-              }
-              setIsProcessingDoc(false);
-              setProcessingError('Failed to get processing status.');
-            }
-          }
-        }, 1000);
+          }, 1000);
+        }
+      } catch (e) {
+        // Even if this fails, attempt polling; backend may already be processing
+        console.error('Error in startProcessing:', e);
       }
     };
 
@@ -743,117 +941,28 @@ export default function AIChatScreen() {
             // Always scroll to bottom when content changes
             scrollToBottom(false, 100);
           }}
-          renderItem={({ item: msg, index }) => {
-            // Since we're using inverted, the first item (index 0) is actually the last message
-            const actualIndex = displayMessages.length - 1 - index;
-            const isLastAIMessage = !msg.isUser && actualIndex === displayMessages.length - 1;
-            const shouldShowTypewriter = isLastAIMessage && isTyping;
-            
-            return (
-              <View key={msg.id} className={`mb-4 ${msg.isUser ? 'items-end' : 'items-start'}`}>
-                <View className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                  msg.isUser 
-                    ? 'bg-purple-600 rounded-br-md' 
-                    : 'bg-gray-100 dark:bg-gray-800 rounded-bl-md'
-                }`}>
-                  {msg.isUser ? (
-                    <Text className="text-sm leading-5 text-white">
-                      {msg.text}
-                    </Text>
-                  ) : (
-                    <View style={{ width: '100%' }}>
-                      <Markdown 
-                        style={professionalMarkdownStyles}
-                        mergeStyle={false}
-                      >
-                        {(!msg.isUser && isTyping && lastTypingMessageId === msg.id) ? typingText : msg.text}
-                      </Markdown>
-                    </View>
-                  )}
-                </View>
-                <View className="flex-row items-center justify-end mt-1">
-                  <Text className="text-xs text-gray-500 dark:text-gray-400 mr-2">
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                  
-                  {/* Action Buttons for AI Messages */}
-                  {!msg.isUser && (
-                    <View className="flex-row items-center space-x-1">
-                      <TouchableOpacity
-                        onPress={() => {
-                          (async () => {
-                            try {
-                              const plainText = markdownToPlainText(msg.text);
-                              await setStringAsync(plainText);
-                              showToast('success', 'Message copied');
-                            } catch (error) {
-                              console.error('Failed to copy message:', error);
-                              showToast('error', 'Copy failed');
-                            }
-                          })();
-                        }}
-                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
-                      >
-                        <Ionicons name="copy" size={12} color="#6B7280" />
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        onPress={() => {
-                          Alert.alert(
-                            'Download as PDF',
-                            'Do you want to download this response as a PDF file? (Coming Soon)',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                              },
-                              {
-                                text: 'Download',
-                                onPress: () => {
-                                  console.log('Download PDF pressed for:', msg.id);
-                                  // TODO: Implement PDF download functionality
-                                  Alert.alert('Coming Soon', 'PDF download feature will be available soon!');
-                                },
-                              },
-                            ]
-                          );
-                        }}
-                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
-                      >
-                        <Ionicons name="document-text" size={12} color="#6B7280" />
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        onPress={() => {
-                          Alert.alert(
-                            'Listen to Voice',
-                            'Do you want to listen to this message as voice? (Coming Soon)',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                              },
-                              {
-                                text: 'Listen',
-                                onPress: () => {
-                                  console.log('Speak message pressed for:', msg.id);
-                                  // TODO: Implement text-to-speech functionality
-                                  Alert.alert('Coming Soon', 'Voice playback feature will be available soon!');
-                                },
-                              },
-                            ]
-                          );
-                        }}
-                        className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
-                      >
-                        <Ionicons name="volume-high" size={12} color="#6B7280" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-            );
-          }}
+          renderItem={({ item: msg, index }) => (
+            <MessageItem
+              msg={msg}
+              index={index}
+              displayMessagesLength={displayMessages.length}
+              isTyping={isTyping}
+              lastTypingMessageId={lastTypingMessageId}
+              typingText={typingText}
+              onCopyMessage={handleCopyMessage}
+              onDownloadPDF={handleDownloadPDF}
+              onSpeakMessage={handleSpeakMessage}
+            />
+          )}
+          getItemLayout={(data, index) => ({
+            length: 100, // Approximate item height
+            offset: 100 * index,
+            index,
+          })}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={10}
           ListHeaderComponent={() => (
             <>
               {/* Welcome Message - Only show if no messages */}
