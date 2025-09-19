@@ -11,7 +11,6 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { UserProfileProvider } from '@/contexts/UserProfileContext';
 import { QueryProvider } from '@/contexts/QueryProvider';
 import { ToastContainer } from '@/components';
-import './utils/reanimatedConfig'; // Disable Reanimated warnings
 import { pushNotificationService } from './services/pushNotificationService';
 
 // Suppress known warnings at app level

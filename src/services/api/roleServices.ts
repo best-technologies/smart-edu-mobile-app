@@ -148,6 +148,10 @@ export class DirectorService {
   async getSchedules(): Promise<ApiResponse<any[]>> {
     return this.httpClient.makeRequest(API_ENDPOINTS.DIRECTOR.SCHEDULES);
   }
+
+  async getSubjectDetails(subjectId: string): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(`${API_ENDPOINTS.DIRECTOR.SUBJECTS}/${subjectId}/details`);
+  }
 }
 
 export class StudentService {

@@ -496,6 +496,78 @@ export interface StudentSubjectDetailsResponse {
   statusCode: number;
 }
 
+// Director Subject Details Types (for individual subject with topics)
+export interface DirectorSubjectDetailsVideo {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  thumbnail: {
+    public_id: string;
+    secure_url: string;
+  };
+  duration: number;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectorSubjectDetailsMaterial {
+  id: string;
+  title: string;
+  description: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectorSubjectDetailsTopic {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  order: number;
+  isActive: boolean;
+  subjectId: string;
+  videos: DirectorSubjectDetailsVideo[];
+  materials: DirectorSubjectDetailsMaterial[];
+  videoCount: number;
+  materialCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectorSubjectDetailsData {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  description: string;
+  thumbnail: {
+    secure_url: string;
+    public_id: string;
+  } | null;
+  topics: DirectorSubjectDetailsTopic[];
+  totalTopics: number;
+  totalVideos: number;
+  totalMaterials: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectorSubjectDetailsResponse {
+  success: boolean;
+  message: string;
+  data: DirectorSubjectDetailsData;
+  statusCode: number;
+}
+
 // Student Schedules Types
 export interface StudentClass {
   id: string;

@@ -17,7 +17,7 @@ console.warn = (...args) => {
     
     // Suppress Reanimated warnings
     if (message.includes('[Reanimated]') && 
-        message.includes('react-native-reanimated/plugin')) {
+        message.includes('react-native-worklets/plugin')) {
       return;
     }
     

@@ -308,7 +308,7 @@ export default function QuestionTypeSelector({
             <View className="px-4 mb-4">
               <View className="space-y-4">
                 {options.map((option: { text: string; isCorrect: boolean }, index: number) => (
-                  <View key={index} className="flex-row items-center gap-3 py-2">
+                  <View key={`option-${index}`} className="flex-row items-center gap-3 py-2">
                     <TouchableOpacity
                       onPress={() => {
                         const newOptions = [...options];

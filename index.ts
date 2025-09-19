@@ -1,4 +1,3 @@
-import 'react-native-reanimated';
 import { registerRootComponent } from 'expo';
 import { LogBox } from 'react-native';
 

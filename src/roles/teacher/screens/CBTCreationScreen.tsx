@@ -622,14 +622,14 @@ export default function CBTCreationScreen() {
             <>
               <InlineSpinner size="small" color="white" />
               <Text className="text-white font-semibold text-base ml-2">
-                Creating Quiz...
+                Creating Assessment...
               </Text>
             </>
           ) : (
             <>
               <Ionicons name="add-circle" size={18} color="white" />
               <Text className="text-white font-semibold text-base ml-2">
-                Create Quiz
+                Create Assessment
               </Text>
             </>
           )}
@@ -644,11 +644,11 @@ export default function CBTCreationScreen() {
             <View className="flex-row items-center">
               <InlineSpinner size="small" color="#3b82f6" />
               <Text className="text-gray-900 dark:text-gray-100 font-medium ml-3">
-                Creating your quiz...
+                Creating your Assessment...
               </Text>
             </View>
             <Text className="text-gray-500 dark:text-gray-400 text-sm mt-2 text-center">
-              Please wait while we set up your CBT
+              Please wait while we set up your Assessment
             </Text>
           </View>
         </View>

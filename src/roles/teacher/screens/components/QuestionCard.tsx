@@ -202,7 +202,7 @@ export default function QuestionCard({
     return (
       <View className="space-y-3">
         {editOptions.map((option, optionIndex) => (
-          <View key={optionIndex} className="flex-row items-center gap-3 p-3">
+          <View key={`edit-option-${optionIndex}`} className="flex-row items-center gap-3 p-3">
             {/* Remove button - only show if more than 2 options */}
             {editOptions.length > 2 && (
               <TouchableOpacity 
@@ -562,7 +562,7 @@ export default function QuestionCard({
         return (
           <View className="space-y-3">
             {question.options?.map((option, optionIndex) => (
-              <View key={optionIndex} className="flex-row items-center gap-3">
+              <View key={`option-${optionIndex}`} className="flex-row items-center gap-3">
                 <TouchableOpacity
                   onPress={() => {
                     // Toggle correct answer

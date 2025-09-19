@@ -1,14 +1,14 @@
 import React from 'react';
-import { useRoute } from '@react-navigation/native';
 import { SubjectDetailScreen } from '@/components';
+import { useRoute } from '@react-navigation/native';
 
-export default function StudentSubjectDetailsScreen() {
+export default function GlobalSubjectDetailScreen() {
   const route = useRoute();
   const { subject } = route.params as any;
 
   return (
     <SubjectDetailScreen
-      userRole="student"
+      userRole="teacher"
       subject={subject}
     />
   );
