@@ -12,4 +12,3 @@ export { default as ErrorModal } from './ErrorModal';
 export type { SuccessModalProps } from './SuccessModal';
 export type { ErrorModalProps } from './ErrorModal';
 export { TopicContentTabs } from './TopicContentTabs';
-export { SubjectDetailScreen } from './SubjectDetailScreen';
