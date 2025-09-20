@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRoute } from '@react-navigation/native';
-import SubjectDetailScreen from '@/components/SubjectDetailScreen';
+import { SubjectDetailScreen } from '@/components/SubjectDetailScreen';
 
 export default function StudentSubjectDetailsScreen() {
   const route = useRoute();

@@ -7,9 +7,12 @@ import { useToast } from '@/contexts/ToastContext';
 interface SubjectCardProps {
   subject: Subject;
   onUpdate?: (updatedSubject: Subject) => void;
+  onPress?: (subject: Subject) => void;
 }
 
-export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
+export function SubjectCard({ subject, onUpdate, onPress }: SubjectCardProps) {
+  console.log('SubjectCard props received:', { subject: subject.name, onUpdate: !!onUpdate, onPress: !!onPress });
+  
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { showSuccess, showError } = useToast();
@@ -143,10 +146,29 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
     );
   };
 
+  const handleCardPress = () => {
+    console.log('SubjectCard pressed for:', subject.name);
+    console.log('onPress function exists:', !!onPress);
+    if (onPress) {
+      onPress(subject);
+    } else {
+      console.log('No onPress function provided');
+    }
+  };
+
+  const handleEditPress = (e: any) => {
+    e.stopPropagation();
+    handleUpdateClick();
+  };
+
   return (
     <>
-      <TouchableOpacity activeOpacity={0.8} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 mb-2">
-        <View className="flex-row items-center gap-3">
+      <View className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 mb-2">
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          onPress={handleCardPress}
+          className="flex-row items-center gap-3"
+        >
           {/* Subject Icon with Color */}
           <View 
             className="h-10 w-10 items-center justify-center rounded-lg"
@@ -172,7 +194,7 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={handleUpdateClick}
+                onPress={handleEditPress}
                 className="bg-blue-500 px-2.5 py-1 rounded-md"
                 activeOpacity={0.7}
               >
@@ -228,8 +250,8 @@ export function SubjectCard({ subject, onUpdate }: SubjectCardProps) {
               )}
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
 
       {/* Update Modal */}
       <Modal

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ApiService } from '../services/api';
-import { DirectorSubjectDetailsData } from '../services/types/apiTypes';
+import { TeacherService } from '../services/api/roleServices';
+import { SubjectDetailsData } from '../roles/teacher/screens/components/subjects/types';
 
 interface UseDirectorSubjectDetailsOptions {
   subjectId: string;
@@ -8,10 +8,12 @@ interface UseDirectorSubjectDetailsOptions {
 }
 
 export const useDirectorSubjectDetails = ({ subjectId, enabled = true }: UseDirectorSubjectDetailsOptions) => {
-  return useQuery<DirectorSubjectDetailsData>({
+  const teacherService = new TeacherService();
+  
+  return useQuery<SubjectDetailsData>({
     queryKey: ['director-subject-details', subjectId],
     queryFn: async () => {
-      const response = await ApiService.director.getSubjectDetails(subjectId);
+      const response = await teacherService.getSubjectDetails(subjectId, 1, 10);
       return response.data;
     },
     enabled: enabled && !!subjectId,

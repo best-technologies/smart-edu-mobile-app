@@ -12,3 +12,12 @@ export { default as ErrorModal } from './ErrorModal';
 export type { SuccessModalProps } from './SuccessModal';
 export type { ErrorModalProps } from './ErrorModal';
 export { TopicContentTabs } from './TopicContentTabs';
+export { default as SubjectsListScreen } from './SubjectsListScreen';
+export type { 
+  Subject, 
+  AvailableClass, 
+  SubjectStats, 
+  AcademicSession, 
+  SubjectPagination,
+  SubjectsListScreenProps 
+} from './SubjectsListScreen';
