@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import TopBar from './components/shared/TopBar';
 import { 
-  QuickActions, 
   SubjectsEnrolled, 
   ClassSchedule, 
   RecentNotifications 
 } from './components/dashboard';
+import { QuickLinks } from '@/components';
 import { useStudentDashboard } from '@/hooks/useStudentDashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CenteredLoader } from '@/components';
@@ -56,44 +56,6 @@ export default function StudentDashboardScreen() {
   // Show basic UI even when API fails
   const showFallbackUI = error || !dashboardData;
 
-  const quickActions = [
-    {
-      id: 'ai-assistance',
-      title: 'AI Assistance',
-      icon: 'sparkles' as const,
-      color: '#8B5CF6',
-      onPress: () => navigation.navigate('AIChatMain'),
-      isAnimated: true,
-    },
-    {
-      id: '1',
-      title: 'Assessments',
-      icon: 'document-text-outline' as const,
-      color: '#3B82F6',
-      onPress: () => navigation.navigate('Assessments'),
-    },
-    {
-      id: '2',
-      title: 'Results',
-      icon: 'stats-chart-outline' as const,
-      color: '#F59E0B',
-      onPress: () => navigation.navigate('Results'),
-    },
-    {
-      id: '3',
-      title: 'Subjects',
-      icon: 'book-outline' as const,
-      color: '#8B5CF6',
-      onPress: () => navigation.navigate('Subjects'),
-    },
-    {
-      id: '4',
-      title: 'Schedules',
-      icon: 'calendar-outline' as const,
-      color: '#EC4899',
-      onPress: () => navigation.navigate('Schedules'),
-    },
-  ];
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
@@ -156,7 +118,7 @@ export default function StudentDashboardScreen() {
         )}
 
         {/* Quick Actions Section - Always show */}
-        <QuickActions actions={quickActions} />
+        <QuickLinks role="student" />
         
         {/* Subjects Enrolled - Show with fallback data */}
         <SubjectsEnrolled 

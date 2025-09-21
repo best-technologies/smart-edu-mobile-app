@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import TopBar from './components/shared/TopBar';
-import QuickActions from './components/dashboard/QuickActions';
+import { QuickLinks } from '@/components';
 import ManagedClasses from './components/dashboard/ManagedClasses';
 import SubjectsTeaching from './components/dashboard/SubjectsTeaching';
 import RecentNotifications from './components/dashboard/RecentNotifications';
@@ -97,37 +97,6 @@ export default function TeacherDashboardScreen() {
     },
   ] : teacherDashboardData.upcomingClasses;
 
-  const quickActions = [
-    {
-      id: 'ai-assistance',
-      title: 'AI Assistance',
-      icon: 'sparkles',
-      color: '#8B5CF6',
-      onPress: () => navigation.navigate('AIChatMain'),
-      isAnimated: true,
-    },
-    {
-      id: '1',
-      title: 'Take Attendance',
-      icon: 'checkmark-circle-outline',
-      color: '#10B981',
-      onPress: () => console.log('Take Attendance'),
-    },
-    {
-      id: '2',
-      title: 'Grade Assignments',
-      icon: 'document-text-outline',
-      color: '#3B82F6',
-      onPress: () => console.log('Grade Assignments'),
-    },
-    {
-      id: '3',
-      title: 'Assessment',
-      icon: 'clipboard-outline',
-      color: '#EF4444',
-      onPress: () => navigation.navigate('AssessmentsList'),
-    },
-  ];
 
   if (error) {
     return (
@@ -175,7 +144,7 @@ export default function TeacherDashboardScreen() {
           <CenteredLoader visible={true} text="Loading dashboard..." />
         ) : dashboardData ? (
           <>
-            <QuickActions actions={quickActions} />
+            <QuickLinks role="teacher" />
             
             <ManagedClasses classes={managedClasses} />
             
