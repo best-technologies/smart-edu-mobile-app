@@ -22,11 +22,13 @@ export default function StudentsScreen() {
   const [data, setData] = useState<StudentTabResponse['data'] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchStudentData = useCallback(async (page: number = 1, isRefresh: boolean = false) => {
     try {
       if (page === 1) {
         setLoading(true);
+        setError(null);
       } else {
         setLoadingMore(true);
       }
@@ -49,9 +51,13 @@ export default function StudentsScreen() {
         }
         
         setHasMore(response.data.students.pagination.has_next);
+        setError(null);
+      } else {
+        setError('Failed to load student data. Please try again.');
       }
     } catch (error) {
       console.error('Error fetching student data:', error);
+      setError('Unable to connect to server. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -85,18 +91,201 @@ export default function StudentsScreen() {
     );
   }
 
-  if (!data) {
+  // Show error state with UI - this ensures teachers see the interface even with errors
+  if (error && !data) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900" edges={['top']}>
-        <Text className="text-lg text-gray-500 dark:text-gray-400">No data available</Text>
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <TopBar />
+        
+        <ScrollView className="flex-1" contentContainerClassName="pb-32">
+          {/* Stats Section - Fallback */}
+          <View className="px-6 py-4">
+            <StudentStats stats={{
+              totalStudents: 0,
+              activeStudents: 0,
+              totalClasses: 0
+            }} />
+          </View>
+
+          {/* Classes Section - Fallback */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Classes You Manage
+            </Text>
+            <View className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-6">
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="school-outline" size={24} color="#9ca3af" />
+                <Text className="text-gray-500 dark:text-gray-400 ml-2 text-center">
+                  No classes assigned yet
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Subjects Section - Fallback */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Subjects You Teach
+            </Text>
+            <View className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-6">
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="book-outline" size={24} color="#9ca3af" />
+                <Text className="text-gray-500 dark:text-gray-400 ml-2 text-center">
+                  No subjects assigned yet
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Search and Filters - Always show */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <SearchBar 
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search students by name, ID, or class..."
+            />
+            <View className="mt-3">
+              <FilterChips 
+                selectedFilter={selectedFilter}
+                onFilterChange={setSelectedFilter}
+              />
+            </View>
+          </View>
+
+          {/* Students List Header */}
+          <View className="px-6 py-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                0 Students
+              </Text>
+            </View>
+          </View>
+
+          {/* Error State */}
+          <View className="items-center justify-center py-12 px-6">
+            <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4 text-center">
+              Unable to Load Students
+            </Text>
+            <Text className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+              {error}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => fetchStudentData(1, true)}
+              className="mt-6 bg-blue-500 px-6 py-3 rounded-xl"
+            >
+              <Text className="text-white font-semibold">Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Floating Action Button */}
+        <FloatingActionButton 
+          icon="add"
+          onPress={() => console.log('Add new student')}
+        />
       </SafeAreaView>
     );
   }
 
-  const filteredStudents = data.students.data.filter((student: StudentTabStudent) => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.student_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.class.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Show fallback UI even when no data - this ensures teachers see the interface
+  if (!data) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <TopBar />
+        
+        <ScrollView className="flex-1" contentContainerClassName="pb-32">
+          {/* Stats Section - Fallback */}
+          <View className="px-6 py-4">
+            <StudentStats stats={{
+              totalStudents: 0,
+              activeStudents: 0,
+              totalClasses: 0
+            }} />
+          </View>
+
+          {/* Classes Section - Fallback */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Classes You Manage
+            </Text>
+            <View className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-6">
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="school-outline" size={24} color="#9ca3af" />
+                <Text className="text-gray-500 dark:text-gray-400 ml-2 text-center">
+                  No classes assigned yet
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Subjects Section - Fallback */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Subjects You Teach
+            </Text>
+            <View className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-6">
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="book-outline" size={24} color="#9ca3af" />
+                <Text className="text-gray-500 dark:text-gray-400 ml-2 text-center">
+                  No subjects assigned yet
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Search and Filters - Always show */}
+          <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+            <SearchBar 
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search students by name, ID, or class..."
+            />
+            <View className="mt-3">
+              <FilterChips 
+                selectedFilter={selectedFilter}
+                onFilterChange={setSelectedFilter}
+              />
+            </View>
+          </View>
+
+          {/* Students List Header */}
+          <View className="px-6 py-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                0 Students
+              </Text>
+            </View>
+          </View>
+
+          {/* Empty State */}
+          <View className="items-center justify-center py-12">
+            <Ionicons name="school-outline" size={48} color="#9ca3af" />
+            <Text className="text-lg font-semibold text-gray-500 dark:text-gray-400 mt-4">
+              No Students Found
+            </Text>
+            <Text className="text-sm text-gray-400 dark:text-gray-500 text-center mt-2 px-6">
+              You don't have any students assigned to your classes yet. Contact your administrator to get students assigned to your subjects.
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Floating Action Button */}
+        <FloatingActionButton 
+          icon="add"
+          onPress={() => console.log('Add new student')}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const filteredStudents = (data?.students?.data || []).filter((student: StudentTabStudent) => {
+    // Safety checks for student data
+    if (!student) return false;
+    
+    const matchesSearch = (student.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (student.student_id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (student.class?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesFilter = selectedFilter === 'all' || 
                          (selectedFilter === 'active' && student.status === 'active') ||
@@ -107,15 +296,17 @@ export default function StudentsScreen() {
   });
 
   const handleStudentSelect = (studentId: string) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+    if (!studentId) return;
+    setSelectedStudents(prev => {
+      const current = prev || [];
+      return current.includes(studentId) 
+        ? current.filter(id => id !== studentId)
+        : [...current, studentId];
+    });
   };
 
   const handleBulkAction = (action: string) => {
-    console.log(`Bulk action: ${action} for students:`, selectedStudents);
+    console.log(`Bulk action: ${action} for students:`, selectedStudents || []);
     setSelectedStudents([]);
   };
 
@@ -126,17 +317,20 @@ export default function StudentsScreen() {
       <FlatList
         className="flex-1"
         contentContainerClassName="pb-32"
-        data={filteredStudents}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View className="px-6 py-2">
-            <StudentCardNew 
-              student={item}
-              isSelected={selectedStudents.includes(item.id)}
-              onSelect={() => handleStudentSelect(item.id)}
-            />
-          </View>
-        )}
+        data={filteredStudents || []}
+        keyExtractor={(item) => item?.id || Math.random().toString()}
+        renderItem={({ item }) => {
+          if (!item) return null;
+          return (
+            <View className="px-6 py-2">
+              <StudentCardNew 
+                student={item}
+                isSelected={(selectedStudents || []).includes(item.id)}
+                onSelect={() => handleStudentSelect(item.id)}
+              />
+            </View>
+          );
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -151,19 +345,17 @@ export default function StudentsScreen() {
         onEndReachedThreshold={0.1}
         ListHeaderComponent={() => (
           <>
-           
-
             {/* Stats Section */}
             <View className="px-6 py-4">
-              <StudentStats stats={{
-                totalStudents: data.summary.total_students,
-                activeStudents: data.students.data.filter(s => s.status === 'active').length,
-                totalClasses: data.summary.total_classes
-              }} />
+            <StudentStats stats={{
+              totalStudents: data?.summary?.total_students || 0,
+              activeStudents: (data?.students?.data || []).filter(s => s?.status === 'active').length,
+              totalClasses: data?.summary?.total_classes || 0
+            }} />
             </View>
 
             {/* Classes Section */}
-            {data.classes && data.classes.length > 0 && (
+            {data?.classes && data.classes.length > 0 && (
               <View className="px-6 py-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
                 <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                   Classes You Manage
@@ -191,7 +383,7 @@ export default function StudentsScreen() {
               <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Subjects You Teach
               </Text>
-              {data.subjects && data.subjects.length > 0 ? (
+              {data?.subjects && data.subjects.length > 0 ? (
                 <View className="flex-row flex-wrap gap-2">
                   {data.subjects.map((subject) => (
                     <View 
@@ -239,12 +431,12 @@ export default function StudentsScreen() {
             <View className="px-6 py-4">
               <View className="flex-row items-center justify-between mb-4">
                 <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {filteredStudents.length} Student{filteredStudents.length !== 1 ? 's' : ''}
+                  {(filteredStudents || []).length} Student{(filteredStudents || []).length !== 1 ? 's' : ''}
                 </Text>
-                {selectedStudents.length > 0 && (
+                {(selectedStudents || []).length > 0 && (
                   <View className="flex-row items-center gap-2">
                     <Text className="text-sm text-gray-500 dark:text-gray-400">
-                      {selectedStudents.length} selected
+                      {(selectedStudents || []).length} selected
                     </Text>
                     <TouchableOpacity 
                       onPress={() => setSelectedStudents([])}
@@ -280,7 +472,7 @@ export default function StudentsScreen() {
       />
 
       {/* Bulk Actions */}
-      {selectedStudents.length > 0 && (
+      {(selectedStudents || []).length > 0 && (
         <View className="absolute bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-6 py-4">
           <View className="flex-row gap-3">
             <TouchableOpacity 

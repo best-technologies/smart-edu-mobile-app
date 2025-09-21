@@ -26,8 +26,10 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('adeola.wale4@bestacademy.edu.ng');
+  // const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('Maximus123');
+  // const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   const { login, isLoading, error, clearError } = useAuth();

@@ -17,7 +17,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import BackButton from '@/components/BackButton';
+import { CenteredLoader } from '@/components';
 
 type ForgotPasswordScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 type ForgotPasswordScreenRouteProp = RouteProp<RootStackParamList, 'ForgotPassword'>;
@@ -28,7 +28,8 @@ interface ForgotPasswordScreenProps {
 }
 
 export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswordScreenProps) {
-  const [email, setEmail] = useState('omayowagold@gmail.com');
+  // const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('tope.rasheedat1@bestacademy.edu.ng');
   const [emailError, setEmailError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   
@@ -99,61 +100,56 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1">
       <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor="#f9fafb" 
-        translucent={false}
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true}
       />
       
-      <SafeAreaView className="flex-1">
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-        >
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+      <LinearGradient
+        colors={['#0f172a', '#1a1a1a', '#32CD32']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        {/* Background decorative elements */}
+        <View className="absolute inset-0 opacity-5">
+          <View className="absolute top-20 left-8 w-32 h-32 border border-white/20 rounded-full" />
+          <View className="absolute top-40 right-12 w-24 h-24 border border-white/20 rotate-45" />
+          <View className="absolute bottom-40 left-16 w-20 h-20 border border-white/20 rounded-full" />
+          <View className="absolute bottom-32 right-8 w-28 h-28 border border-white/20 rotate-12" />
+        </View>
+
+        <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1"
           >
-            <View 
-              className="px-6"
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              {/* Header */}
-              <View className="flex-row items-center mb-8 mt-4">
-                <BackButton />
-                <Text className="text-2xl font-bold text-gray-900 ml-4">
-                  Forgot Password
-                </Text>
-              </View>
-
-              {/* Main Content */}
-              <View className="items-center mb-12">
-                <View className="mb-8">
-                  <View className="w-20 h-20 bg-blue-100 rounded-2xl items-center justify-center">
-                    <Ionicons 
-                      name="lock-closed" 
-                      size={36} 
-                      color="#3b82f6" 
-                    />
+              <View className="flex-1 px-8 justify-center">
+                {/* Header */}
+                <View className="items-center mb-12">
+                  <View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20 mb-6">
+                    <Ionicons name="lock-closed" size={48} color="#14b8a6" />
                   </View>
+                  
+                  <Text className="text-3xl font-bold text-white mb-2 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+                    Forgot Password
+                  </Text>
+                  <Text className="text-white/90 text-center text-base font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Enter your email address below and we'll send you a secure code to reset your password
+                  </Text>
                 </View>
-                
-                <Text className="text-2xl font-bold text-gray-900 mb-3 text-center w-full">
-                  Reset Your Password
-                </Text>
-                <Text className="text-gray-600 text-center text-base leading-6 w-full px-4">
-                  Enter your email address below and we'll send you a secure code to reset your password.
-                </Text>
-              </View>
 
-              {/* Form */}
-              {!isLoading && !isValidating ? (
-                <View className="space-y-8">
-                  {/* Email Input */}
+                {/* Email Input */}
+                <View className="space-y-6 mb-4">
                   <View>
-                    <Text className="text-gray-700 font-semibold text-sm mb-2">
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Email Address
                     </Text>
                     <View className="relative">
@@ -161,98 +157,110 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
                         value={email}
                         onChangeText={handleEmailChange}
                         placeholder="Enter your email address"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         keyboardType="email-address"
                         autoCapitalize="none"
                         autoCorrect={false}
                         autoComplete="email"
                         textContentType="emailAddress"
-                        className={`w-full h-14 bg-white rounded-xl px-4 text-gray-900 text-base border ${
-                          emailError ? 'border-red-500' : 'border-gray-200'
+                        className={`w-full h-14 bg-white/15 rounded-xl px-4 pr-12 text-white text-base border ${
+                          emailError ? 'border-red-500' : 'border-white/25'
                         }`}
                         style={{
                           shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.05,
-                          shadowRadius: 2,
-                          elevation: 2,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 4,
+                          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
                         }}
                       />
                       <View className="absolute right-4 top-0 bottom-0 justify-center">
-                        <Ionicons name="mail-outline" size={20} color="#9ca3af" />
+                        <Ionicons name="mail-outline" size={20} color="rgba(255, 255, 255, 0.8)" />
                       </View>
                     </View>
                     {emailError && (
-                      <Text className="text-red-500 text-sm mt-2 ml-1">
+                      <Text className="text-red-300 text-sm mt-2 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                         {emailError}
                       </Text>
                     )}
                   </View>
+                </View>
 
-                  {/* Send Email Button */}
-                  <View className="mt-8">
-                    <TouchableOpacity
-                      onPress={handleButtonPress}
-                      disabled={isLoading || isValidating}
-                      className={`w-full h-14 rounded-xl items-center justify-center ${
-                        isLoading || isValidating ? 'opacity-60' : ''
-                      }`}
-                      style={{
-                        shadowColor: '#3b82f6',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.2,
-                        shadowRadius: 8,
-                        elevation: 8,
-                      }}
-                    >
-                      <LinearGradient
-                        colors={['#3b82f6', '#2563eb']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          borderRadius: 12,
-                        }}
-                      >
-                        <Text className="text-white font-semibold text-base">
-                          Send Reset Code
+                {/* Send Email Button */}
+                <TouchableOpacity
+                  onPress={handleButtonPress}
+                  disabled={isLoading || isValidating}
+                  className="w-full h-14 rounded-xl items-center justify-center overflow-hidden"
+                  style={{
+                    shadowColor: '#32CD32',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 12,
+                    elevation: 12,
+                  }}
+                >
+                  <LinearGradient
+                    colors={isLoading || isValidating ? ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)'] : ['#32CD32', '#28a745', '#20c997']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {isLoading || isValidating ? (
+                      <View className="flex-row items-center">
+                        <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
+                        <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                          Sending Reset Code...
                         </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ) : (
-                /* Loading State */
-                <View className="space-y-8">
-                  <View className="items-center py-8">
-                    <View className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full mb-4" />
-                    <Text className="text-gray-600 text-center text-base">
-                      Sending reset code...
-                    </Text>
-                  </View>
-                </View>
-              )}
+                      </View>
+                    ) : (
+                      <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        Send Reset Code
+                      </Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
 
-              {/* Footer */}
-              <View className="items-center mt-12 w-full">
-                <View className="flex-row justify-center items-center">
-                  <Text className="text-gray-500 text-sm">
-                    Remember your password?{' '}
+                {/* Footer */}
+                <View className="items-center bg-white/5 rounded-2xl p-6 border border-white/10 mt-8">
+                  <Text className="text-white/90 text-sm text-center font-medium mb-2" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Remember your password?
                   </Text>
-                  <TouchableOpacity onPress={handleBack}>
-                    <Text className="text-blue-600 font-semibold text-sm">
+                  <TouchableOpacity 
+                    onPress={handleBack}
+                    className="bg-lime-500/20 px-6 py-3 rounded-xl border border-lime-400/30"
+                    style={{
+                      shadowColor: '#32CD32',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 4,
+                    }}
+                  >
+                    <Text className="text-lime-400 font-bold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Sign in here
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* Centered Loader for full-screen loading */}
+      <CenteredLoader 
+        visible={isLoading || isValidating}
+        text="Sending reset code..."
+        size="large"
+        spinnerColor="#32CD32"
+        textColor="#ffffff"
+      />
     </View>
   );
 }

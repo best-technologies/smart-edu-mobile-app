@@ -10,6 +10,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,7 +18,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import BackButton from '@/components/BackButton';
+import { CenteredLoader } from '@/components';
 import OTPInput from '@/components/OTPInput';
 
 type PasswordResetOTPScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PasswordResetOTP'>;
@@ -31,8 +32,8 @@ interface PasswordResetOTPScreenProps {
 export default function PasswordResetOTPScreen({ navigation, route }: PasswordResetOTPScreenProps) {
   const { email } = route.params;
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6-digit OTP
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('Maximus123');
+  const [confirmPassword, setConfirmPassword] = useState('Maximus123');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -116,6 +117,12 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
       return;
     }
 
+    // Additional validation: check if all digits are filled
+    if (otp.some(digit => !digit || digit.trim() === '')) {
+      setOtpError('Please enter all 6 digits');
+      return;
+    }
+
     // Validate password
     if (!newPassword.trim()) {
       setPasswordError('Password is required');
@@ -177,253 +184,277 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1">
       <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor="#f9fafb" 
-        translucent={false}
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true}
       />
       
-      <SafeAreaView className="flex-1">
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
-          <ScrollView 
-            contentContainerStyle={{ 
-              flexGrow: 1,
-              paddingBottom: 120, // Increased padding to ensure submit button is visible
-              minHeight: '100%'
-            }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-            bounces={false}
-            style={{ flex: 1 }}
+      <LinearGradient
+        colors={['#0f172a', '#1a1a1a', '#32CD32']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        {/* Background decorative elements */}
+        <View className="absolute inset-0 opacity-5">
+          <View className="absolute top-20 left-8 w-32 h-32 border border-white/20 rounded-full" />
+          <View className="absolute top-40 right-12 w-24 h-24 border border-white/20 rotate-45" />
+          <View className="absolute bottom-40 left-16 w-20 h-20 border border-white/20 rounded-full" />
+          <View className="absolute bottom-32 right-8 w-28 h-28 border border-white/20 rotate-12" />
+        </View>
+
+        <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1"
           >
-            <Animated.View 
-              style={{ 
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-                flex: 1,
-                justifyContent: 'space-between',
-                minHeight: '100%'
-              }}
-              className="px-6 py-4"
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              {/* Header */}
-              <View className="flex-row items-center mb-6 mt-2">
-                <BackButton />
-                <Text className="text-2xl font-bold text-gray-900 ml-4">
-                  Reset Password
-                </Text>
-              </View>
-
-              {/* Main Content */}
-              <View className="flex-1">
-                <View className="items-center mb-8">
-                <Animated.View 
-                  style={{ transform: [{ scale: iconScale }] }}
-                  className="mb-6"
-                >
-                  <Animated.View className="w-20 h-20 bg-blue-100 rounded-2xl items-center justify-center">
-                    <Ionicons name="key" size={36} color="#3b82f6" />
+              <Animated.View 
+                style={{ 
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                }}
+                className="flex-1 px-8 justify-center"
+              >
+                {/* Header */}
+                <View className="items-center mb-12">
+                  <Animated.View 
+                    style={{ transform: [{ scale: iconScale }] }}
+                    className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20 mb-6"
+                  >
+                    <Ionicons name="key" size={48} color="#14b8a6" />
                   </Animated.View>
-                </Animated.View>
-                
-                <Text className="text-2xl font-bold text-gray-900 mb-3 text-center w-full">
-                  Set New Password
-                </Text>
-                <Text className="text-gray-600 text-center text-base leading-6 w-full px-4">
-                  Enter the 6-digit code sent to {email} and create a new password
-                </Text>
-              </View>
+                  
+                  <Text className="text-3xl font-bold text-white mb-2 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+                    Reset Password
+                  </Text>
+                  <Text className="text-white/90 text-center text-base font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Enter the 6-digit code sent to {email} and create a new password
+                  </Text>
+                </View>
 
-              {/* OTP Input */}
-              <View className="mb-6">
-                <Text className="text-gray-700 font-semibold text-sm mb-6">
-                  Verification Code
-                </Text>
-                
                 {/* OTP Input */}
-                <OTPInput
-                  value={otp}
-                  onChange={(newOtp) => {
-                    setOtp(newOtp);
-                    setOtpError('');
-                    // Check if OTP is complete and trigger validation
-                    if (newOtp.join('').length === 6) {
-                      setTimeout(() => {
-                        const otpString = newOtp.join('');
-                        if (otpString.length === 6) {
-                          // Auto-submit when OTP is complete
-                          handleResetPassword();
+                <View className="space-y-6 mb-4">
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Verification Code
+                    </Text>
+                    
+                    <OTPInput
+                      value={otp}
+                      onChange={(newOtp) => {
+                        setOtp(newOtp);
+                        setOtpError(''); // Clear error immediately when user types
+                        // Check if OTP is complete and trigger validation
+                        if (newOtp.join('').length === 6) {
+                          // Clear any existing errors before auto-submit
+                          setOtpError('');
+                          setPasswordError('');
+                          setConfirmPasswordError('');
+                          setTimeout(() => {
+                            const otpString = newOtp.join('');
+                            // if (otpString.length === 6) {
+                            //   // Auto-submit when OTP is complete
+                            //   handleResetPassword();
+                            // }
+                          }, 100); // Small delay to ensure state is updated
                         }
-                      }, 100); // Small delay to ensure state is updated
-                    }
-                  }}
-                  length={6}
-                  autoFocus={true}
-                  keyboardType="number-pad"
-                  containerStyle={{ marginBottom: 16 }}
-                  inputStyle={{
-                    backgroundColor: '#f3f4f6',
-                    borderColor: otpError ? '#ef4444' : '#d1d5db',
-                    borderWidth: 2,
-                    color: '#111827',
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    letterSpacing: 4,
-                  }}
-                />
-                
-                {otpError && (
-                  <Text className="text-red-500 text-sm mt-4 text-center">
-                    {otpError}
-                  </Text>
-                )}
-              </View>
-
-              {/* New Password Input */}
-              <View className="mb-4">
-                <Text className="text-gray-700 font-semibold text-sm mb-2">
-                  New Password
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    ref={passwordRef}
-                    value={newPassword}
-                    onChangeText={handlePasswordChange}
-                    placeholder="Enter new password"
-                    placeholderTextColor="#9ca3af"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className={`w-full h-14 bg-white rounded-xl px-4 text-gray-900 text-base border ${
-                      passwordError ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    style={{
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-0 bottom-0 justify-center"
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-off" : "eye"} 
-                      size={20} 
-                      color="#9ca3af" 
+                      }}
+                      length={6}
+                      autoFocus={true}
+                      keyboardType="number-pad"
+                      containerStyle={{ marginBottom: 16 }}
+                      inputStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                        borderColor: otpError ? '#ef4444' : 'rgba(255, 255, 255, 0.25)',
+                        borderWidth: 2,
+                        color: '#ffffff',
+                        fontSize: 20,
+                        fontWeight: 'bold',
+                        letterSpacing: 4,
+                      }}
                     />
-                  </TouchableOpacity>
-                </View>
-                {passwordError && (
-                  <Text className="text-red-500 text-sm mt-2 ml-1">
-                    {passwordError}
-                  </Text>
-                )}
-              </View>
-
-              {/* Confirm Password Input */}
-              <View className="mb-6">
-                <Text className="text-gray-700 font-semibold text-sm mb-2">
-                  Confirm Password
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    ref={confirmPasswordRef}
-                    value={confirmPassword}
-                    onChangeText={handleConfirmPasswordChange}
-                    placeholder="Confirm new password"
-                    placeholderTextColor="#9ca3af"
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className={`w-full h-14 bg-white rounded-xl px-4 text-gray-900 text-base border ${
-                      confirmPasswordError ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    style={{
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-0 bottom-0 justify-center"
-                  >
-                    <Ionicons 
-                      name={showConfirmPassword ? "eye-off" : "eye"} 
-                      size={20} 
-                      color="#9ca3af" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {confirmPasswordError && (
-                  <Text className="text-red-500 text-sm mt-2 ml-1">
-                    {confirmPasswordError}
-                  </Text>
-                )}
-                </View>
-              </View>
-
-              {/* Reset Password Button */}
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }} className="mt-8 mb-6">
-                <TouchableOpacity
-                  onPress={handleButtonPress}
-                  disabled={isLoading}
-                  className={`w-full h-16 rounded-xl items-center justify-center ${
-                    isLoading ? 'opacity-60' : ''
-                  }`}
-                  style={{
-                    shadowColor: '#3b82f6',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 8,
-                  }}
-                >
-                  <Animated.View className="w-full h-full bg-blue-600 rounded-xl items-center justify-center">
-                    {isLoading ? (
-                      <Animated.View className="flex-row items-center">
-                        <Animated.View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
-                        <Text className="text-white font-bold text-base">
-                          Resetting Password...
-                        </Text>
-                      </Animated.View>
-                    ) : (
-                      <Text className="text-white font-bold text-base">
-                        Reset Password
+                    
+                    {otpError && (
+                      <Text className="text-red-300 text-sm mt-4 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        {otpError}
                       </Text>
                     )}
-                  </Animated.View>
-                </TouchableOpacity>
-              </Animated.View>
+                  </View>
 
-              {/* Footer */}
-              <View className="items-center mt-6">
-                <View className="flex-row items-center">
-                  <Text className="text-gray-500 text-sm text-center">
-                    Remember your password?{' '}
+                  {/* New Password Input */}
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      New Password
+                    </Text>
+                    <View className="relative">
+                      <TextInput
+                        ref={passwordRef}
+                        value={newPassword}
+                        onChangeText={handlePasswordChange}
+                        placeholder="Enter new password"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        className={`w-full h-14 bg-white/15 rounded-xl px-4 pr-12 text-white text-base border ${
+                          passwordError ? 'border-red-500' : 'border-white/25'
+                        }`}
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 4,
+                          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+                        }}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-0 bottom-0 justify-center"
+                      >
+                        <Ionicons 
+                          name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                          size={20} 
+                          color="rgba(255, 255, 255, 0.8)" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {passwordError && (
+                      <Text className="text-red-300 text-sm mt-2 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        {passwordError}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Confirm Password Input */}
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Confirm Password
+                    </Text>
+                    <View className="relative">
+                      <TextInput
+                        ref={confirmPasswordRef}
+                        value={confirmPassword}
+                        onChangeText={handleConfirmPasswordChange}
+                        placeholder="Confirm new password"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        secureTextEntry={!showConfirmPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        className={`w-full h-14 bg-white/15 rounded-xl px-4 pr-12 text-white text-base border ${
+                          confirmPasswordError ? 'border-red-500' : 'border-white/25'
+                        }`}
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 4,
+                          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+                        }}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-0 bottom-0 justify-center"
+                      >
+                        <Ionicons 
+                          name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                          size={20} 
+                          color="rgba(255, 255, 255, 0.8)" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {confirmPasswordError && (
+                      <Text className="text-red-300 text-sm mt-2 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                        {confirmPasswordError}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                {/* Reset Password Button */}
+                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                  <TouchableOpacity
+                    onPress={handleButtonPress}
+                    disabled={isLoading}
+                    className="w-full h-14 rounded-xl items-center justify-center overflow-hidden"
+                    style={{
+                      shadowColor: '#32CD32',
+                      shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 12,
+                      elevation: 12,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={isLoading ? ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)'] : ['#32CD32', '#28a745', '#20c997']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      {isLoading ? (
+                        <View className="flex-row items-center">
+                          <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
+                          <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                            Resetting Password...
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                          Reset Password
+                        </Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+
+                {/* Footer */}
+                <View className="items-center bg-white/5 rounded-2xl p-6 border border-white/10 mt-8">
+                  <Text className="text-white/90 text-sm text-center font-medium mb-2" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    Remember your password?
                   </Text>
-                  <TouchableOpacity onPress={handleBack}>
-                    <Text className="text-blue-600 font-semibold text-sm">
+                  <TouchableOpacity 
+                    onPress={handleBack}
+                    className="bg-lime-500/20 px-6 py-3 rounded-xl border border-lime-400/30"
+                    style={{
+                      shadowColor: '#32CD32',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 4,
+                    }}
+                  >
+                    <Text className="text-lime-400 font-bold text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                       Sign in here
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </Animated.View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+              </Animated.View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* Centered Loader for full-screen loading */}
+      <CenteredLoader 
+        visible={isLoading}
+        text="Resetting your password..."
+        size="large"
+        spinnerColor="#32CD32"
+        textColor="#ffffff"
+      />
     </View>
   );
 }

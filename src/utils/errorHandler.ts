@@ -134,8 +134,8 @@ export class ErrorHandler {
 
       case 403:
         return {
-          title: 'Access Denied',
-          message: 'You don\'t have permission to perform this action.',
+          title: 'Session Expired',
+          message: 'Your session has expired. Please log in again.',
           type: 'error'
         };
 
@@ -288,6 +288,7 @@ export function isAuthenticationError(error: any): boolean {
     'student not found',
     'unauthorized',
     'forbidden',
+    'forbidden resource',
     'invalid token',
     'token expired',
     'authentication failed',
@@ -318,12 +319,11 @@ export function shouldTriggerAuthAction(error: any): boolean {
   const errorMessage = error.message || error.toString() || '';
   const errorString = errorMessage.toLowerCase();
   
-  console.log('🔍 Checking if error should trigger auth action:', {
-    errorMessage,
-    errorString,
-    errorType: typeof error,
-    errorConstructor: error.constructor?.name
-  });
+  // Check for 403 status code specifically
+  if (error.statusCode === 403 || error.status === 403) {
+    console.log('🔍 403 status code detected, triggering auth action');
+    return true;
+  }
   
   // Check for common authentication error patterns
   const authErrorPatterns = [
@@ -334,6 +334,7 @@ export function shouldTriggerAuthAction(error: any): boolean {
     'student not found',
     'unauthorized',
     'forbidden',
+    'forbidden resource',
     'invalid token',
     'token expired',
     'authentication failed',

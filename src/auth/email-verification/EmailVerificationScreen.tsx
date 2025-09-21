@@ -232,99 +232,61 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
                 className="px-8 justify-center"
               >
                 {/* Header */}
-                <View className="items-center mb-8">
-                  <Text className="text-2xl font-bold text-white text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
-                    Verify Email Address
-                  </Text>
-                </View>
-
-                {/* Main Content */}
                 <View className="items-center mb-12">
                   <Animated.View 
                     style={{ transform: [{ scale: iconScale }] }}
-                    className="mb-6"
+                    className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20 mb-6"
                   >
-                    <Animated.View className="w-24 h-24 bg-white/10 rounded-3xl items-center justify-center backdrop-blur-sm border border-white/20">
-                      <Ionicons name="mail" size={48} color="#32CD32" />
-                    </Animated.View>
+                    <Ionicons name="mail" size={48} color="#14b8a6" />
                   </Animated.View>
                   
-                  <Text className="text-2xl font-bold text-white mb-3 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
-                    Verify Your Email
+                  <Text className="text-3xl font-bold text-white mb-2 text-center" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+                    Verify Email Address
                   </Text>
-                  <Text className="text-white/90 text-center text-base leading-6 mb-4 font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    We've sent a 6-digit verification code to
+                  <Text className="text-white/90 text-center text-base font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    We've sent a 6-digit verification code to {email}
                   </Text>
-                  <Text className="text-lime-400 text-center text-base font-semibold mb-6" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    {email}
-                  </Text>
-                  <Text className="text-white/90 text-center text-sm font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    Please enter the code to verify your email address
-                  </Text>
-                </View>
-
-                {/* Email Input (Read-only) */}
-                <View className="mb-6">
-                  <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    Email Address
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={email}
-                      editable={false}
-                      className="w-full h-14 bg-white/10 rounded-xl px-4 text-white/70 text-base border border-white/20"
-                      style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 4,
-                        elevation: 3,
-                        fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
-                      }}
-                    />
-                    <View className="absolute right-4 top-0 bottom-0 justify-center">
-                      <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.5)" />
-                    </View>
-                  </View>
                 </View>
 
                 {/* OTP Input */}
-                <View className="mb-8">
-                  <Text className="text-white font-semibold text-sm mb-3 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                    Verification Code
-                  </Text>
-                  <View className="flex-row justify-between space-x-3">
-                    {otp.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={(ref) => {
-                          if (ref) otpRefs.current[index] = ref;
-                        }}
-                        style={{
-                          width: 45,
-                          height: 55,
-                          backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: digit ? '#32CD32' : 'rgba(255, 255, 255, 0.3)',
-                          textAlign: 'center',
-                          fontSize: 20,
-                          fontWeight: 'bold',
-                          color: '#ffffff',
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          elevation: 3,
-                        }}
-                        value={digit}
-                        onChangeText={(value) => handleOtpChange(value, index)}
-                        onKeyPress={(e) => handleKeyPress(e, index)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        autoFocus={index === 0}
-                      />
-                    ))}
+                <View className="space-y-6 mb-4">
+                  <View>
+                    <Text className="text-white font-semibold text-sm mb-1 ml-1" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                      Verification Code
+                    </Text>
+                    <View className="flex-row justify-between space-x-3">
+                      {otp.map((digit, index) => (
+                        <TextInput
+                          key={index}
+                          ref={(ref) => {
+                            if (ref) otpRefs.current[index] = ref;
+                          }}
+                          style={{
+                            width: 45,
+                            height: 55,
+                            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                            borderRadius: 12,
+                            borderWidth: 2,
+                            borderColor: digit ? '#32CD32' : 'rgba(255, 255, 255, 0.25)',
+                            textAlign: 'center',
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                            color: '#ffffff',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 4,
+                            elevation: 4,
+                          }}
+                          value={digit}
+                          onChangeText={(value) => handleOtpChange(value, index)}
+                          onKeyPress={(e) => handleKeyPress(e, index)}
+                          keyboardType="number-pad"
+                          maxLength={1}
+                          autoFocus={index === 0}
+                        />
+                      ))}
+                    </View>
                   </View>
                 </View>
 
@@ -356,12 +318,12 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
                       }}
                     >
                       {isLoading ? (
-                        <InlineSpinner 
-                          size="medium"
-                          color="#ffffff"
-                          text="Verifying..."
-                          textColor="#ffffff"
-                        />
+                        <View className="flex-row items-center">
+                          <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
+                          <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                            Verifying...
+                          </Text>
+                        </View>
                       ) : (
                         <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                           Verify Email
@@ -372,8 +334,8 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
                 </Animated.View>
 
                 {/* Resend OTP */}
-                <View className="items-center mt-8">
-                  <Text className="text-white/90 text-sm text-center mb-2 font-medium" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                <View className="items-center bg-white/5 rounded-2xl p-6 border border-white/10 mt-8">
+                  <Text className="text-white/90 text-sm text-center font-medium mb-2" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                     Didn't receive the code?
                   </Text>
                   <TouchableOpacity 
@@ -384,21 +346,21 @@ export default function EmailVerificationScreen({ navigation, route }: EmailVeri
                         ? 'bg-white/10 border-white/20' 
                         : 'bg-lime-500/20 border-lime-400/30'
                     }`}
-                                          style={{
-                        shadowColor: '#32CD32',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: countdown > 0 ? 0.1 : 0.2,
-                        shadowRadius: 4,
-                        elevation: countdown > 0 ? 2 : 4,
-                      }}
+                    style={{
+                      shadowColor: '#32CD32',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: countdown > 0 ? 0.1 : 0.2,
+                      shadowRadius: 4,
+                      elevation: countdown > 0 ? 2 : 4,
+                    }}
                   >
                     {isSendingOTP ? (
-                      <InlineSpinner 
-                        size="small"
-                        color="#ffffff"
-                        text="Sending..."
-                        textColor="#ffffff"
-                      />
+                      <View className="flex-row items-center">
+                        <View className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full mr-2" />
+                        <Text className="text-white font-medium text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                          Sending...
+                        </Text>
+                      </View>
                     ) : countdown > 0 ? (
                       <Text className="text-white/70 font-medium text-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                         Resend in {formatCountdown(countdown)}

@@ -37,12 +37,18 @@ export default function TeacherDashboardScreen() {
   // Transform API data to match component expectations
   const managedClasses = dashboardData && dashboardData.managed_class ? [dashboardData.managed_class] : [];
   
-  const subjectsTeaching = dashboardData ? dashboardData.subjects_teaching : [];
+  const subjectsTeaching = dashboardData ? dashboardData.subjects_teaching.map((subject, index) => ({
+    ...subject,
+    id: subject.id || `subject-${index}-${Date.now()}`
+  })) : [];
   
   // Use mock notifications if no notifications exist
   const notifications = dashboardData ? (
     dashboardData.recent_notifications.length > 0 
-      ? dashboardData.recent_notifications 
+      ? dashboardData.recent_notifications.map((notification, index) => ({
+          ...notification,
+          id: notification.id || `notification-${index}-${Date.now()}`
+        }))
       : teacherDashboardData.notifications
   ) : teacherDashboardData.notifications;
 
@@ -51,8 +57,8 @@ export default function TeacherDashboardScreen() {
       day: `${formatDay(dashboardData.class_schedules.today.day)}'s Classes`,
       icon: 'time-outline',
       color: '#10B981',
-      classes: dashboardData.class_schedules.today.schedule.map(item => ({
-        id: `${item.subject.id}-${item.time.from}`,
+      classes: dashboardData.class_schedules.today.schedule.map((item, index) => ({
+        id: `today-${item.subject.id}-${item.time.from}-${index}`,
         subject: formatSubjectName(item.subject.name),
         classCode: formatClassName(item.class.name),
         startTime: formatTime(item.time.from),
@@ -65,8 +71,8 @@ export default function TeacherDashboardScreen() {
       day: `${formatDay(dashboardData.class_schedules.tomorrow.day)}'s Classes`,
       icon: 'time-outline',
       color: '#F59E0B',
-      classes: dashboardData.class_schedules.tomorrow.schedule.map(item => ({
-        id: `${item.subject.id}-${item.time.from}`,
+      classes: dashboardData.class_schedules.tomorrow.schedule.map((item, index) => ({
+        id: `tomorrow-${item.subject.id}-${item.time.from}-${index}`,
         subject: formatSubjectName(item.subject.name),
         classCode: formatClassName(item.class.name),
         startTime: formatTime(item.time.from),
@@ -79,8 +85,8 @@ export default function TeacherDashboardScreen() {
       day: `${formatDay(dashboardData.class_schedules.day_after_tomorrow.day)}'s Classes`,
       icon: 'time-outline',
       color: '#8B5CF6',
-      classes: dashboardData.class_schedules.day_after_tomorrow.schedule.map(item => ({
-        id: `${item.subject.id}-${item.time.from}`,
+      classes: dashboardData.class_schedules.day_after_tomorrow.schedule.map((item, index) => ({
+        id: `day-after-${item.subject.id}-${item.time.from}-${index}`,
         subject: formatSubjectName(item.subject.name),
         classCode: formatClassName(item.class.name),
         startTime: formatTime(item.time.from),
