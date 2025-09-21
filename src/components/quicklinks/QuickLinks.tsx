@@ -33,7 +33,7 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
             title: 'Attendance',
             icon: 'checkmark-circle-outline',
             color: '#10B981',
-            onPress: () => console.log('Attendance'),
+            onPress: () => navigation.navigate('Attendance', { role: 'director' }),
           },
           {
             id: 'assessment',
@@ -59,7 +59,7 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
             title: 'Attendance',
             icon: 'checkmark-circle-outline',
             color: '#10B981',
-            onPress: () => console.log('Attendance'),
+            onPress: () => navigation.navigate('Attendance', { role: 'teacher' }),
           },
           {
             id: 'assessment',

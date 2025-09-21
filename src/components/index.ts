@@ -4,6 +4,7 @@ export { default as Hello } from './Hello';
 export { default as InlineSpinner } from './InlineSpinner';
 export { QuickActions, QuickLinks } from './quicklinks';
 export type { QuickAction, UserRole } from './quicklinks';
+export { AttendanceScreen } from './attendance';
 export { default as CenteredLoader } from './CenteredLoader';
 export { default as InlineLoader } from './InlineLoader';
 export { default as Toast } from './Toast';

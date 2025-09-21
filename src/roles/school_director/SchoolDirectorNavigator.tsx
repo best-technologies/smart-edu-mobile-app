@@ -7,6 +7,7 @@ import NotificationsListScreen from './screens/notifications/NotificationsListSc
 import NotificationDetailScreen from './screens/notifications/NotificationDetailScreen';
 import { AIChatScreen, AIChatMainScreen, ChatWithExistingScreen } from '@/screens/ai-chat';
 import GlobalSubjectDetailScreen from './screens/GlobalSubjectDetailScreen';
+import { AttendanceScreen } from '@/components';
 
 export type SchoolDirectorStackParamList = {
   SchoolDirectorTabs: undefined;
@@ -28,6 +29,7 @@ export type SchoolDirectorStackParamList = {
     fileType?: string;
     processingStatus?: string;
   };
+  Attendance: { role: 'director' | 'teacher' | 'student' };
 };
 
 const Stack = createNativeStackNavigator<SchoolDirectorStackParamList>();
@@ -49,6 +51,7 @@ export default function SchoolDirectorNavigator() {
       <Stack.Screen name="AIChatMain" component={AIChatMainScreen} />
       <Stack.Screen name="ChatWithExisting" component={ChatWithExistingScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
+      <Stack.Screen name="Attendance" component={AttendanceScreen} />
     </Stack.Navigator>
   );
 }
