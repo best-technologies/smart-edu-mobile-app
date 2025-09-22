@@ -58,6 +58,14 @@ export class HttpClient {
       const url = `${API_CONFIG.BASE_URL}${endpoint}`;
       console.log(`🌐 ${method} ${url}`);
       
+      // Special logging for attendance endpoints
+      if (endpoint.includes('attendance/')) {
+        console.log('📊 ATTENDANCE REQUEST DEBUG:');
+        console.log('  - Full URL:', url);
+        console.log('  - Method:', method);
+        console.log('  - Endpoint:', endpoint);
+      }
+      
       const headers: Record<string, string> = {};
 
       // Only set Content-Type for JSON data, let React Native set it for FormData
@@ -70,7 +78,19 @@ export class HttpClient {
         const token = await TokenManager.getAccessToken();
         if (token) {
           headers.Authorization = `Bearer ${token}`;
+          if (endpoint.includes('attendance/submit')) {
+            console.log('Authorization header set with token');
+          }
+        } else {
+          if (endpoint.includes('attendance/submit')) {
+            console.log('WARNING: No auth token available!');
+          }
         }
+      }
+      
+      if (endpoint.includes('attendance/submit')) {
+        console.log('Request headers:', headers);
+        console.log('=== END HTTP CLIENT - ATTENDANCE SUBMIT ===');
       }
 
       const requestConfig: RequestInit = {

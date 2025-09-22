@@ -17,6 +17,7 @@ import CBTQuestionCreationScreen from './screens/CBTQuestionCreationScreen';
 import CBTQuizDetailScreen from './screens/CBTQuizDetailScreen';
 import AssessmentsListScreen from './screens/AssessmentsListScreen';
 import { AttendanceScreen } from '@/components';
+import StudentAttendanceHistoryScreen from '@/components/attendance/StudentAttendanceHistoryScreen';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -103,6 +104,7 @@ export default function TeacherTabs() {
       <Stack.Screen name="CBTQuizDetail" component={CBTQuizDetailScreen} />
       <Stack.Screen name="CBTQuestionCreation" component={CBTQuestionCreationScreen} />
       <Stack.Screen name="Attendance" component={AttendanceScreen} />
+      <Stack.Screen name="StudentAttendanceHistory" component={StudentAttendanceHistoryScreen} />
     </Stack.Navigator>
   );
 }

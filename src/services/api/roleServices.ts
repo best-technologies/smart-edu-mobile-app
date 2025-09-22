@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from '../config/apiConfig';
+import { API_ENDPOINTS, API_CONFIG } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
 import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse, StudentProfileData } from '../types/apiTypes';
 
@@ -119,6 +119,143 @@ export class TeacherService {
     );
     const data = (res as any)?.data || res;
     return data as { sessionId: string; progress: number; stage: string; message: string; bytesUploaded: number; totalBytes: number; estimatedTimeRemaining?: number; materialId?: string; };
+  }
+
+  async getAttendanceSessionDetails(): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(API_ENDPOINTS.TEACHER.ATTENDANCE_SESSION);
+  }
+
+  async getClassStudents(classId: string, page: number = 1, limit: number = 10): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', page.toString());
+    queryParams.append('limit', limit.toString());
+    
+    return this.httpClient.makeRequest(
+      `${API_ENDPOINTS.TEACHER.ATTENDANCE_CLASS_STUDENTS}/${classId}/students?${queryParams.toString()}`
+    );
+  }
+
+  async getAttendanceForDate(classId: string, date: string): Promise<ApiResponse<any>> {
+    return this.httpClient.makeRequest(
+      `${API_ENDPOINTS.TEACHER.ATTENDANCE_GET}/${classId}/date/${date}`
+    );
+  }
+
+  async submitAttendance(attendanceData: {
+    class_id: string;
+    date: string;
+    session_type?: string;
+    attendance_records: Array<{
+      student_id: string;
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PARTIAL';
+      reason?: string;
+      is_excused?: boolean;
+      excuse_note?: string;
+    }>;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    console.log('=== TEACHER SERVICE - SUBMIT ATTENDANCE ===');
+    console.log('API endpoint:', API_ENDPOINTS.TEACHER.ATTENDANCE_SUBMIT);
+    console.log('Request method: POST');
+    console.log('Request payload (JSON):', JSON.stringify(attendanceData, null, 2));
+    console.log('Payload details:');
+    console.log('- class_id:', attendanceData.class_id);
+    console.log('- date:', attendanceData.date);
+    console.log('- session_type:', attendanceData.session_type);
+    console.log('- notes:', attendanceData.notes);
+    console.log('- attendance_records count:', attendanceData.attendance_records.length);
+    console.log('- attendance_records:', attendanceData.attendance_records);
+    
+    const result = this.httpClient.makeRequest(
+      API_ENDPOINTS.TEACHER.ATTENDANCE_SUBMIT,
+      'POST',
+      attendanceData
+    );
+    
+    console.log('Response received:', result);
+    console.log('=== END TEACHER SERVICE - SUBMIT ATTENDANCE ===');
+    return result;
+  }
+
+  async updateAttendance(attendanceData: {
+    class_id: string;
+    date: string;
+    attendance_records: Array<{
+      student_id: string;
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PARTIAL';
+      reason?: string;
+      is_excused?: boolean;
+      excuse_note?: string;
+    }>;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    
+    const result = this.httpClient.makeRequest(
+      API_ENDPOINTS.TEACHER.ATTENDANCE_UPDATE,
+      'PATCH',
+      attendanceData
+    );
+    
+    console.log('Response received:', result);
+    console.log('=== END TEACHER SERVICE - UPDATE ATTENDANCE ===');
+    return result;
+  }
+
+  async getStudentAttendanceHistory(
+    studentId: string, 
+    year?: number, 
+    month?: number
+  ): Promise<ApiResponse<{
+    summary: {
+      totalSchoolDaysThisMonth: number;
+      totalPresentThisMonth: number;
+      totalSchoolDaysThisTerm: number;
+      totalPresentThisTerm: number;
+      lastAbsentDate: string | null;
+    };
+    records: Array<{
+      date: string;
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PARTIAL' | 'HOLIDAY' | 'WEEKEND';
+      isExcused: boolean;
+      reason?: string;
+      markedAt?: string;
+      markedBy?: string;
+    }>;
+  }>> {
+    const params = new URLSearchParams();
+    if (year) params.append('year', year.toString());
+    if (month) params.append('month', month.toString());
+    
+    const queryString = params.toString();
+    const endpoint = `${API_ENDPOINTS.TEACHER.ATTENDANCE_HISTORY}/${studentId}${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('🔍 getStudentAttendanceHistory called with:');
+    console.log('  - studentId:', studentId);
+    console.log('  - year:', year);
+    console.log('  - month:', month);
+    console.log('  - API_ENDPOINTS.TEACHER.ATTENDANCE_HISTORY:', API_ENDPOINTS.TEACHER.ATTENDANCE_HISTORY);
+    console.log('  - queryString:', queryString);
+    console.log('  - final endpoint:', endpoint);
+    console.log('  - full URL will be:', `${API_CONFIG.BASE_URL}${endpoint}`);
+    
+    const result = this.httpClient.makeRequest<{
+      summary: {
+        totalSchoolDaysThisMonth: number;
+        totalPresentThisMonth: number;
+        totalSchoolDaysThisTerm: number;
+        totalPresentThisTerm: number;
+        lastAbsentDate: string | null;
+      };
+      records: Array<{
+        date: string;
+        status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PARTIAL' | 'HOLIDAY' | 'WEEKEND';
+        isExcused: boolean;
+        reason?: string;
+        markedAt?: string;
+        markedBy?: string;
+      }>;
+    }>(endpoint, 'GET');
+    return result;
   }
 }
 

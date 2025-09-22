@@ -59,6 +59,12 @@ export const API_ENDPOINTS = {
     UPLOAD_VIDEO_START: '/teachers/topics/upload-video/start',
     UPLOAD_PROGRESS: '/teachers/topics/upload-progress',
     UPLOAD_PROGRESS_POLL: '/teachers/topics/video-upload-progress',
+    ATTENDANCE_SESSION: '/teachers/attendance/getsessiondetailsandclasses',
+    ATTENDANCE_CLASS_STUDENTS: '/teachers/attendance/classes',
+    ATTENDANCE_GET: '/teachers/attendance/classes',
+    ATTENDANCE_SUBMIT: '/teachers/attendance/submit',
+    ATTENDANCE_UPDATE: '/teachers/attendance/update',
+    ATTENDANCE_HISTORY: '/teachers/attendance/students',
   },
   DIRECTOR: {
     DASHBOARD: '/director/dashboard',

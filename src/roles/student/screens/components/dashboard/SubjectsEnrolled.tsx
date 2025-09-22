@@ -6,19 +6,20 @@ interface Subject {
   name: string;
   code: string;
   color: string;
-  teacher: {
+  teacher?: {
     id: string;
     name: string;
     display_picture: any;
-  };
+  } | null;
 }
 
 interface SubjectsEnrolledProps {
-  subjects: Subject[];
+  subjects?: Subject[];
   totalSubjects?: number;
 }
 
 export default function SubjectsEnrolled({ subjects, totalSubjects }: SubjectsEnrolledProps) {
+  const subjectList = subjects ?? [];
   return (
     <View className="mb-6">
       <View className="flex-row items-center justify-between mb-4">
@@ -48,7 +49,7 @@ export default function SubjectsEnrolled({ subjects, totalSubjects }: SubjectsEn
         showsHorizontalScrollIndicator={false}
         contentContainerClassName="gap-3 px-1"
       >
-        {subjects.map((subject) => (
+        {subjectList.map((subject) => (
           <TouchableOpacity
             key={subject.id}
             activeOpacity={0.8}
@@ -75,7 +76,7 @@ export default function SubjectsEnrolled({ subjects, totalSubjects }: SubjectsEn
             <View className="flex-row items-center">
               <Ionicons name="person-outline" size={14} color="#6B7280" />
               <Text className="text-xs text-gray-600 dark:text-gray-300 ml-1 flex-1" numberOfLines={1}>
-                {subject.teacher.name}
+                {subject.teacher?.name ?? 'Unknown teacher'}
               </Text>
             </View>
           </TouchableOpacity>

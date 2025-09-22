@@ -351,7 +351,6 @@ export function shouldTriggerAuthAction(error: any): boolean {
   ];
   
   const shouldTrigger = authErrorPatterns.some(pattern => errorString.includes(pattern));
-  console.log('🔍 Auth action trigger result:', shouldTrigger);
   
   return shouldTrigger;
 }

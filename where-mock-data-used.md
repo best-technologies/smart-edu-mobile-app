@@ -10,3 +10,16 @@
 -- Mock Data Usage Locations
 - DirectorDashboardScreen.tsx: ongoingClasses and notifications fallback data from @mock/director.ts
 - TeacherDashboardScreen.tsx: notifications and upcomingClasses fallback data from @mock/teacher.ts
+
+credentials
+-- School director 
+- dada.ngozi1@bestacademy.edu.ng
+- Maximus123
+
+----Teacher 
+- tope.rasheedat1@bestacademy.edu.ng
+- Maximus123
+
+---- Student
+- quadri.jumoke1@bestacademy.edu.ng
+- Maximus123
