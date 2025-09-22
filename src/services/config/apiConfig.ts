@@ -84,6 +84,7 @@ export const API_ENDPOINTS = {
     ASSESSMENT_QUESTIONS: '/students/assessments',
     ASSESSMENT_SUBMIT: '/students/assessments',
     ASSESSMENT_ANSWERS: '/students/assessments',
+    ATTENDANCE: '/students/attendance',
   },
   AI_CHAT: {
     INITIATE: '/ai-chat/initiate-ai-chat',

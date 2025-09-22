@@ -117,7 +117,7 @@ export default function RecentNotifications({ notifications = [], pendingAssessm
           <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
             Recent Notifications
           </Text>
-          {pendingAssessments && pendingAssessments > 0 && (
+          {(pendingAssessments ?? 0) > 0 && (
             <View className="px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30">
               <Text className="text-xs font-medium text-orange-700 dark:text-orange-300">
                 {pendingAssessments} Pending

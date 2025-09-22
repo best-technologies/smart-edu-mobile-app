@@ -14,7 +14,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useToast } from '@/contexts/ToastContext';
 import CenteredLoader from '@/components/CenteredLoader';
 import InlineLoader from '@/components/InlineLoader';
-import { useStudentAttendanceHistory } from '@/hooks/useStudentAttendanceHistory';
+import { useStudentAttendance } from '@/hooks/useStudentAttendance';
+import { useStudentProfile } from '@/hooks/useStudentProfile';
 
 interface Student {
   id: string;
@@ -28,12 +29,35 @@ interface Student {
   class_id: string;
 }
 
+interface AcademicSession {
+  id: string;
+  academic_year: string;
+  term: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  status: string;
+}
+
+interface AvailableTerm {
+  id: string;
+  term: string;
+  academic_year: string;
+}
+
 interface AttendanceSummary {
   totalSchoolDaysThisMonth: number;
   totalPresentThisMonth: number;
   totalSchoolDaysThisTerm: number;
   totalPresentThisTerm: number;
   lastAbsentDate: string | null;
+}
+
+interface AttendanceData {
+  academic_sessions: AcademicSession[];
+  available_terms: AvailableTerm[];
+  summary: AttendanceSummary;
+  records: AttendanceRecord[];
 }
 
 interface AttendanceRecord {
@@ -48,28 +72,40 @@ interface AttendanceRecord {
 export default function StudentAttendanceHistoryScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { student, role } = route.params as { student: Student; role: string };
+  const params = route.params as any;
+  const passedStudent = params?.student as Student | undefined;
+  const role = (params?.role as string) ?? 'student';
+  
+  // For student role, we don't need to fetch profile data since attendance endpoint is for current student
+  // For teacher/director roles, we use the passed student data
+  const student = passedStudent || null;
   const { showSuccess, showError } = useToast();
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
-  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
 
-  // Use the API hook
+  // Use the new API hook - no need for student ID as it's for current student
   const {
-    data: attendanceData,
-    isLoading,
+    data: attendanceResponse,
+    isLoading: isDataLoading,
     error,
-    refetch
-  } = useStudentAttendanceHistory({
-    studentId: student.id,
+    refetch,
+    isFetching
+  } = useStudentAttendance({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1, // JavaScript months are 0-based
-    enabled: true
+    enabled: true // Always enabled since it's for the current student
   });
 
-  const attendanceSummary = (attendanceData as any)?.data?.summary || null;
-  const attendanceRecords = (attendanceData as any)?.data?.records || [];
+  // Debug log to verify correct endpoint is being called
+  console.log('📊 StudentAttendanceHistoryScreen - Role:', role, 'Student:', !!student, 'Loading:', isDataLoading);
+
+  const attendanceData: AttendanceData | null = attendanceResponse?.data || null;
+
+  const attendanceSummary = attendanceData?.summary || null;
+  const attendanceRecords = attendanceData?.records || [];
+  const academicSessions = attendanceData?.academic_sessions || [];
+  const availableTerms = attendanceData?.available_terms || [];
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -78,8 +114,6 @@ export default function StudentAttendanceHistoryScreen() {
   };
 
   const navigateMonth = async (direction: 'prev' | 'next') => {
-    setIsCalendarLoading(true);
-    
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
       newMonth.setMonth(newMonth.getMonth() - 1);
@@ -88,7 +122,6 @@ export default function StudentAttendanceHistoryScreen() {
     }
     setCurrentMonth(newMonth);
     // The query will automatically refetch due to the year/month dependency
-    setIsCalendarLoading(false);
   };
 
   const getAttendanceForDate = (date: string): AttendanceRecord | null => {
@@ -187,6 +220,18 @@ export default function StudentAttendanceHistoryScreen() {
     );
   }
 
+  // For teacher/director roles, we need student data
+  // For student role, we don't need student data since attendance endpoint is for current student
+  if (!student && role !== 'student') {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900" edges={['top']}>
+        <View className="flex-1 items-center justify-center p-6">
+          <CenteredLoader visible={true} text="Preparing attendance..." />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Skeleton loading component
   const SkeletonCard = () => (
     <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
@@ -262,29 +307,45 @@ export default function StudentAttendanceHistoryScreen() {
         </View>
 
         {/* Student Info */}
-        <View className="flex-row items-center">
-          <View className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center mr-3">
-            {student.displayPicture ? (
-              <Image
-                source={{ uri: student.displayPicture }}
-                className="w-12 h-12 rounded-full"
-              />
-            ) : (
-              <Ionicons name="person" size={24} color="#6B7280" />
-            )}
+        {student ? (
+          <View className="flex-row items-center">
+            <View className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center mr-3">
+              {student.displayPicture ? (
+                <Image
+                  source={{ uri: student.displayPicture }}
+                  className="w-12 h-12 rounded-full"
+                />
+              ) : (
+                <Ionicons name="person" size={24} color="#6B7280" />
+              )}
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {student.name}
+              </Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">
+                {student.student_id} • {student.class_name}
+              </Text>
+            </View>
           </View>
-          <View className="flex-1">
-            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {student.name}
-            </Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
-              {student.student_id} • {student.class_name}
-            </Text>
+        ) : role === 'student' ? (
+          <View className="flex-row items-center">
+            <View className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 items-center justify-center mr-3">
+              <Ionicons name="person" size={24} color="#3B82F6" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                My Attendance
+              </Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">
+                Track your daily attendance
+              </Text>
+            </View>
           </View>
-        </View>
+        ) : null}
       </View>
 
-      {isLoading ? (
+      {isDataLoading ? (
         <ScrollView className="flex-1">
           <View className="p-4">
             <SkeletonCard />
@@ -317,6 +378,25 @@ export default function StudentAttendanceHistoryScreen() {
               Attendance Summary
             </Text>
             
+            {/* Attendance Percentage */}
+            {attendanceSummary && !isFetching && (
+              <View className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-3 mb-4">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <Ionicons name="trending-up" size={20} color="#10B981" />
+                    <Text className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 ml-2">
+                      Monthly Attendance Rate
+                    </Text>
+                  </View>
+                  <Text className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {attendanceSummary.totalSchoolDaysThisMonth > 0 
+                      ? Math.round((attendanceSummary.totalPresentThisMonth / attendanceSummary.totalSchoolDaysThisMonth) * 100)
+                      : 0}%
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Scrollable Cards Row */}
             <ScrollView 
               horizontal 
@@ -326,9 +406,13 @@ export default function StudentAttendanceHistoryScreen() {
             >
               {/* School Days This Month Card */}
               <View className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mr-3 min-w-[140px] items-center">
-                <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {attendanceSummary?.totalSchoolDaysThisMonth}
-                </Text>
+                {isFetching ? (
+                  <InlineLoader size="small" />
+                ) : (
+                  <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {attendanceSummary?.totalSchoolDaysThisMonth || 0}
+                  </Text>
+                )}
                 <Text className="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
                   School Days This Month
                 </Text>
@@ -336,9 +420,13 @@ export default function StudentAttendanceHistoryScreen() {
               
               {/* Present This Month Card */}
               <View className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mr-3 min-w-[120px] items-center">
-                <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {attendanceSummary?.totalPresentThisMonth}
-                </Text>
+                {isFetching ? (
+                  <InlineLoader size="small" />
+                ) : (
+                  <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {attendanceSummary?.totalPresentThisMonth || 0}
+                  </Text>
+                )}
                 <Text className="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
                   Present This Month
                 </Text>
@@ -346,9 +434,13 @@ export default function StudentAttendanceHistoryScreen() {
               
               {/* School Days This Term Card */}
               <View className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mr-3 min-w-[140px] items-center">
-                <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {attendanceSummary?.totalSchoolDaysThisTerm}
-                </Text>
+                {isFetching ? (
+                  <InlineLoader size="small" />
+                ) : (
+                  <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {attendanceSummary?.totalSchoolDaysThisTerm || 0}
+                  </Text>
+                )}
                 <Text className="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
                   School Days This Term
                 </Text>
@@ -356,9 +448,13 @@ export default function StudentAttendanceHistoryScreen() {
               
               {/* Present This Term Card */}
               <View className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mr-3 min-w-[120px] items-center">
-                <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {attendanceSummary?.totalPresentThisTerm}
-                </Text>
+                {isFetching ? (
+                  <InlineLoader size="small" />
+                ) : (
+                  <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {attendanceSummary?.totalPresentThisTerm || 0}
+                  </Text>
+                )}
                 <Text className="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
                   Present This Term
                 </Text>
@@ -366,6 +462,30 @@ export default function StudentAttendanceHistoryScreen() {
             </ScrollView>
           </View>
         </View>
+
+        {/* Academic Session Info */}
+        {academicSessions.length > 0 && (
+          <View className="px-4 pb-3">
+            <View className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700 p-3">
+              <View className="flex-row items-center mb-2">
+                <Ionicons name="school" size={18} color="#3B82F6" />
+                <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100 ml-2">
+                  Current Academic Session
+                </Text>
+              </View>
+              {academicSessions.filter(session => session.is_current).map((session, index) => (
+                <View key={session.id} className="mb-1">
+                  <Text className="text-sm text-blue-800 dark:text-blue-200">
+                    {session.academic_year} - {session.term.charAt(0).toUpperCase() + session.term.slice(1)} Term
+                  </Text>
+                  <Text className="text-xs text-blue-600 dark:text-blue-300">
+                    {new Date(session.start_date).toLocaleDateString()} - {new Date(session.end_date).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Legend Section */}
         <View className="px-4 pb-3">
@@ -392,6 +512,10 @@ export default function StudentAttendanceHistoryScreen() {
                   <Text className="text-sm text-gray-600 dark:text-gray-400 ml-2">Late</Text>
                 </View>
                 <View className="flex-row items-center">
+                  <Ionicons name="checkmark-circle-outline" size={18} color="#8B5CF6" />
+                  <Text className="text-sm text-gray-600 dark:text-gray-400 ml-2">Excused</Text>
+                </View>
+                <View className="flex-row items-center">
                   <Ionicons name="remove-circle" size={18} color="#F59E0B" />
                   <Text className="text-sm text-gray-600 dark:text-gray-400 ml-2">Partial</Text>
                 </View>
@@ -415,34 +539,44 @@ export default function StudentAttendanceHistoryScreen() {
             <View className="flex-row items-center justify-between mb-4">
               <TouchableOpacity
                 onPress={() => navigateMonth('prev')}
-                disabled={isCalendarLoading}
+                disabled={isFetching}
                 className={`w-8 h-8 rounded-full items-center justify-center ${
-                  isCalendarLoading 
+                  isFetching 
                     ? 'bg-gray-200 dark:bg-gray-600' 
                     : 'bg-gray-100 dark:bg-gray-700'
                 }`}
               >
-                {isCalendarLoading ? (
+                {isFetching ? (
                   <InlineLoader size="small" />
                 ) : (
                   <Ionicons name="chevron-back" size={16} color="#374151" />
                 )}
               </TouchableOpacity>
               
-              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </Text>
+              <View className="items-center">
+                <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </Text>
+                {(() => {
+                  const currentSession = academicSessions.find(session => session.is_current);
+                  return currentSession ? (
+                    <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {currentSession.academic_year} - {currentSession.term.charAt(0).toUpperCase() + currentSession.term.slice(1)} Term
+                    </Text>
+                  ) : null;
+                })()}
+              </View>
               
               <TouchableOpacity
                 onPress={() => navigateMonth('next')}
-                disabled={isCalendarLoading}
+                disabled={isFetching}
                 className={`w-8 h-8 rounded-full items-center justify-center ${
-                  isCalendarLoading 
+                  isFetching 
                     ? 'bg-gray-200 dark:bg-gray-600' 
                     : 'bg-gray-100 dark:bg-gray-700'
                 }`}
               >
-                {isCalendarLoading ? (
+                {isFetching ? (
                   <InlineLoader size="small" />
                 ) : (
                   <Ionicons name="chevron-forward" size={16} color="#374151" />
@@ -480,14 +614,20 @@ export default function StudentAttendanceHistoryScreen() {
                             }`}
                             onPress={() => {
                               if (day.attendance) {
+                                const statusText = day.attendance.status.charAt(0) + day.attendance.status.slice(1).toLowerCase();
                                 Alert.alert(
-                                  `${day.date}`,
-                                  `Status: ${day.attendance.status}${day.attendance.reason ? `\nReason: ${day.attendance.reason}` : ''}`,
+                                  `Attendance - ${new Date(day.date).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                  })}`,
+                                  `Status: ${statusText}${day.attendance.reason ? `\nReason: ${day.attendance.reason}` : ''}${day.attendance.markedAt ? `\nMarked at: ${new Date(day.attendance.markedAt).toLocaleString()}` : ''}`,
                                   [{ text: 'OK' }]
                                 );
                               }
                             }}
-                            disabled={isCalendarLoading}
+                            disabled={isFetching}
                           >
                             <Text className={`${
                               day.isToday 
@@ -515,10 +655,15 @@ export default function StudentAttendanceHistoryScreen() {
                 ))}
               </View>
 
-              {/* Loading Overlay */}
-              {isCalendarLoading && (
-                <View className="absolute inset-0 bg-white/80 dark:bg-gray-800/80 items-center justify-center rounded-lg">
-                  <InlineLoader size="medium" />
+              {/* Loading Overlay for Calendar Data */}
+              {isFetching && (
+                <View className="absolute inset-0 bg-white/50 dark:bg-gray-800/50 items-center justify-center rounded-lg">
+                  <View className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+                    <InlineLoader size="medium" />
+                    <Text className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                      Loading attendance data...
+                    </Text>
+                  </View>
                 </View>
               )}
             </View>

@@ -81,11 +81,11 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
         return [
           ...commonActions,
           {
-            id: 'assessments',
-            title: 'Assessments',
-            icon: 'document-text-outline',
-            color: '#3B82F6',
-            onPress: () => navigation.navigate('Assessments'),
+            id: 'attendance',
+            title: 'Attendance',
+            icon: 'checkmark-circle-outline',
+            color: '#10B981',
+            onPress: () => navigation.navigate('StudentAttendanceHistory', { role: 'student' }),
           },
           {
             id: 'results',
@@ -93,13 +93,6 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
             icon: 'stats-chart-outline',
             color: '#F59E0B',
             onPress: () => navigation.navigate('Results'),
-          },
-          {
-            id: 'subjects',
-            title: 'Subjects',
-            icon: 'book-outline',
-            color: '#8B5CF6',
-            onPress: () => navigation.navigate('Subjects'),
           },
           {
             id: 'schedules',

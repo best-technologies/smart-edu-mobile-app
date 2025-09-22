@@ -380,6 +380,52 @@ export class StudentService {
     const url = API_ENDPOINTS.USER.PROFILE;
     return this.httpClient.makeRequest<StudentProfileData>(url);
   }
+
+  async getAttendanceHistory(year?: number, month?: number): Promise<ApiResponse<{
+    academic_sessions: Array<{
+      id: string;
+      academic_year: string;
+      term: string;
+      start_date: string;
+      end_date: string;
+      is_current: boolean;
+      status: string;
+    }>;
+    available_terms: Array<{
+      id: string;
+      term: string;
+      academic_year: string;
+    }>;
+    summary: {
+      totalSchoolDaysThisMonth: number;
+      totalPresentThisMonth: number;
+      totalSchoolDaysThisTerm: number;
+      totalPresentThisTerm: number;
+      lastAbsentDate: string | null;
+    };
+    records: Array<{
+      date: string;
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PARTIAL' | 'HOLIDAY' | 'WEEKEND';
+      isExcused: boolean;
+      reason?: string;
+      markedAt?: string;
+      markedBy?: string;
+    }>;
+  }>> {
+    const params = new URLSearchParams();
+    if (year) params.append('year', year.toString());
+    if (month) params.append('month', month.toString());
+    
+    const queryString = params.toString();
+    const endpoint = `${API_ENDPOINTS.STUDENT.ATTENDANCE}${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('🔍 StudentService.getAttendanceHistory called with:');
+    console.log('  - year:', year);
+    console.log('  - month:', month);
+    console.log('  - endpoint:', endpoint);
+    
+    return this.httpClient.makeRequest(endpoint, 'GET');
+  }
 }
 
 export class UserService {
