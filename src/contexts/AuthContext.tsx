@@ -7,6 +7,8 @@ import { ErrorHandler, shouldTriggerAuthAction } from '@/utils/errorHandler';
 import { getRouteForRole } from '@/utils/roleMapper';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { queryClient } from './QueryProvider';
+import { navigationRef } from '@/navigation/RootNavigation';
+import { forceNavigateToLogin, retryNavigateToLogin, emergencyNavigateToLogin } from '@/utils/logoutHelper';
 
 // Auth State Interface
 interface AuthState {
@@ -383,9 +385,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         showError(friendlyError.title, friendlyError.message, 4000);
       }
     } finally {
-      console.log('🔄 Dispatching LOGOUT action');
+      // console.log('🔄 Dispatching LOGOUT action');
       dispatch({ type: 'LOGOUT' });
       console.log('✅ LOGOUT action dispatched');
+      
+      // Force immediate navigation reset after logout
+      // console.log('🔄 Forcing immediate navigation reset after logout');
+      
+      // Use emergency navigation which tries multiple approaches
+      emergencyNavigateToLogin();
     }
   };
 

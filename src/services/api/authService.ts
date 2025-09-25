@@ -95,15 +95,15 @@ export class AuthService {
       console.log('🔄 Logout success response:', response.success);
       
       if (response.success) {
-        console.log('✅ Logout successful:', response.message);
+        // console.log('✅ Logout successful:', response.message);
       } else {
-        console.log('⚠️ Logout response indicates failure:', response.message);
+        // console.log('⚠️ Logout response indicates failure:', response.message);
       }
     } catch (error) {
       console.error('❌ Logout API error:', error);
     } finally {
       // Clear local storage regardless of API response
-      console.log('🧹 Clearing local tokens and data...');
+      // console.log('🧹 Clearing local tokens and data...');
       await TokenManager.clearTokens();
       console.log('✅ Logout process completed');
     }

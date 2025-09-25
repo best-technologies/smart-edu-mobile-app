@@ -8,6 +8,7 @@ import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentNavigator from '@/roles/student/StudentNavigator';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
+import { navigationRef } from './RootNavigation';
 import React from 'react';
 
 export type RootStackParamList = {
@@ -44,8 +45,11 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer 
+      ref={navigationRef}
       theme={AppTheme}
-      onReady={() => {}}
+      onReady={() => {
+        console.log('🚀 Navigation container is ready');
+      }}
     >
       <Stack.Navigator 
         initialRouteName="Login" 

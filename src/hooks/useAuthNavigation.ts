@@ -92,24 +92,53 @@ export function useAuthNavigation() {
     if (!isAuthenticated && !user) {
       console.log('🚪 User logged out, navigating to Login screen');
       
-      // Try multiple navigation approaches to ensure we get to the login screen
-      try {
-        // First try: Reset to login screen
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
-        console.log('✅ Navigation reset to Login screen');
-      } catch (error) {
-        console.log('❌ Navigation reset failed, trying navigate:', error);
+      // Immediate aggressive navigation reset
+      const performNavigationReset = () => {
         try {
-          // Fallback: Navigate to login
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+          console.log('✅ Navigation reset to Login screen completed');
+          return true;
+        } catch (error) {
+          console.log('❌ Navigation reset failed:', error);
+          return false;
+        }
+      };
+
+      // Try immediate reset
+      if (!performNavigationReset()) {
+        // If immediate reset fails, try navigate
+        try {
           navigation.navigate('Login');
           console.log('✅ Navigated to Login screen');
         } catch (navigateError) {
-          console.log('❌ Navigation failed completely:', navigateError);
+          console.log('❌ Navigation failed, trying goBack + navigate:', navigateError);
+          try {
+            navigation.goBack();
+            setTimeout(() => {
+              navigation.navigate('Login');
+            }, 100);
+          } catch (lastResortError) {
+            console.log('❌ Last resort navigation failed:', lastResortError);
+          }
         }
       }
+
+      // Additional safety reset after a short delay
+      setTimeout(() => {
+        try {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+          console.log('✅ Safety navigation reset completed');
+        } catch (e) {
+          console.log('⚠️ Safety reset failed (non-critical):', e);
+        }
+      }, 300);
+
       return;
     }
 

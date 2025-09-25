@@ -22,7 +22,7 @@ export default function Toast({
   type,
   title,
   message,
-  duration = 4000, // 4 seconds
+  duration = 1000, // 1 second
   onClose,
   onPress,
 }: ToastProps) {

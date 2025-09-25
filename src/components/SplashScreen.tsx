@@ -107,8 +107,11 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
             {/* Tagline */}
             <View className="items-center mb-12">
-              <Text className="text-lg text-white/90 text-center font-medium tracking-wide">
+              <Text className="text-lg text-white/90 text-center font-medium tracking-wide mb-2">
                 Learn. Manage. Grow.
+              </Text>
+              <Text className="text-sm text-white/70 text-center font-normal tracking-wide px-4">
+                Your AI Powered Learning and School Management System
               </Text>
             </View>
 
