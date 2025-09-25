@@ -15,6 +15,7 @@ import { useToast } from '@/contexts/ToastContext';
 import CenteredLoader from '@/components/CenteredLoader';
 import InlineLoader from '@/components/InlineLoader';
 import { useStudentAttendance } from '@/hooks/useStudentAttendance';
+import { useStudentAttendanceHistory } from '@/hooks/useStudentAttendanceHistory';
 import { useStudentProfile } from '@/hooks/useStudentProfile';
 
 interface Student {
@@ -54,8 +55,8 @@ interface AttendanceSummary {
 }
 
 interface AttendanceData {
-  academic_sessions: AcademicSession[];
-  available_terms: AvailableTerm[];
+  academic_sessions?: AcademicSession[];
+  available_terms?: AvailableTerm[];
   summary: AttendanceSummary;
   records: AttendanceRecord[];
 }
@@ -84,26 +85,40 @@ export default function StudentAttendanceHistoryScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
-  // Use the new API hook - no need for student ID as it's for current student
-  const {
-    data: attendanceResponse,
-    isLoading: isDataLoading,
-    error,
-    refetch,
-    isFetching
-  } = useStudentAttendance({
+  // Use the correct API hook based on role
+  // For students: use useStudentAttendance (no student ID needed)
+  // For teachers/directors: use useStudentAttendanceHistory (requires student ID)
+  const studentAttendanceQuery = useStudentAttendance({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1, // JavaScript months are 0-based
-    enabled: true // Always enabled since it's for the current student
+    enabled: role === 'student' // Only enabled for student role
   });
+
+  const teacherAttendanceQuery = useStudentAttendanceHistory({
+    studentId: student?.id || '',
+    year: currentMonth.getFullYear(),
+    month: currentMonth.getMonth() + 1, // JavaScript months are 0-based
+    enabled: (role === 'teacher' || role === 'director') && !!student?.id // Only enabled for teacher/director roles with student ID
+  });
+
+  // Use the appropriate query based on role
+  const attendanceResponse = role === 'student' ? studentAttendanceQuery.data : teacherAttendanceQuery.data;
+  const isDataLoading = role === 'student' ? studentAttendanceQuery.isLoading : teacherAttendanceQuery.isLoading;
+  const error = role === 'student' ? studentAttendanceQuery.error : teacherAttendanceQuery.error;
+  const refetch = role === 'student' ? studentAttendanceQuery.refetch : teacherAttendanceQuery.refetch;
+  const isFetching = role === 'student' ? studentAttendanceQuery.isFetching : teacherAttendanceQuery.isFetching;
 
   // Debug log to verify correct endpoint is being called
   console.log('📊 StudentAttendanceHistoryScreen - Role:', role, 'Student:', !!student, 'Loading:', isDataLoading);
 
+  // Handle different data structures from student vs teacher endpoints
   const attendanceData: AttendanceData | null = attendanceResponse?.data || null;
 
   const attendanceSummary = attendanceData?.summary || null;
   const attendanceRecords = attendanceData?.records || [];
+  
+  // Student endpoint includes academic_sessions and available_terms
+  // Teacher endpoint only includes summary and records
   const academicSessions = attendanceData?.academic_sessions || [];
   const availableTerms = attendanceData?.available_terms || [];
 
@@ -473,7 +488,7 @@ export default function StudentAttendanceHistoryScreen() {
                   Current Academic Session
                 </Text>
               </View>
-              {academicSessions.filter(session => session.is_current).map((session, index) => (
+              {academicSessions.filter((session: AcademicSession) => session.is_current).map((session: AcademicSession, index: number) => (
                 <View key={session.id} className="mb-1">
                   <Text className="text-sm text-blue-800 dark:text-blue-200">
                     {session.academic_year} - {session.term.charAt(0).toUpperCase() + session.term.slice(1)} Term
@@ -558,7 +573,7 @@ export default function StudentAttendanceHistoryScreen() {
                   {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </Text>
                 {(() => {
-                  const currentSession = academicSessions.find(session => session.is_current);
+                  const currentSession = academicSessions.find((session: AcademicSession) => session.is_current);
                   return currentSession ? (
                     <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {currentSession.academic_year} - {currentSession.term.charAt(0).toUpperCase() + currentSession.term.slice(1)} Term

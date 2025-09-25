@@ -384,22 +384,31 @@ export default function StudentsScreen() {
                 Subjects You Teach
               </Text>
               {data?.subjects && data.subjects.length > 0 ? (
-                <View className="flex-row flex-wrap gap-2">
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerClassName="gap-3 pr-4"
+                >
                   {data.subjects.map((subject) => (
                     <View 
                       key={subject.id} 
-                      className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2"
+                      className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 min-w-[160px]"
                       style={{ borderLeftColor: subject.color, borderLeftWidth: 4 }}
                     >
-                      <Text className="text-sm font-semibold text-green-700 dark:text-green-300">
+                      <Text className="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">
                         {capitalizeWords(subject.name)}
                       </Text>
                       <Text className="text-xs text-green-600 dark:text-green-400">
-                        {subject.code}{subject.assigned_class ? ` • ${capitalizeWords(subject.assigned_class.name)}` : ' • No class assigned'}
+                        {subject.code}
                       </Text>
+                      {subject.assigned_class && (
+                        <Text className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          {capitalizeWords(subject.assigned_class.name)}
+                        </Text>
+                      )}
                     </View>
                   ))}
-                </View>
+                </ScrollView>
               ) : (
                 <View className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-6">
                   <View className="flex-row items-center justify-center">

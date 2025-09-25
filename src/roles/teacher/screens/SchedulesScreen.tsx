@@ -226,14 +226,18 @@ export default function SchedulesScreen() {
               <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Subjects You Teach:
               </Text>
-              <View className="flex-row flex-wrap gap-2">
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerClassName="gap-2 pr-4"
+              >
                 {subjects.map((subject) => (
                   <View 
                     key={subject.id} 
-                    className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2"
+                    className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 min-w-[140px]"
                     style={{ borderLeftColor: subject.color, borderLeftWidth: 4 }}
                   >
-                    <Text className="text-sm font-semibold text-green-700 dark:text-green-300">
+                    <Text className="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">
                       {subject.name}
                     </Text>
                     <Text className="text-xs text-green-600 dark:text-green-400">
@@ -241,7 +245,7 @@ export default function SchedulesScreen() {
                     </Text>
                   </View>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           )}
 
