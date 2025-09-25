@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import StudentDashboardScreen from './screens/StudentDashboardScreen';
 import StudentSubjectsScreen from './screens/StudentSubjectsScreen';
 import StudentSchedulesScreen from './screens/StudentSchedulesScreen';
-import StudentTasksScreen from './screens/StudentTasksScreen';
+import StudentResultsScreen from './screens/StudentResultsScreen';
 import StudentProfileScreen from './screens/StudentProfileScreen';
 
 function Screen({ label }: { label: string }) {
@@ -62,7 +62,7 @@ export default function StudentTabs() {
       <Tab.Screen name="Dashboard" component={StudentDashboardScreen} />
       <Tab.Screen name="Subjects" component={StudentSubjectsScreen} />
       <Tab.Screen name="Schedules" component={StudentSchedulesScreen} />
-      <Tab.Screen name="Assessments" component={StudentTasksScreen} />
+      <Tab.Screen name="Assessments" component={StudentResultsScreen} />
       <Tab.Screen name="Profile" component={StudentProfileScreen} />
     </Tab.Navigator>
   );
