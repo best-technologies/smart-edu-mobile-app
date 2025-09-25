@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { StudentResultView, StudentResultData } from '@/components';
 
 // Mock data for now
 const mockData = {
@@ -307,6 +308,7 @@ export default function GradingScreen() {
     status: 'all',
   });
   const [selectedAssignment, setSelectedAssignment] = useState<string>('1');
+  const [selectedResult, setSelectedResult] = useState<StudentResultData | null>(null);
 
   const handleSelection = (type: keyof SelectionState, value: string) => {
     setSelections(prev => {
@@ -378,13 +380,72 @@ export default function GradingScreen() {
   };
 
   const handleViewSubmission = (submission: any) => {
-    console.log('View submission:', submission);
-    // Navigate to submission detail screen
+    // console.log('View submission clicked:', submission);
+    
+    // Convert submission to StudentResultData format
+    const resultData: StudentResultData = {
+      id: submission.id,
+      type: submission.type as 'Class Work' | 'Assignment' | 'CA' | 'Exam',
+      student: {
+        id: submission.student.id,
+        name: submission.student.name,
+        avatar: submission.student.avatar,
+        studentId: submission.student.id,
+        class: 'SS 1A', // This should come from the actual data
+      },
+      subject: {
+        id: '1',
+        name: 'Mathematics', // This should come from the actual data
+        code: 'MATH101',
+      },
+      attached: submission.attached,
+      status: submission.status,
+      score: submission.score,
+      maxScore: 100, // This should come from the actual data
+      submittedAt: submission.submittedAt,
+      gradedAt: submission.gradedAt,
+      gradedBy: submission.gradedBy,
+      feedback: submission.feedback || 'Great work on this submission! Keep up the excellent effort.',
+      comments: submission.comments || 'Well done!',
+      rubric: submission.rubric || [
+        {
+          criteria: 'Understanding',
+          points: submission.score ? Math.round(submission.score * 0.4) : 0,
+          maxPoints: 40,
+          feedback: 'Good understanding of the concepts'
+        },
+        {
+          criteria: 'Presentation',
+          points: submission.score ? Math.round(submission.score * 0.3) : 0,
+          maxPoints: 30,
+          feedback: 'Clear and well-organized presentation'
+        },
+        {
+          criteria: 'Accuracy',
+          points: submission.score ? Math.round(submission.score * 0.3) : 0,
+          maxPoints: 30,
+          feedback: 'Accurate calculations and reasoning'
+        }
+      ],
+    };
+    
+    // console.log('Setting selected result:', resultData);
+    setSelectedResult(resultData);
   };
 
   const handleGradeSubmission = (submission: any) => {
     console.log('Grade submission:', submission);
-    // Navigate to grading screen
+    // This would open a grading modal/form
+  };
+
+  const handleEditResult = (result: StudentResultData) => {
+    console.log('Edit result:', result);
+    // This would open an edit modal/form
+  };
+
+  const handleGradeResult = (result: StudentResultData) => {
+    console.log('Grade result:', result);
+    // This would open a grading modal/form
   };
 
   const HorizontalList = ({ 
@@ -702,6 +763,20 @@ export default function GradingScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Student Result View Modal */}
+      {selectedResult && (
+        <StudentResultView
+          result={selectedResult}
+          role="teacher"
+          onClose={() => {
+            // console.log('Closing result modal');
+            setSelectedResult(null);
+          }}
+          onEdit={handleEditResult}
+          onGrade={handleGradeResult}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -24,3 +24,5 @@ export type {
   SubjectPagination,
   SubjectsListScreenProps 
 } from './SubjectsListScreen';
+export { default as StudentResultView } from './StudentResultView';
+export type { StudentResultData } from './StudentResultView';
