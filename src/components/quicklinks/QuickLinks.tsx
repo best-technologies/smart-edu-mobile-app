@@ -69,11 +69,11 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
             onPress: () => navigation.navigate('AssessmentsList'),
           },
           {
-            id: 'results',
+            id: 'grades',
             title: 'Results',
             icon: 'stats-chart-outline',
             color: '#F59E0B',
-            onPress: () => console.log('Results'),
+            onPress: () => navigation.navigate('Grades'),
           },
         ];
 
@@ -92,7 +92,7 @@ export default function QuickLinks({ role, className }: QuickLinksProps) {
             title: 'Results',
             icon: 'stats-chart-outline',
             color: '#F59E0B',
-            onPress: () => navigation.navigate('Results'),
+            onPress: () => navigation.navigate('Grades'),
           },
           {
             id: 'schedules',
