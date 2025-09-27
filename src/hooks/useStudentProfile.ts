@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { StudentService } from '@/services/api/roleServices';
-import { ApiResponse, StudentProfileData } from '@/services/types/apiTypes';
+import { StudentProfileResponse } from '@/services/types/apiTypes';
 
 const studentService = new StudentService();
 
 export const useStudentProfile = () => {
-  return useQuery<ApiResponse<StudentProfileData>>({
+  return useQuery<StudentProfileResponse>({
     queryKey: ['studentProfile'],
     queryFn: () => studentService.getProfile(),
     staleTime: 10 * 60 * 1000, // 10 minutes - profile data doesn't change often

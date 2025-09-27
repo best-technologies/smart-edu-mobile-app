@@ -39,7 +39,10 @@ export const API_ENDPOINTS = {
   },
   // User Management
   USER: {
-    PROFILE: '/director/user/profile',
+    PROFILE: '/user/profile',
+    PROFILE_STUDENT: '/user/mobile-student-profile',
+    PROFILE_TEACHER: '/user/mobile-teacher-profile',
+    PROFILE_DIRECTOR: '/user/mobile-director-profile',
     UPDATE_PROFILE: '/user/profile',
     CHANGE_PASSWORD: '/user/change-password',
   },

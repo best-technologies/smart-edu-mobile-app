@@ -17,6 +17,7 @@ import CenteredLoader from '@/components/CenteredLoader';
 import { useToast } from '@/contexts/ToastContext';
 import { StudentService } from '@/services/api/roleServices';
 import { useQueryClient } from '@tanstack/react-query';
+import { mockAssessmentAnswersResponse } from '@/mock/assessments';
 
 const { width } = Dimensions.get('window');
 
@@ -159,36 +160,67 @@ export default function AssessmentTakingScreen({ route, navigation }: Assessment
       // Calculate time spent
       const timeSpent = startTime ? Math.floor((new Date().getTime() - startTime.getTime()) / 1000) : 0;
       
-      // Create service instance
-      const studentService = new StudentService();
+      let response;
       
-      // Debug: Check if method exists
-      console.log('StudentService instance:', studentService);
-      console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(studentService)));
-      console.log('submitAssessment method:', typeof studentService.submitAssessment);
-      
-      // Try to access the method directly
-      if (!studentService.submitAssessment) {
-        console.log('Method not found, trying alternative approach...');
-        // Try to call the method directly from the prototype
-        const method = Object.getPrototypeOf(studentService).submitAssessment;
-        if (typeof method === 'function') {
-          console.log('Found method on prototype, calling directly...');
-          const response = await method.call(studentService, assessmentId, {
+      // Handle mock assessment submissions
+      if (assessmentId.startsWith('mock-assessment-')) {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create mock response based on answers
+        const totalQuestions = questions?.length || 0;
+        const answeredQuestions = Object.keys(answers).filter(qId => 
+          answers[qId] && answers[qId].length > 0
+        ).length;
+        
+        // Calculate mock score (simplified)
+        const mockScore = Math.floor((answeredQuestions / totalQuestions) * 50) + Math.floor(Math.random() * 20);
+        const totalPoints = 50;
+        const percentage = Math.round((mockScore / totalPoints) * 100);
+        const passed = percentage >= 60;
+        const grade = percentage >= 90 ? 'A' : percentage >= 80 ? 'B' : percentage >= 70 ? 'C' : percentage >= 60 ? 'D' : 'F';
+        
+        response = {
+          success: true,
+          data: {
+            total_score: mockScore,
+            total_points: totalPoints,
+            percentage_score: percentage,
+            passed,
+            grade
+          }
+        };
+      } else {
+        // Create service instance for real assessments
+        const studentService = new StudentService();
+        
+        // Debug: Check if method exists
+        console.log('StudentService instance:', studentService);
+        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(studentService)));
+        console.log('submitAssessment method:', typeof studentService.submitAssessment);
+        
+        // Try to access the method directly
+        if (!studentService.submitAssessment) {
+          console.log('Method not found, trying alternative approach...');
+          // Try to call the method directly from the prototype
+          const method = Object.getPrototypeOf(studentService).submitAssessment;
+          if (typeof method === 'function') {
+            console.log('Found method on prototype, calling directly...');
+            response = await method.call(studentService, assessmentId, {
+              answers,
+              timeSpent
+            });
+          } else {
+            throw new Error('submitAssessment method not found on StudentService');
+          }
+        } else {
+          // Submit to backend
+          response = await studentService.submitAssessment(assessmentId, {
             answers,
             timeSpent
           });
-          return response;
-        } else {
-          throw new Error('submitAssessment method not found on StudentService');
         }
       }
-      
-      // Submit to backend
-      const response = await studentService.submitAssessment(assessmentId, {
-        answers,
-        timeSpent
-      });
 
       if (response.success) {
         const { total_score, total_points, percentage_score, passed, grade } = response.data;

@@ -131,7 +131,9 @@ const BasicInfoTab = ({ userData }: { userData: any }) => (
 );
 
 // Academic Info Component
-const AcademicInfoTab = ({ academicData }: { academicData: any }) => (
+const AcademicInfoTab = ({ academicData, generalInfo }: { academicData: any, generalInfo: any }) => {
+  
+  return (
   <View className="space-y-6">
     {/* Current Academic Status */}
     <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -143,28 +145,28 @@ const AcademicInfoTab = ({ academicData }: { academicData: any }) => (
         <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
           <Text className="text-gray-600 dark:text-gray-400">Class</Text>
           <Text className="font-semibold text-gray-900 dark:text-gray-100">
-            {academicData?.student_class?.name || ''}
+            {generalInfo?.student_class?.name || 'Not Available'}
           </Text>
         </View>
         
         <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
           <Text className="text-gray-600 dark:text-gray-400">Level</Text>
           <Text className="font-semibold text-gray-900 dark:text-gray-100">
-            {academicData?.student_class?.level || ''}
+            {generalInfo?.student_class?.level || 'Not Available'}
           </Text>
         </View>
         
         <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
           <Text className="text-gray-600 dark:text-gray-400">Academic Year</Text>
           <Text className="font-semibold text-gray-900 dark:text-gray-100">
-            {academicData?.current_session?.academic_year || ''}
+            {generalInfo?.current_session?.academic_year || 'Not Available'}
           </Text>
         </View>
         
         <View className="flex-row items-center justify-between py-3">
           <Text className="text-gray-600 dark:text-gray-400">Term</Text>
           <Text className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
-            {academicData?.current_session?.term || ''}
+            {generalInfo?.current_session?.term || 'Not Available'}
           </Text>
         </View>
       </View>
@@ -269,7 +271,8 @@ const AcademicInfoTab = ({ academicData }: { academicData: any }) => (
       </View>
     )}
   </View>
-);
+  );
+};
 
 // Settings Component
 const SettingsTab = ({ settingsData }: { settingsData: any }) => {
@@ -490,7 +493,6 @@ export default function StudentProfileScreen() {
   const [activeTab, setActiveTab] = useState('basic');
   const [refreshing, setRefreshing] = useState(false);
   const { data: profileData, isLoading, refetch } = useStudentProfile();
-
   const handleTabPress = (tabId: string) => {
     setActiveTab(tabId);
   };
@@ -511,7 +513,7 @@ export default function StudentProfileScreen() {
       case 'basic':
         return <BasicInfoTab userData={profileData?.data?.general_info?.student} />;
       case 'academic':
-        return <AcademicInfoTab academicData={profileData?.data?.academic_info} />;
+        return <AcademicInfoTab academicData={profileData?.data?.academic_info} generalInfo={profileData?.data?.general_info} />;
       case 'settings':
         return <SettingsTab settingsData={profileData?.data?.settings} />;
       case 'help':

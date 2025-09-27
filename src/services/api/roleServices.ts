@@ -1,6 +1,6 @@
 import { API_ENDPOINTS, API_CONFIG } from '../config/apiConfig';
 import { HttpClient } from './httpClient';
-import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse, StudentProfileData } from '../types/apiTypes';
+import { ApiResponse, UserProfile, StudentTabResponse, TeacherScheduleResponse, StudentDashboardResponse, StudentSubjectsResponse, StudentSubjectDetailsResponse, StudentSchedulesResponse, StudentAssessmentsResponse, AssessmentQuestionsResponse, AssessmentSubmissionResponse, AssessmentAnswersResponse, StudentProfileData, StudentProfileResponse } from '../types/apiTypes';
 
 export class TeacherService {
   private httpClient: HttpClient;
@@ -376,9 +376,9 @@ export class StudentService {
     return this.httpClient.makeRequest<AssessmentAnswersResponse['data']>(url) as Promise<AssessmentAnswersResponse>;
   }
 
-  async getProfile(): Promise<ApiResponse<StudentProfileData>> {
-    const url = API_ENDPOINTS.USER.PROFILE;
-    return this.httpClient.makeRequest<StudentProfileData>(url);
+  async getProfile(): Promise<StudentProfileResponse> {
+    const url = API_ENDPOINTS.USER.PROFILE_STUDENT;
+    return this.httpClient.makeRequest<StudentProfileData>(url) as Promise<StudentProfileResponse>;
   }
 
   async getAttendanceHistory(year?: number, month?: number): Promise<ApiResponse<{

@@ -46,7 +46,7 @@ export interface User {
   school?: School;
 }
 
-// Extended User Profile (from /director/user/profile endpoint)
+// Extended User Profile (from /user/profile endpoint)
 export interface UserProfile extends User {
   school: School;
   current_academic_session_id?: string;
@@ -1031,4 +1031,12 @@ export interface StudentProfileData {
       minimum_android_version: string;
     };
   };
+}
+
+// Backend Response Type for Student Profile
+export interface StudentProfileResponse {
+  success: boolean;
+  message: string;
+  data: StudentProfileData;
+  statusCode: number;
 }
