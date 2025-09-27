@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
-import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert } from 'react-native';
+import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,10 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAIChatConversations } from '../../hooks/useAIChatConversations';
 import { useConversationMessages } from '../../hooks/useConversationMessages';
 import { professionalMarkdownStyles, professionalDarkMarkdownStyles } from '../../utils/markdownStyles';
+import { TeacherQuickLinks, QuickLinkConfigModal } from '../../components';
+import { TEACHER_QUICK_LINKS, QuickLinkItem } from '../../components/TeacherQuickLinks';
+import { CONFIGURABLE_QUICK_LINKS } from '../../components/QuickLinkConfigs';
+import type { QuickLinkConfig } from '../../components/QuickLinkConfigModal';
 
 type AIChatRouteParams = {
   materialTitle?: string;
@@ -96,7 +100,7 @@ const MessageItem = memo(({
 
   return (
     <View key={msg.id} className={`mb-4 ${msg.isUser ? 'items-end' : 'items-start'}`}>
-      <View className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+      <View className={`${msg.isUser ? 'max-w-[80%]' : 'max-w-[95%]'} px-3 py-3 rounded-2xl ${
         msg.isUser 
           ? 'bg-purple-600 rounded-br-md' 
           : 'bg-gray-100 dark:bg-gray-800 rounded-bl-md'
@@ -210,6 +214,10 @@ export default function AIChatScreen() {
   const [processingInfo, setProcessingInfo] = useState<{ status?: string; progress?: number; processedChunks?: number; totalChunks?: number } | null>(null);
   const processingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const [isQuickLinksDropdownVisible, setIsQuickLinksDropdownVisible] = useState(false);
+  const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<QuickLinkConfig | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   // Use TanStack Query hooks
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
@@ -275,9 +283,52 @@ export default function AIChatScreen() {
       ]
     );
   }, []);
+
+  // Store configurable quick link display titles for message mapping
+  const [configurableMessageMap, setConfigurableMessageMap] = useState<Record<string, string>>({});
+
+  // Function to map backend messages back to display titles
+  const mapMessageToDisplayTitle = useCallback((message: string): string => {
+    // First check if this is a configurable quick link message (exact match)
+    if (configurableMessageMap[message]) {
+      return configurableMessageMap[message];
+    }
+    
+    // Pattern matching for known configurable quick link types
+    const lowerMessage = message.toLowerCase();
+    
+    // Question Bank patterns
+    if (lowerMessage.includes('generate a comprehensive question bank') && 
+        lowerMessage.includes('specifications:')) {
+      return 'Question Bank';
+    }
+    
+    // Assessment patterns
+    if (lowerMessage.includes('create a comprehensive') && 
+        (lowerMessage.includes('quiz') || lowerMessage.includes('test') || 
+         lowerMessage.includes('exam') || lowerMessage.includes('assessment'))) {
+      return 'Create Assessment';
+    }
+    
+    // Interactive Activities patterns
+    if (lowerMessage.includes('create') && lowerMessage.includes('engaging interactive activities')) {
+      return 'Interactive Activities';
+    }
+    
+    // Then check regular quick link messages
+    const matchingQuickLink = TEACHER_QUICK_LINKS.find(
+      link => link.message.trim().toLowerCase() === message.trim().toLowerCase()
+    );
+    
+    // If found, return the display title, otherwise return original message
+    return matchingQuickLink ? matchingQuickLink.display_title : message;
+  }, [configurableMessageMap]);
   
-  // Combine API messages with local optimistic messages
-  const displayMessages = [...messages, ...localMessages];
+  // Combine API messages with local optimistic messages and map quick link messages to display titles
+  const displayMessages = [...messages, ...localMessages].map(msg => ({
+    ...msg,
+    text: msg.isUser ? mapMessageToDisplayTitle(msg.text) : msg.text
+  }));
 
   // Improved scroll to bottom function for inverted FlatList
   const scrollToBottom = (animated: boolean = true, delay: number = 0) => {
@@ -289,14 +340,23 @@ export default function AIChatScreen() {
             offset: 0, 
             animated 
           });
-          
         } catch (error) {
           console.log('❌ scrollToOffset failed:', error);
-          // Fallback to scrollToEnd
+          // Fallback to scrollToIndex for the first item (latest message in inverted list)
           try {
-            scrollViewRef.current?.scrollToEnd({ animated });
-          } catch (fallbackError) {
-            console.log('❌ scrollToEnd also failed:', fallbackError);
+            scrollViewRef.current?.scrollToIndex({ 
+              index: 0, 
+              animated,
+              viewPosition: 0
+            });
+          } catch (indexError) {
+            console.log('❌ scrollToIndex failed:', indexError);
+            // Final fallback to scrollToEnd
+            try {
+              scrollViewRef.current?.scrollToEnd({ animated });
+            } catch (fallbackError) {
+              console.log('❌ scrollToEnd also failed:', fallbackError);
+            }
           }
         }
       };
@@ -311,6 +371,18 @@ export default function AIChatScreen() {
     }
   };
 
+  // Handle scroll position to show/hide scroll to bottom button
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    
+    // For inverted FlatList, check if user has scrolled up from the bottom (offset > 0)
+    // Show button when user scrolls up more than 50px from bottom
+    // Also ensure there's actual content to scroll to
+    const hasScrollableContent = contentSize.height > layoutMeasurement.height;
+    const scrolledFromBottom = contentOffset.y > 50 && hasScrollableContent;
+    setShowScrollToBottom(scrolledFromBottom);
+  };
+
   // Typewriter effect for AI responses - optimized for performance
   const typewriterEffect = (text: string, callback?: () => void) => {
     // Ensure clean start
@@ -321,9 +393,10 @@ export default function AIChatScreen() {
     const interval = setInterval(() => {
       if (index < text.length) {
         // Add more characters at once and reduce update frequency
-        const nextChars = text.slice(index, index + 10);
-        setTypingText(prev => prev + nextChars);
-        index += 10;
+        const charsToAdd = Math.min(10, text.length - index);
+        const currentText = text.slice(0, index + charsToAdd);
+        setTypingText(currentText); // Use absolute text instead of accumulation
+        index += charsToAdd;
         // Only scroll every few updates to reduce re-renders
         if (index % 50 === 0) {
           scrollToBottom(true);
@@ -346,7 +419,7 @@ export default function AIChatScreen() {
     
     // Find the conversation to get materialId
     const conversation = conversations.find(conv => conv.id === conversationId);
-    console.log('📋 Found conversation:', conversation);
+    console.log('📋 Found existing conversation:');
     if (conversation) {
       setCurrentMaterialId(conversation.materialId);
     }
@@ -529,6 +602,8 @@ export default function AIChatScreen() {
   // Handle messages loading and auto-scroll - AGGRESSIVE
   useEffect(() => {
     if (displayMessages.length > 0) {
+      // Hide scroll to bottom button when new messages arrive
+      setShowScrollToBottom(false);
       // Immediate scroll
       scrollToBottom(false);
       // Multiple delayed scrolls to ensure it works
@@ -575,6 +650,96 @@ export default function AIChatScreen() {
   }, []);
 
   const minimumRequiredTokensToSendMessage = 2000;
+
+  // Check if current user is a teacher or admin
+  const isTeacher = userProfile?.role === 'teacher';
+  const isAdmin = userProfile?.role === 'admin';
+  const isSchoolDirector = userProfile?.role === 'school_director';
+  const canUseQuickLinks = isTeacher || isAdmin || isSchoolDirector;
+
+  // Handle quick link message sending
+  const handleQuickLinkPress = async (message: string, displayTitle: string, isConfigurable: boolean = false) => {
+    // Store the mapping for configurable messages
+    if (isConfigurable) {
+      setConfigurableMessageMap(prev => ({
+        ...prev,
+        [message]: displayTitle
+      }));
+    }
+    if (!canSendMessage()) {
+      Alert.alert(
+        'Daily Token Limit Reached',
+        `You have used ${usageLimits?.tokensUsedThisDay || 0} tokens today. You need at least 2000 tokens remaining to send messages. Please try again tomorrow.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    if (!isWaitingForResponse && (currentMaterialId || isGeneralChat)) {
+      setMessage('');
+      setTypingText('');
+      setFailedMessage(null);
+      setIsWaitingForResponse(true);
+      
+      // Dismiss keyboard
+      try { Keyboard.dismiss(); } catch {}
+
+      // Add user message immediately (optimistic UI) - show display title to user
+      const userMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        text: displayTitle,
+        isUser: true,
+        timestamp: new Date(),
+      };
+      setLocalMessages(prev => [userMessage, ...prev]);
+      
+      // Scroll to show the new message
+      setTimeout(() => scrollToBottom(false), 100);
+      
+      try {
+        const conversationIdToUse = currentConversationId || 'new-conversation';
+        const materialIdToSend = isGeneralChat ? null : (currentMaterialId || null);
+        
+        // Send the actual detailed message to backend
+        const response = await aiChatService.sendMessage(
+          message, // This is the detailed prompt
+          materialIdToSend,
+          conversationIdToUse
+        );
+        
+        if (response.success && response.data) {
+          if (!currentConversationId) {
+            setCurrentConversationId(response.data.conversationId);
+          }
+          
+          if (response.data.chatTitle && !currentChatTitle) {
+            setCurrentChatTitle(safeDecodeTitle(response.data.chatTitle));
+          }
+          
+          const latestMessage = response.data.content;
+          const latestId = response.data.id;
+          if (latestMessage && latestId) {
+            setLastTypingMessageId(latestId);
+            typewriterEffect(latestMessage);
+          }
+
+          setLocalMessages([]);
+          await refreshMessages();
+          await refreshConversations();
+        } else {
+          console.error('Failed to send quick link message:', response.message);
+          setFailedMessage(message);
+          setLocalMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+        }
+      } catch (error) {
+        console.error('Failed to send quick link message:', error);
+        setFailedMessage(message);
+        setLocalMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+      } finally {
+        setIsWaitingForResponse(false);
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     // Check token limits before allowing message send
@@ -836,15 +1001,37 @@ export default function AIChatScreen() {
           </View>
         </View>
         
-        {/* Conversation History Button */}
-        {conversations.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setShowConversationHistory(true)}
-            className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full items-center justify-center"
-          >
-            <Ionicons name="time-outline" size={18} color="#6B7280" />
-          </TouchableOpacity>
-        )}
+        {/* Quick Links and Conversation History Buttons */}
+        <View className="flex-row items-center space-x-2">
+          {/* Teacher Quick Links Button - Only show for teachers/admins with uploaded material */}
+          {canUseQuickLinks && currentMaterialId && !isGeneralChat && (
+            <TouchableOpacity
+              onPress={() => setIsQuickLinksDropdownVisible(!isQuickLinksDropdownVisible)}
+              disabled={isWaitingForResponse || !canSendMessage()}
+              className={`w-8 h-8 rounded-full items-center justify-center ${
+                isWaitingForResponse || !canSendMessage()
+                  ? 'bg-gray-300 dark:bg-gray-600' 
+                  : 'bg-red-500 dark:bg-red-600'
+              }`}
+            >
+              <Ionicons 
+                name={isQuickLinksDropdownVisible ? "close" : "flash"} 
+                size={18} 
+                color={isWaitingForResponse || !canSendMessage() ? "#9CA3AF" : "white"} 
+              />
+            </TouchableOpacity>
+          )}
+          
+          {/* Conversation History Button */}
+          {conversations.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setShowConversationHistory(true)}
+              className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full items-center justify-center"
+            >
+              <Ionicons name="time-outline" size={18} color="#6B7280" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Token Usage Indicator */}
@@ -931,6 +1118,8 @@ export default function AIChatScreen() {
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
           inverted={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           onLayout={() => {
             // Scroll to bottom when FlatList is laid out
             if (messages.length > 0) {
@@ -1150,6 +1339,32 @@ export default function AIChatScreen() {
         </View>
       </KeyboardAvoidingView>
 
+      {/* Scroll to Bottom Button */}
+      {showScrollToBottom && (
+        <View className="absolute bottom-24 right-4 z-40">
+          <TouchableOpacity
+            onPress={() => {
+              // First scroll, then hide button after a delay to ensure scroll completes
+              scrollToBottom(true);
+              setTimeout(() => {
+                setShowScrollToBottom(false);
+              }, 300);
+            }}
+            className="w-12 h-12 bg-purple-600 dark:bg-purple-700 rounded-full items-center justify-center shadow-lg"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="chevron-down" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Conversation History Modal */}
       {showConversationHistory && (
         <View className="absolute inset-0 bg-black/50 z-50">
@@ -1193,6 +1408,126 @@ export default function AIChatScreen() {
           </View>
         </View>
       )}
+
+      {/* Quick Links Dropdown Modal */}
+      {isQuickLinksDropdownVisible && (
+        <Modal
+          visible={isQuickLinksDropdownVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsQuickLinksDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setIsQuickLinksDropdownVisible(false)}
+            className="flex-1 bg-black/50"
+          >
+            <View className="absolute top-20 left-4 right-4 max-h-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+              {/* Header */}
+              <View className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <View className="w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-full items-center justify-center mr-3">
+                      <Ionicons name="flash" size={18} color="#EF4444" />
+                    </View>
+                    <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Quick Teaching Tools
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setIsQuickLinksDropdownVisible(false)}
+                    className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="close" size={18} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+                <Text className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Select a teaching tool to get AI assistance
+                </Text>
+              </View>
+
+              {/* Quick Links Grid */}
+              <ScrollView 
+                className="flex-1 p-4"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 16 }}
+              >
+                <View className="flex-row flex-wrap justify-between">
+                  {TEACHER_QUICK_LINKS.map((item: QuickLinkItem) => {
+                    const isConfigurable = CONFIGURABLE_QUICK_LINKS[item.id as keyof typeof CONFIGURABLE_QUICK_LINKS];
+                    
+                    return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => {
+                        if (isConfigurable) {
+                          // Show configuration modal for configurable items
+                          setSelectedConfig(isConfigurable);
+                          setConfigModalVisible(true);
+                          setIsQuickLinksDropdownVisible(false);
+                        } else {
+                          // Direct message for simple items
+                          handleQuickLinkPress(item.message, item.display_title);
+                          setIsQuickLinksDropdownVisible(false);
+                        }
+                      }}
+                      className="w-[48%] mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600"
+                      activeOpacity={0.7}
+                    >
+                      <View className="items-center">
+                        <View 
+                          className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                          style={{ backgroundColor: `${item.color}20` }}
+                        >
+                          <Ionicons 
+                            name={item.icon} 
+                            size={24} 
+                            color={item.color} 
+                          />
+                        </View>
+                        <Text 
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100 text-center leading-4"
+                          numberOfLines={2}
+                        >
+                          {item.display_title}
+                        </Text>
+                        {isConfigurable && (
+                          <View className="absolute top-1 right-1">
+                            <View className="w-5 h-5 bg-blue-500 rounded-full items-center justify-center">
+                              <Ionicons name="settings" size={10} color="white" />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+
+              {/* Footer */}
+              <View className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                <Text className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  These tools will send optimized prompts to help you with teaching tasks
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Quick Link Configuration Modal */}
+      <QuickLinkConfigModal
+        visible={configModalVisible}
+        config={selectedConfig}
+        onClose={() => {
+          setConfigModalVisible(false);
+          setSelectedConfig(null);
+        }}
+        onSubmit={(message, displayTitle) => {
+          handleQuickLinkPress(message, displayTitle, true);
+        }}
+      />
     </SafeAreaView>
   );
 }

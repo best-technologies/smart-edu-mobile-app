@@ -26,3 +26,7 @@ export type {
 } from './SubjectsListScreen';
 export { default as StudentResultView } from './StudentResultView';
 export type { StudentResultData } from './StudentResultView';
+export { default as TeacherQuickLinks } from './TeacherQuickLinks';
+export type { QuickLinkItem } from './TeacherQuickLinks';
+export { default as QuickLinkConfigModal } from './QuickLinkConfigModal';
+export type { QuickLinkConfig, ConfigField } from './QuickLinkConfigModal';

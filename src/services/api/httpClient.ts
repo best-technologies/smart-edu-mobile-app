@@ -124,7 +124,11 @@ export class HttpClient {
           timeout = Math.max(timeout, 60 * 1000); // at least 60s per poll
         }
       } else if (endpoint.includes('/ai-chat/')) {
-        timeout = Math.max(timeout, 30000); // 30s for other AI chat requests
+        if (endpoint.includes('/send-message')) {
+          timeout = Math.max(timeout, 180000); // 3 minutes for AI message generation (complex prompts like question banks)
+        } else {
+          timeout = Math.max(timeout, 60000); // 1 minute for other AI chat requests (conversations, etc.)
+        }
       }
 
       let timeoutId: NodeJS.Timeout | null = null;

@@ -329,6 +329,18 @@ export const darkMarkdownStyles = StyleSheet.create({
 // Additional professional styles for better readability
 export const professionalMarkdownStyles = {
   ...markdownStyles,
+  // Reduce overall font size for better mobile display
+  body: {
+    ...markdownStyles.body,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  paragraph: {
+    ...markdownStyles.paragraph,
+    marginBottom: 10,
+    fontSize: 14,
+    lineHeight: 22,
+  },
   // Enhanced code block with syntax highlighting colors
   code_block: {
     ...markdownStyles.code_block,
@@ -351,14 +363,26 @@ export const professionalMarkdownStyles = {
     shadowRadius: 2,
     elevation: 1,
   },
-  // Better list styling
+  // Better list styling - minimal indentation to save space
   bullet_list: {
     ...markdownStyles.bullet_list,
     paddingLeft: 16,
+    marginLeft: 0,
+    marginVertical: 8,
   },
   ordered_list: {
     ...markdownStyles.ordered_list,
     paddingLeft: 16,
+    marginLeft: 0,
+    marginVertical: 8,
+  },
+  list_item: {
+    ...markdownStyles.list_item,
+    marginVertical: 4,
+    paddingLeft: 0,
+    paddingRight: 0,
+    lineHeight: 20,
+    fontSize: 14,
   },
   // Enhanced table styling
   table: {
@@ -373,6 +397,18 @@ export const professionalMarkdownStyles = {
 
 export const professionalDarkMarkdownStyles = {
   ...darkMarkdownStyles,
+  // Reduce overall font size for better mobile display
+  body: {
+    ...darkMarkdownStyles.body,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  paragraph: {
+    ...darkMarkdownStyles.paragraph,
+    marginBottom: 10,
+    fontSize: 14,
+    lineHeight: 22,
+  },
   // Enhanced dark code block
   code_block: {
     ...darkMarkdownStyles.code_block,
@@ -395,14 +431,26 @@ export const professionalDarkMarkdownStyles = {
     shadowRadius: 2,
     elevation: 2,
   },
-  // Better dark list styling
+  // Better dark list styling - minimal indentation to save space
   bullet_list: {
     ...darkMarkdownStyles.bullet_list,
     paddingLeft: 16,
+    marginLeft: 0,
+    marginVertical: 8,
   },
   ordered_list: {
     ...darkMarkdownStyles.ordered_list,
     paddingLeft: 16,
+    marginLeft: 0,
+    marginVertical: 8,
+  },
+  list_item: {
+    ...darkMarkdownStyles.list_item,
+    marginVertical: 4,
+    paddingLeft: 0,
+    paddingRight: 0,
+    lineHeight: 20,
+    fontSize: 14,
   },
   // Enhanced dark table styling
   table: {
