@@ -1,5 +1,6 @@
 import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Avatar } from './Avatar';
 import { IconButton } from './buttons/IconButton';
 import { capitalize } from './utils';
@@ -33,6 +34,7 @@ export function TopBar({
   avatarUri?: string;
   onNotificationPress?: () => void;
 }) {
+  const navigation = useNavigation();
   const { userProfile, isLoading } = useUserProfileContext();
   const { logout } = useAuth();
   
@@ -54,11 +56,15 @@ export function TopBar({
     }
   };
 
+  const handleProfilePress = () => {
+    (navigation as any).navigate('DirectorProfile');
+  };
+
   return (
     <View className="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-200 dark:border-gray-700">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <Avatar name={displayName} uri={displayAvatar} />
+          <Avatar name={displayName} uri={displayAvatar} onPress={handleProfilePress} />
           <View>
             <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               {/* {displaySchoolId ? `School ID: ${displaySchoolId}` : 'School ID: —'} */}
