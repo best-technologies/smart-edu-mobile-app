@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
-import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert, Modal } from 'react-native';
+import { View, Text, StatusBar, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, FlatList, Keyboard, Alert, Modal, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
@@ -218,10 +218,38 @@ export default function AIChatScreen() {
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<QuickLinkConfig | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  
+  // Animation for breathing flash icon
+  const flashIconOpacity = useRef(new Animated.Value(1)).current;
 
   // Use TanStack Query hooks
   const { conversations, isLoading: conversationsLoading, refreshConversations } = useAIChatConversations();
   const { messages, usageLimits, isLoading: messagesLoading, refreshMessages } = useConversationMessages(currentConversationId);
+  
+  // Breathing animation for flash icon
+  useEffect(() => {
+    const createBreathingAnimation = () => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(flashIconOpacity, {
+            toValue: 0.4,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(flashIconOpacity, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const animation = createBreathingAnimation();
+    animation.start();
+
+    return () => animation.stop();
+  }, [flashIconOpacity]);
   
   // Log conversation ID changes
   useEffect(() => {
@@ -1014,11 +1042,13 @@ export default function AIChatScreen() {
                   : 'bg-red-500 dark:bg-red-600'
               }`}
             >
-              <Ionicons 
-                name={isQuickLinksDropdownVisible ? "close" : "flash"} 
-                size={18} 
-                color={isWaitingForResponse || !canSendMessage() ? "#9CA3AF" : "white"} 
-              />
+              <Animated.View style={{ opacity: isQuickLinksDropdownVisible ? 1 : flashIconOpacity }}>
+                <Ionicons 
+                  name={isQuickLinksDropdownVisible ? "close" : "flash"} 
+                  size={18} 
+                  color={isWaitingForResponse || !canSendMessage() ? "#9CA3AF" : "white"} 
+                />
+              </Animated.View>
             </TouchableOpacity>
           )}
           
@@ -1428,7 +1458,9 @@ export default function AIChatScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center">
                     <View className="w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="flash" size={18} color="#EF4444" />
+                      <Animated.View style={{ opacity: flashIconOpacity }}>
+                        <Ionicons name="flash" size={18} color="#EF4444" />
+                      </Animated.View>
                     </View>
                     <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       Quick Teaching Tools

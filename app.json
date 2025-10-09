@@ -1,10 +1,10 @@
 {
   "expo": {
     "name": "SmartEdu",
-    "slug": "SmartEdu",
+    "slug": "smartedu",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/accessstudy-logo.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -13,12 +13,12 @@
       "backgroundColor": "#1e293b"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.smart-edu-mobile-app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.besttechltd.smartedu"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/accessstudy-logo.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -26,11 +26,11 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.maximussz.SmartEdu"
+      "package": "com.besttechltd.smartedu"
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/accessstudy-logo.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       [
@@ -44,7 +44,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/accessstudy-logo.png",
+          "icon": "./assets/icon.png",
           "color": "#ffffff",
           "sounds": [
             "./assets/notification1.mp3"
@@ -55,10 +55,10 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "59ec328f-95c2-495f-aa41-77a19b614f5d"
+        "projectId": "bbac449d-c7b3-4ede-85a3-39d3bca21622"
       },
       "apiBaseUrl": "https://smart-edu-hub.onrender.com/api/v1"
     },
-    "owner": "maximussz"
+    "owner": "besttechltd"
   }
 }
