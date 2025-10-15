@@ -17,7 +17,7 @@ function resolveBaseUrl(): string {
   }
 
   // Fallback for production
-  return 'https://86226b38f657.ngrok-free.app/api/v1';
+  return 'https://smart-edu-staging.onrender.com/api/v1';
 }
 
 export const API_CONFIG = {

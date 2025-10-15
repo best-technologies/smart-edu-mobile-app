@@ -18,7 +18,7 @@
       "channel": "staging",
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
-        "EXPO_PUBLIC_API_URL": "https://86226b38f657.ngrok-free.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://smart-edu-staging.onrender.com/api/v1"
       }
     },
     "preview": {
@@ -64,6 +64,10 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }
