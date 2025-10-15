@@ -6,16 +6,18 @@ const extra: any = (Constants as any)?.expoConfig?.extra ?? {};
 const EXTRA_API_BASE_URL: string | undefined = extra?.apiBaseUrl;
 
 function resolveBaseUrl(): string {
-  // Development: use local emulator/simulator hosts
-  if (__DEV__) {
-    // const iosSim = 'https://b388ff1b25fb.ngrok-free.app/api/v1';
-    const iosSim = 'http://localhost:1000/api/v1';
-    const androidEmu = 'http://10.0.2.2:1000/api/v1';
-    return Platform.OS === 'android' ? androidEmu : iosSim;
+  // Use the API URL from environment configuration
+  if (EXTRA_API_BASE_URL) {
+    return EXTRA_API_BASE_URL;
   }
 
-  // Production/preview: prefer value from app.json "extra.apiBaseUrl", else fallback to staging
-  return EXTRA_API_BASE_URL || 'https://smart-edu-hub.onrender.com/api/v1';
+  // Fallback for development if no environment variable is set
+  if (__DEV__) {
+    return 'http://localhost:1000/api/v1';
+  }
+
+  // Fallback for production
+  return 'https://86226b38f657.ngrok-free.app/api/v1';
 }
 
 export const API_CONFIG = {
