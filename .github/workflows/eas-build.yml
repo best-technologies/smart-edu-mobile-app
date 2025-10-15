@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Check for EXPO_TOKEN
         run: |
@@ -33,10 +35,8 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      - name: Setup EAS
-        run: |
-          echo "EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}" >> $GITHUB_ENV
-          eas whoami
+      - name: Verify EAS Authentication
+        run: eas whoami
 
       - name: Build for development
         if: github.ref == 'refs/heads/development'
