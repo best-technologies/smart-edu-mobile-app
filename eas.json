@@ -10,7 +10,7 @@
       "channel": "development",
       "env": {
         "EXPO_PUBLIC_ENV": "development",
-        "EXPO_PUBLIC_API_URL": "http:localhost:1000/api/v1"
+        "EXPO_PUBLIC_API_URL": "http://localhost:1000/api/v1"
       }
     },
     "staging": {
@@ -65,16 +65,5 @@
   },
   "submit": {
     "production": {}
-  },
-  "update": {
-    "development": {
-      "channel": "development"
-    },
-    "staging": {
-      "channel": "staging"
-    },
-    "production": {
-      "channel": "production"
-    }
   }
 }

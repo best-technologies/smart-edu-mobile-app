@@ -11,15 +11,15 @@ echo "🚀 Publishing OTA update for $ENVIRONMENT environment..."
 case $ENVIRONMENT in
   "development")
     echo "📱 Publishing to development channel"
-    eas update --channel development --message "$MESSAGE"
+    eas update --branch development --message "$MESSAGE"
     ;;
   "staging")
     echo "🧪 Publishing to staging channel"
-    eas update --channel staging --message "$MESSAGE"
+    eas update --branch staging --message "$MESSAGE"
     ;;
   "production")
     echo "🏭 Publishing to production channel"
-    eas update --channel production --message "$MESSAGE"
+    eas update --branch production --message "$MESSAGE"
     ;;
   *)
     echo "❌ Invalid environment. Use: development, staging, or production"
