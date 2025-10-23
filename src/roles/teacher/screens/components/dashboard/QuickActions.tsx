@@ -1,7 +1,16 @@
 import { ScrollView, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { QuickAction } from '@/mock';
 import { useEffect, useRef } from 'react';
+
+interface QuickAction {
+  id: string;
+  label: string;
+  title: string;
+  icon: string;
+  color: string;
+  onPress?: () => void;
+  isAnimated?: boolean;
+}
 
 // Animated Action Component
 const AnimatedAction = ({ action }: { action: QuickAction }) => {

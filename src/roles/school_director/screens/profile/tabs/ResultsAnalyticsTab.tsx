@@ -1,10 +1,19 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DirectorProfileData } from '@/mock/directorProfile';
 
 interface ResultsAnalyticsTabProps {
-  data: DirectorProfileData['resultsAnalytics'];
+  data: {
+    overallPerformance: { value: number; trend: number; label: string; averageGrade: number; passRate: number; improvementRate: number; topPerformingSubjects: any[]; areasOfConcern: any[] };
+    studentGrowth: { value: number; trend: number; label: string };
+    teacherEfficiency: { value: number; trend: number; label: string };
+    attendanceRate: { value: number; trend: number; label: string };
+    recentResults: any[];
+    performanceTrends: any[];
+    teacherPerformance: { averageScore: number; topPerformers: any[]; needsImprovement: any[]; avgStudentRating: number; totalTeachers: number; needsSupport: any[] };
+    gradeWisePerformance: any[];
+    monthlyTrends: any[];
+  };
 }
 
 interface MetricCardProps {

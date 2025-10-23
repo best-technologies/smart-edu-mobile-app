@@ -1,6 +1,11 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TeachersBasicDetails } from '@/mock';
+
+interface TeachersBasicDetails {
+  totalTeachers: number;
+  totalSubjects: number;
+  activeClasses: number;
+}
 
 export function TeacherStats({ stats }: { stats: TeachersBasicDetails }) {
   return (

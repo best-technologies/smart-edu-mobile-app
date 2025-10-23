@@ -3,7 +3,6 @@ import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { mockDirectorProfile } from '@/mock/directorProfile';
 
 // Import tab components
 import BasicInfoTab from './tabs/BasicInfoTab';
@@ -32,7 +31,84 @@ const tabs: Tab[] = [
 export default function DirectorProfileScreen() {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<TabKey>('basic');
-  const profile = mockDirectorProfile;
+  
+  // Empty profile data - should be fetched from API
+  const profile = {
+    basicInfo: {
+      id: '',
+      name: '',
+      email: '',
+      phone: '',
+      role: 'School Director',
+      department: '',
+      joiningDate: '',
+      joinDate: '',
+      profileImage: null,
+      position: '',
+      schoolName: '',
+      address: '',
+      qualification: '',
+      experience: '',
+      emergencyContact: { name: '', phone: '', relationship: '' },
+    },
+    academicInfo: {
+      qualifications: [],
+      specializations: [],
+      experience: '',
+      certifications: [],
+      currentAcademicYear: '',
+      academicCalendar: { startDate: '', endDate: '', termStart: '', termEnd: '', holidays: [] },
+      totalStudents: 0,
+      totalTeachers: 0,
+      totalClasses: 0,
+      totalSubjects: 0,
+      schoolType: '',
+      curriculum: [],
+      accreditation: [],
+      gradeStructure: [],
+    },
+    resultsAnalytics: {
+      overallPerformance: { value: 0, trend: 0, label: '', averageGrade: 0, passRate: 0, improvementRate: 0, topPerformingSubjects: [], areasOfConcern: [] },
+      studentGrowth: { value: 0, trend: 0, label: '' },
+      teacherEfficiency: { value: 0, trend: 0, label: '' },
+      attendanceRate: { value: 0, trend: 0, label: '' },
+      recentResults: [],
+      performanceTrends: [],
+      teacherPerformance: { averageScore: 0, topPerformers: [], needsImprovement: [], avgStudentRating: 0, totalTeachers: 0, needsSupport: [] },
+      gradeWisePerformance: [],
+      monthlyTrends: [],
+    },
+    subscription: {
+      plan: { name: '', price: 0, billingCycle: '', startDate: '', endDate: '', status: '' },
+      status: '',
+      billingCycle: '',
+      amount: 0,
+      nextBillingDate: '',
+      features: [],
+      usage: { students: 0, teachers: 0, storage: '', currentStudents: 0, currentTeachers: 0, storageUsed: 0, tokensUsedThisMonth: 0 },
+      limits: { maxStudents: 0, maxTeachers: 0, maxStorage: 0, maxTokensPerMonth: 0, maxAiRequests: 0, maxFileSize: 0, maxVideoDuration: 0, maxCloudStorage: 0, storageLimit: 0, tokensPerStudent: 0, tokensPerTeacher: 0, maxFilesPerUser: 0, aiChatSessions: 0 },
+      paymentHistory: [],
+    },
+    systemSettings: {
+      notifications: {
+        email: false,
+        push: false,
+        sms: false,
+      },
+      privacy: {
+        profileVisibility: 'private',
+        activityStatus: false,
+      },
+      preferences: {
+        language: 'English',
+        timezone: '',
+        theme: 'light',
+      },
+      tokenLimits: { dailyLimit: 0, monthlyLimit: 0, currentUsage: 0, resetDate: '', studentDailyTokens: 0, teacherDailyTokens: 0, resetTime: '', warningThreshold: 0 },
+      uploadSettings: { allowedFileTypes: [], maxFileSize: 0, maxFilesPerUpload: 0, compressionEnabled: false, maxFilesPerStudent: 0, maxFilesPerTeacher: 0, autoDeleteAfter: 0 },
+      schoolPolicies: { lateSubmissionPolicy: '', gradingScale: '', attendancePolicy: '', attendanceThreshold: 0, gradePassingMark: 0, lateSubmissionPenalty: 0 },
+    },
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {

@@ -1,6 +1,16 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { QuickStat } from '@/mock';
+
+interface QuickStat {
+  id: string;
+  label: string;
+  title: string;
+  value: string | number;
+  icon: string;
+  color: string;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
+}
 
 export function QuickStats({ stats }: { stats: QuickStat[] }) {
   const getTrendIcon = (trend?: 'up' | 'down' | 'neutral') => {

@@ -1,8 +1,16 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Student } from '@/mock';
 import { capitalizeWords } from '@/utils/textFormatter';
+
+interface Student {
+  id: string;
+  name: string;
+  class: string;
+  avatar?: string;
+  attendance?: number;
+  performance?: number;
+}
 
 interface StudentCardProps {
   student: Student;

@@ -2,10 +2,28 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { DirectorProfileData } from '@/mock/directorProfile';
 
 interface SubscriptionTabProps {
-  data: DirectorProfileData['subscription'];
+  data: {
+    plan: { name: string; price: number; billingCycle: string; startDate: string; endDate: string; status: string };
+    status: string;
+    billingCycle: string;
+    amount: number;
+    nextBillingDate: string;
+    features: Array<{ name: string; included: boolean; description: string }>;
+    usage: { students: number; teachers: number; storage: string; currentStudents: number; currentTeachers: number; storageUsed: number; tokensUsedThisMonth: number };
+    limits: { maxStudents: number; maxTeachers: number; maxStorage: number; maxTokensPerMonth: number; maxAiRequests: number; maxFileSize: number; maxVideoDuration: number; maxCloudStorage: number; storageLimit: number; tokensPerStudent: number; tokensPerTeacher: number; maxFilesPerUser: number; aiChatSessions: number };
+    paymentHistory?: Array<{
+      id: string;
+      date: string;
+      amount: number;
+      status: string;
+      method: string;
+      plan: string;
+      currency: string;
+      invoice: string;
+    }>;
+  };
 }
 
 interface UsageBarProps {
@@ -84,7 +102,16 @@ const FeatureRow = ({ name, included, description }: FeatureRowProps) => (
 );
 
 interface PaymentRowProps {
-  payment: DirectorProfileData['subscription']['paymentHistory'][0];
+  payment: {
+    id: string;
+    date: string;
+    amount: number;
+    status: string;
+    method: string;
+    plan: string;
+    currency: string;
+    invoice: string;
+  };
   isLast?: boolean;
 }
 
@@ -323,11 +350,11 @@ export default function SubscriptionTab({ data }: SubscriptionTabProps) {
           Payment History
         </Text>
         <View className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          {data.paymentHistory.map((payment, index) => (
+          {(data.paymentHistory || []).map((payment, index) => (
             <PaymentRow
               key={payment.id}
               payment={payment}
-              isLast={index === data.paymentHistory.length - 1}
+              isLast={index === (data.paymentHistory?.length || 0) - 1}
             />
           ))}
         </View>

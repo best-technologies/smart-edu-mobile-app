@@ -1,6 +1,22 @@
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DayClasses } from '@/mock';
+
+interface ClassItem {
+  id: string;
+  subject: string;
+  classCode: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  color: string;
+}
+
+interface DayClasses {
+  day: string;
+  icon: string;
+  color: string;
+  classes: ClassItem[];
+}
 
 export function UpcomingClasses({ classes }: { classes: DayClasses[] }) {
   return (

@@ -17,7 +17,6 @@ import CenteredLoader from '@/components/CenteredLoader';
 import { useToast } from '@/contexts/ToastContext';
 import { StudentService } from '@/services/api/roleServices';
 import { useQueryClient } from '@tanstack/react-query';
-import { mockAssessmentAnswersResponse } from '@/mock/assessments';
 
 const { width } = Dimensions.get('window');
 

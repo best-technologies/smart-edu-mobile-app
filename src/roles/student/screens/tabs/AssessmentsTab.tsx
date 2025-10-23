@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStudentAssessments } from '@/hooks/useStudentAssessments';
 import { Assessment } from '@/services/types/apiTypes';
 import { useToast } from '@/contexts/ToastContext';
-import { mockStudentAssessmentsResponse } from '@/mock/assessments';
 
 interface AssessmentsTabProps {
   navigation: any;
@@ -214,15 +213,9 @@ export default function AssessmentsTab({ navigation }: AssessmentsTabProps) {
     return diffDays;
   };
 
-  // Get assessments from API response - use mock data if no real assessments
-  const realAssessments = assessmentsData?.data?.assessments || [];
-  const hasRealAssessments = realAssessments.length > 0;
-  
-  // Use mock data if no real assessments are available
-  const allAssessments = hasRealAssessments ? realAssessments : mockStudentAssessmentsResponse.data.assessments;
-  const generalInfo = hasRealAssessments 
-    ? assessmentsData?.data?.general_info 
-    : mockStudentAssessmentsResponse.data.general_info;
+  // Get assessments from API response
+  const allAssessments = assessmentsData?.data?.assessments || [];
+  const generalInfo = assessmentsData?.data?.general_info;
 
   // Client-side filtering
   const filteredAssessments = allAssessments.filter((assessment: Assessment) => {
@@ -357,8 +350,8 @@ export default function AssessmentsTab({ navigation }: AssessmentsTabProps) {
         </View>
       </ScrollView>
 
-      {/* Mock Data Indicator */}
-      {/* {!hasRealAssessments && (
+      {/* Mock Data Indicator - Removed for production */}
+      {/* {false && (
         <View className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 mx-4">
           <View className="flex-row items-center gap-2">
             <Ionicons name="information-circle" size={20} color="#3B82F6" />

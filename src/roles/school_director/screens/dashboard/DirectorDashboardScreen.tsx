@@ -9,7 +9,6 @@ import { OverviewCard, SmallOverviewCard } from '../../components/dashboard/Over
 import FinanceCard from '../../components/dashboard/Finance';
 import { useDirectorDashboard, useRefreshDirectorDashboard } from '@/hooks/useDirectorDashboard';
 import { CenteredLoader, QuickLinks } from '@/components';
-import { directorDashboardData } from '@/mock/director';
 
 
 export default function DirectorDashboardScreen() {
@@ -135,23 +134,10 @@ export default function DirectorDashboardScreen() {
             ))}
           </View>
         ) : (
-          <View className="gap-3">
-            {directorDashboardData.data?.ongoingClasses?.map((c, idx) => (
-              <View key={`${c.className}-${idx}`} className="rounded-xl p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-900 dark:text-gray-100 font-semibold text-base">
-                    {c.className ?? '—'} • {c.subject ?? '—'}
-                  </Text>
-                  <View className="bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-full">
-                    <Text className="text-blue-700 dark:text-blue-300 text-sm font-medium">
-                      {c.startTime ?? '—'} - {c.endTime ?? '—'}
-                    </Text>
-                  </View>
-                </View>
-                <Text className="text-gray-600 dark:text-gray-300 mt-2 text-sm">{c.teacher ?? '—'}</Text>
-              </View>
-            ))}
-          </View>
+          <EmptyState
+            title="No ongoing classes"
+            subtitle="There are no classes in session right now."
+          />
         )}
       </Section>
 
@@ -174,22 +160,10 @@ export default function DirectorDashboardScreen() {
             ))}
           </View>
         ) : (
-          <View className="gap-3">
-            {directorDashboardData.data?.notifications?.map((n) => (
-              <View key={n.id} className="rounded-xl p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-900 dark:text-gray-100 font-semibold text-base">{n.title ?? '—'}</Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">{n.createdAt ?? ''}</Text>
-                </View>
-                <Text className="text-gray-600 dark:text-gray-300 mt-2 text-sm leading-5">{n.description ?? ''}</Text>
-                {n.comingUpOn ? (
-                  <View className="mt-3 rounded-xl bg-amber-50 dark:bg-amber-900/40 px-3 py-2 self-start border border-amber-200 dark:border-amber-800">
-                    <Text className="text-amber-700 dark:text-amber-300 text-xs font-medium">Coming up: {n.comingUpOn}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ))}
-          </View>
+          <EmptyState
+            title="No notifications"
+            subtitle="You don't have any notifications at this time."
+          />
         )}
       </Section>
 

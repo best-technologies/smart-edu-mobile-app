@@ -1,6 +1,16 @@
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Teacher } from '@/mock';
+
+interface Teacher {
+  id: string;
+  name: string;
+  subject: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  classes?: number;
+  students?: number;
+}
 
 interface TeacherCardProps {
   teacher: Teacher;

@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DirectorProfileData } from '@/mock/directorProfile';
 
 interface SystemSettingsTabProps {
-  data: DirectorProfileData['systemSettings'];
+  data: {
+    notifications: {
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+    };
+    privacy: {
+      profileVisibility: string;
+      activityStatus: boolean;
+    };
+    preferences: {
+      language: string;
+      timezone: string;
+      theme: string;
+    };
+    tokenLimits: { dailyLimit: number; monthlyLimit: number; currentUsage: number; resetDate: string; studentDailyTokens: number; teacherDailyTokens: number; resetTime: string; warningThreshold: number };
+    uploadSettings: { allowedFileTypes: any[]; maxFileSize: number; maxFilesPerUpload: number; compressionEnabled: boolean; maxFilesPerStudent: number; maxFilesPerTeacher: number; autoDeleteAfter: number };
+    schoolPolicies: { lateSubmissionPolicy: string; gradingScale: string; attendancePolicy: string; attendanceThreshold: number; gradePassingMark: number; lateSubmissionPenalty: number };
+  };
 }
 
 interface SettingRowProps {

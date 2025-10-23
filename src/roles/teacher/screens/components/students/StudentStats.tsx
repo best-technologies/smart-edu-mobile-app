@@ -1,7 +1,12 @@
 import React from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StudentsBasicDetails } from '@/mock';
+
+interface StudentsBasicDetails {
+  totalStudents: number;
+  maleStudents: number;
+  femaleStudents: number;
+}
 
 interface StudentStatsProps {
   stats: StudentsBasicDetails;

@@ -2,10 +2,24 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { DirectorProfileData } from '@/mock/directorProfile';
 
 interface AcademicInfoTabProps {
-  data: DirectorProfileData['academicInfo'];
+  data: {
+    qualifications: string[];
+    specializations: string[];
+    experience: string;
+    certifications: string[];
+    currentAcademicYear: string;
+    academicCalendar: { startDate: string; endDate: string; termStart: string; termEnd: string; holidays: any[] };
+    totalStudents: number;
+    totalTeachers: number;
+    totalClasses: number;
+    totalSubjects: number;
+    schoolType: string;
+    curriculum: any[];
+    accreditation: any[];
+    gradeStructure: any[];
+  };
 }
 
 interface StatCardProps {

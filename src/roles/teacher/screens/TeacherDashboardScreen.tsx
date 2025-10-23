@@ -10,8 +10,22 @@ import RecentNotifications from './components/dashboard/RecentNotifications';
 import UpcomingClasses from './components/dashboard/UpcomingClasses';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useTeacherDashboard, useRefreshTeacherDashboard } from '@/hooks/useDirectorDashboard';
-import { DayClasses, teacherDashboardData } from '@/mock/teacher';
 import { formatClassName, formatSubjectName, formatRoomName, formatTime, formatDay } from '@/utils/textFormatter';
+
+interface DayClasses {
+  day: string;
+  icon: string;
+  color: string;
+  classes: Array<{
+    id: string;
+    subject: string;
+    classCode: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+    color: string;
+  }>;
+}
 
 export default function TeacherDashboardScreen() {
   const navigation = useNavigation<any>();
@@ -41,15 +55,13 @@ export default function TeacherDashboardScreen() {
     id: subject.id || `subject-${index}-${Date.now()}`
   })) : [];
   
-  // Use mock notifications if no notifications exist
-  const notifications = dashboardData ? (
-    dashboardData.recent_notifications.length > 0 
-      ? dashboardData.recent_notifications.map((notification, index) => ({
-          ...notification,
-          id: notification.id || `notification-${index}-${Date.now()}`
-        }))
-      : teacherDashboardData.notifications
-  ) : teacherDashboardData.notifications;
+  // Transform notifications
+  const notifications = dashboardData 
+    ? dashboardData.recent_notifications.map((notification, index) => ({
+        ...notification,
+        id: notification.id || `notification-${index}-${Date.now()}`
+      }))
+    : [];
 
   const upcomingClasses: DayClasses[] = dashboardData ? [
     {
@@ -94,7 +106,7 @@ export default function TeacherDashboardScreen() {
         color: item.subject.color,
       })),
     },
-  ] : teacherDashboardData.upcomingClasses;
+  ] : [];
 
 
   if (error) {

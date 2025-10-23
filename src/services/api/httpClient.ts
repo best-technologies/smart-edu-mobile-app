@@ -108,7 +108,7 @@ export class HttpClient {
       
       // Add timeout - much longer for file uploads; optionally disable for large uploads
       let controller: AbortController | null = new AbortController();
-      let timeout = 10000; // Default 10s
+      let timeout = 30000; // Default 30s (increased from 10s)
 
       const isUploadEndpoint = endpoint.includes('/upload-document') || endpoint.includes('/start-upload') || endpoint.includes('/upload-progress');
 
@@ -129,6 +129,9 @@ export class HttpClient {
         } else {
           timeout = Math.max(timeout, 60000); // 1 minute for other AI chat requests (conversations, etc.)
         }
+      } else if (endpoint.includes('/dashboard')) {
+        // Dashboard endpoints often take longer due to data aggregation
+        timeout = Math.max(timeout, 45000); // 45 seconds for dashboard requests
       }
 
       let timeoutId: NodeJS.Timeout | null = null;

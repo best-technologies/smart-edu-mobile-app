@@ -1,10 +1,25 @@
 import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DirectorProfileData } from '@/mock/directorProfile';
 
 interface BasicInfoTabProps {
-  data: DirectorProfileData['basicInfo'];
+  data: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    role: string;
+    department: string;
+    joiningDate: string;
+    joinDate: string;
+    profileImage: string | null;
+    position: string;
+    schoolName: string;
+    address: string;
+    qualification: string;
+    experience: string;
+    emergencyContact: { name: string; phone: string; relationship: string };
+  };
 }
 
 interface InfoCardProps {

@@ -25,44 +25,67 @@ export default function SchoolDirectorTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: '#4338ca',
+        tabBarInactiveTintColor: '#6b7280',
         tabBarStyle: {
-          height: 80 + insets.bottom,
-          paddingBottom: 16 + insets.bottom,
+          height: 75,
+          paddingBottom: insets.bottom > 0 ? 8 : 12,
           paddingTop: 8,
-          paddingHorizontal: 16,
+          paddingHorizontal: 12,
           backgroundColor: '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
+          borderTopWidth: 0,
+          position: 'absolute',
+          bottom: insets.bottom > 0 ? 20 : 16,
+          left: 20,
+          right: 20,
+          borderRadius: 28,
+          elevation: 10,
           shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: -2,
-          },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-          elevation: 8,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
+          paddingBottom: 6,
         },
-        tabBarIcon: ({ color, size }) => {
-          const map: Record<string, keyof typeof Ionicons.glyphMap> = {
+        tabBarItemStyle: {
+          borderRadius: 100,
+          marginHorizontal: 2,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          overflow: 'hidden',
+        },
+        tabBarActiveBackgroundColor: '#e0e7ff',
+        tabBarInactiveBackgroundColor: 'transparent',
+        tabBarIconStyle: {
+          marginTop: 2,
+        },
+        tabBarShowLabel: true,
+        tabBarAllowFontScaling: false,
+        tabBarIcon: ({ color, focused }) => {
+          const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: 'home',
+            Teachers: 'people',
+            Students: 'school',
+            Subject: 'book',
+            Schedules: 'calendar',
+          };
+          const outlineMap: Record<string, keyof typeof Ionicons.glyphMap> = {
             Dashboard: 'home-outline',
             Teachers: 'people-outline',
             Students: 'school-outline',
             Subject: 'book-outline',
             Schedules: 'calendar-outline',
           };
-          const name = map[route.name] ?? 'ellipse-outline';
-          return <Ionicons name={name} size={size} color={color} />;
+          const name = focused ? (iconMap[route.name] ?? 'ellipse') : (outlineMap[route.name] ?? 'ellipse-outline');
+          return <Ionicons name={name} size={26} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={DirectorDashboardScreen} />
+      <Tab.Screen name="Dashboard" component={DirectorDashboardScreen} options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="Teachers" component={TeachersScreen} />
       <Tab.Screen name="Subject" options={{ tabBarLabel: 'Subject' }} component={SubjectsScreen} />
       <Tab.Screen name="Students" component={StudentsScreen} />
