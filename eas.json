@@ -17,6 +17,7 @@
       }
     },
     "staging": {
+      "autoIncrement": true,
       "distribution": "internal",
       "channel": "staging",
       "android": {
@@ -28,6 +29,7 @@
       }
     },
     "preview": {
+      "autoIncrement": true,
       "distribution": "internal",
       "channel": "preview",
       "env": {
@@ -60,6 +62,7 @@
       "channel": "simulator"
     },
     "android": {
+      "autoIncrement": true,
       "extends": "development",
       "android": {
         "buildType": "app-bundle"
