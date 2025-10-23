@@ -9,6 +9,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
-import { CenteredLoader, InlineSpinner } from '@/components';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -221,10 +221,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                         alignItems: 'center',
                       }}
                     >
-                    
-                      <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-                        Sign In
-                      </Text>
+                      {isLoading ? (
+                        <View className="flex-row items-center">
+                          <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 12 }} />
+                          <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                            Signing In...
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                          Sign In
+                        </Text>
+                      )}
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -292,15 +300,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </LinearGradient>
-
-      {/* Centered Loader for full-screen loading */}
-      <CenteredLoader 
-        visible={isLoading}
-        text="Signing you in..."
-        size="large"
-        spinnerColor="#32CD32"
-        textColor="#ffffff"
-      />
     </View>
   );
 }

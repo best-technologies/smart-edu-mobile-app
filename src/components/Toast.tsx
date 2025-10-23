@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -26,6 +27,7 @@ export default function Toast({
   onClose,
   onPress,
 }: ToastProps) {
+  const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
@@ -95,12 +97,12 @@ export default function Toast({
     <View
       style={{
         position: 'absolute',
-        top: 100,
+        top: insets.top + 8,
         left: 16,
         right: 16,
         zIndex: 9999999,
         elevation: 9999999,
-        borderRadius: 16,
+        borderRadius: 12,
         overflow: 'hidden',
       }}
     >
@@ -109,23 +111,23 @@ export default function Toast({
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
-          borderRadius: 16,
+          borderRadius: 12,
           borderWidth: 1,
           borderColor: config.borderColor,
-          padding: 16,
+          padding: 12,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           {/* Icon */}
-          <View style={{ marginRight: 12, marginTop: 2 }}>
-            <Ionicons name={config.icon as any} size={24} color={config.iconColor} />
+          <View style={{ marginRight: 10, marginTop: 1 }}>
+            <Ionicons name={config.icon as any} size={20} color={config.iconColor} />
           </View>
 
           {/* Content */}
-          <View style={{ flex: 1, marginRight: 8 }}>
+          <View style={{ flex: 1, marginRight: 6 }}>
             <Text style={{ 
               color: 'white', 
-              fontSize: 16, 
+              fontSize: 13, 
               fontWeight: 'bold',
               textShadowColor: 'rgba(0, 0, 0, 0.2)',
               textShadowOffset: { width: 0, height: 1 },
@@ -136,8 +138,8 @@ export default function Toast({
             {message && (
               <Text style={{ 
                 color: 'rgba(255, 255, 255, 0.9)', 
-                fontSize: 14, 
-                marginTop: 4,
+                fontSize: 10, 
+                marginTop: 2,
                 textShadowColor: 'rgba(0, 0, 0, 0.1)',
                 textShadowOffset: { width: 0, height: 1 },
                 textShadowRadius: 1,
@@ -154,15 +156,15 @@ export default function Toast({
               onClose();
             }}
             style={{
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 12,
+              borderRadius: 10,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Ionicons name="close" size={16} color="#ffffff" />
+            <Ionicons name="close" size={14} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </LinearGradient>

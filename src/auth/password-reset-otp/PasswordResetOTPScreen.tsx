@@ -9,6 +9,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +19,6 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { CenteredLoader } from '@/components';
 import OTPInput from '@/components/OTPInput';
 
 type PasswordResetOTPScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PasswordResetOTP'>;
@@ -32,8 +32,10 @@ interface PasswordResetOTPScreenProps {
 export default function PasswordResetOTPScreen({ navigation, route }: PasswordResetOTPScreenProps) {
   const { email } = route.params;
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6-digit OTP
-  const [newPassword, setNewPassword] = useState('Maximus123');
-  const [confirmPassword, setConfirmPassword] = useState('Maximus123');
+  // const [newPassword, setNewPassword] = useState('Maximus123');
+  // const [confirmPassword, setConfirmPassword] = useState('Maximus123');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -406,7 +408,7 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
                     >
                       {isLoading ? (
                         <View className="flex-row items-center">
-                          <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
+                          <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 12 }} />
                           <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                             Resetting Password...
                           </Text>
@@ -446,15 +448,6 @@ export default function PasswordResetOTPScreen({ navigation, route }: PasswordRe
           </KeyboardAvoidingView>
         </SafeAreaView>
       </LinearGradient>
-
-      {/* Centered Loader for full-screen loading */}
-      <CenteredLoader 
-        visible={isLoading}
-        text="Resetting your password..."
-        size="large"
-        spinnerColor="#32CD32"
-        textColor="#ffffff"
-      />
     </View>
   );
 }

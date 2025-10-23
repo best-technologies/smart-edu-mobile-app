@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +18,6 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { CenteredLoader } from '@/components';
 
 type ForgotPasswordScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 type ForgotPasswordScreenRouteProp = RouteProp<RootStackParamList, 'ForgotPassword'>;
@@ -28,8 +28,8 @@ interface ForgotPasswordScreenProps {
 }
 
 export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswordScreenProps) {
-  // const [email, setEmail] = useState('');
-  const [email, setEmail] = useState('tope.rasheedat1@bestacademy.edu.ng');
+  const [email, setEmail] = useState('');
+  // const [email, setEmail] = useState('tope.rasheedat1@bestacademy.edu.ng');
   const [emailError, setEmailError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   
@@ -213,7 +213,7 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
                   >
                     {isLoading || isValidating ? (
                       <View className="flex-row items-center">
-                        <View className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mr-3" />
+                        <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 12 }} />
                         <Text className="text-white font-bold text-base" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                           Sending Reset Code...
                         </Text>
@@ -252,15 +252,6 @@ export default function ForgotPasswordScreen({ navigation, route }: ForgotPasswo
           </KeyboardAvoidingView>
         </SafeAreaView>
       </LinearGradient>
-
-      {/* Centered Loader for full-screen loading */}
-      <CenteredLoader 
-        visible={isLoading || isValidating}
-        text="Sending reset code..."
-        size="large"
-        spinnerColor="#32CD32"
-        textColor="#ffffff"
-      />
     </View>
   );
 }
