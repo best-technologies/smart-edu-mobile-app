@@ -48,7 +48,7 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://smart-edu-hub.onrender.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://smart-edu-backend-gf0a.onrender.com"
       }
     },
     "simulator": {
