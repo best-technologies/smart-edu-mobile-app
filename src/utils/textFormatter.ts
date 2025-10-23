@@ -182,5 +182,25 @@ export function formatDay(day: string): string {
   return capitalizeFirst(day);
 }
 
+/**
+ * Truncates text after a specified number of characters and adds ellipsis
+ * @param text - The text to truncate
+ * @param maxLength - Maximum number of characters before truncation (default: 20)
+ * @returns Truncated text with ellipsis if needed
+ * 
+ * @example
+ * truncateText("verylongemail@example.com", 20) // "verylongemail@exampl..."
+ * truncateText("short@email.com", 20) // "short@email.com"
+ * truncateText("thisisaverylongemailaddress@company.com") // "thisisaverylongemail..."
+ */
+export function truncateText(text: string, maxLength: number = 20): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  if (text.length <= maxLength) {
+    return text;
+  }
+  
+  return text.substring(0, maxLength) + '...';
+}
 
 

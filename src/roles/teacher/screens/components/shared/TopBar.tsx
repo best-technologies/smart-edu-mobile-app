@@ -2,7 +2,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { formatTeacherName } from '@/utils/textFormatter';
+import { formatTeacherName, truncateText } from '@/utils/textFormatter';
 
 // Helper function to format term name
 const formatTerm = (term: string) => {
@@ -64,7 +64,7 @@ export function TopBar() {
               Welcome back, {formatTeacherName(teacherName)}
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1} ellipsizeMode="tail">
-              {userProfile?.email || 'Loading...'}
+              {truncateText(userProfile?.email || 'Loading...', 20)}
             </Text>
             {isSchoolDirector && userProfile?.current_academic_session && (
               <View className="flex-row items-center gap-2 mt-1">
