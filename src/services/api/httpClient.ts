@@ -147,11 +147,22 @@ export class HttpClient {
       
       if (!contentType || !contentType.includes('application/json')) {
         const textResponse = await response.text();
-        console.log('📄 Non-JSON response body:', textResponse);
+        // console.log('📄 Non-JSON response body:', textResponse);
         throw new ApiError(response.status, 'Invalid response format', { status: response.status, body: textResponse });
       }
 
-      const responseData = await response.json();
+      // Try to get response as text first to debug
+      const responseText = await response.text();
+      // console.log('📄 Raw response text:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('🚨 JSON Parse Error:', parseError);
+        console.error('🚨 Response text that failed to parse:', responseText);
+        throw new ApiError(response.status, 'Invalid JSON response', { status: response.status, body: responseText, parseError });
+      }
 
       if (!response.ok) {
         throw new ApiError(response.status, responseData.message || 'Request failed', responseData);

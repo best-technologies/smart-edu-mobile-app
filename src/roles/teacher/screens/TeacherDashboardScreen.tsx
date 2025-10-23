@@ -8,7 +8,6 @@ import ManagedClasses from './components/dashboard/ManagedClasses';
 import SubjectsTeaching from './components/dashboard/SubjectsTeaching';
 import RecentNotifications from './components/dashboard/RecentNotifications';
 import UpcomingClasses from './components/dashboard/UpcomingClasses';
-import FloatingActionButton from './components/shared/FloatingActionButton';
 import CenteredLoader from '@/components/CenteredLoader';
 import { useTeacherDashboard, useRefreshTeacherDashboard } from '@/hooks/useDirectorDashboard';
 import { DayClasses, teacherDashboardData } from '@/mock/teacher';
@@ -166,8 +165,6 @@ export default function TeacherDashboardScreen() {
           </View>
         )}
       </ScrollView>
-      
-      <FloatingActionButton />
     </SafeAreaView>
   );
 }

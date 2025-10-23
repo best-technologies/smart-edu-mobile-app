@@ -229,16 +229,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 </TouchableOpacity>
 
                 {/* Divider */}
-                <View className="flex-row items-center my-8">
+                {/* <View className="flex-row items-center my-8">
                   <View className="flex-1 h-px bg-white/25" />
                   <Text className="text-white/80 font-medium text-sm mx-4" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
                     or continue with
                   </Text>
                   <View className="flex-1 h-px bg-white/25" />
-                </View>
+                </View> */}
 
                 {/* Social Login Buttons */}
-                <View className="flex-row space-x-4 mb-8">
+                {/* <View className="flex-row space-x-4 mb-8">
                   <TouchableOpacity
                     onPress={handleGoogleLogin}
                     className="flex-1 h-14 bg-white/15 rounded-xl items-center justify-center border border-white/25"
@@ -257,6 +257,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                       </Text>
                     </View>
                   </TouchableOpacity>
+                </View> */}
+
+                 <View className="flex-row items-center my-8">
+                  <View className="flex-1 h-px bg-white/25" />
+                  <Text className="text-white/80 font-medium text-sm mx-4" style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
+                    ---
+                  </Text>
+                  <View className="flex-1 h-px bg-white/25" />
                 </View>
 
                 {/* Footer */}

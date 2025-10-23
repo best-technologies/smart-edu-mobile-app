@@ -85,7 +85,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
                 {/* Professional logo container */}
                 <View className="w-32 h-32 bg-white/10 rounded-2xl items-center justify-center backdrop-blur-sm border border-white/20">
                   <Image
-                    source={require('../../assets/accessstudy-logo.png')}
+                    source={require('../../assets/icon.png')}
                     style={{ width: 70, height: 70 }}
                     resizeMode="contain"
                   />

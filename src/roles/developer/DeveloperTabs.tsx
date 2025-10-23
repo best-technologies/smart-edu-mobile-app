@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function Screen({ label }: { label: string }) {
   return (
@@ -13,13 +14,27 @@ function Screen({ label }: { label: string }) {
 const Tab = createBottomTabNavigator();
 
 export default function DeveloperTabs() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: { height: 60, paddingBottom: 8, paddingTop: 8 },
+        tabBarStyle: { 
+          height: 60 + insets.bottom, 
+          paddingBottom: 8 + insets.bottom, 
+          paddingTop: 8,
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e5e7eb',
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
         tabBarIcon: ({ color, size }) => {
           const map: Record<string, keyof typeof Ionicons.glyphMap> = {
             Dashboard: 'home-outline',

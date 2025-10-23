@@ -8,6 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_ENV": "development",
         "EXPO_PUBLIC_API_URL": "http://localhost:1000/api/v1"
@@ -16,6 +19,9 @@
     "staging": {
       "distribution": "internal",
       "channel": "staging",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
         "EXPO_PUBLIC_API_URL": "https://smart-edu-staging.onrender.com/api/v1"

@@ -2,6 +2,7 @@ import "../global.css";
 import { StatusBar } from 'react-native';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from '@/navigation/RootNavigator';
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
@@ -129,16 +130,18 @@ function AppContent() {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <UserProfileProvider>
-              <AppContent />
-            </UserProfileProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </QueryProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <UserProfileProvider>
+                <AppContent />
+              </UserProfileProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </QueryProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

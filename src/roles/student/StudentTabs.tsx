@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import StudentDashboardScreen from './screens/StudentDashboardScreen';
 import StudentSubjectsScreen from './screens/StudentSubjectsScreen';
 import StudentSchedulesScreen from './screens/StudentSchedulesScreen';
@@ -18,6 +19,8 @@ function Screen({ label }: { label: string }) {
 const Tab = createBottomTabNavigator();
 
 export default function StudentTabs() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -25,8 +28,8 @@ export default function StudentTabs() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: { 
-          height: 80, 
-          paddingBottom: 12, 
+          height: 80 + insets.bottom, 
+          paddingBottom: 12 + insets.bottom, 
           paddingTop: 8,
           backgroundColor: '#ffffff',
           borderTopWidth: 1,

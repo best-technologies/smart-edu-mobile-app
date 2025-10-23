@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -48,16 +48,22 @@ export function TopBar() {
     <View className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 px-6 py-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <View className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center">
-            <Text className="text-white font-bold text-sm">
-              {userProfile ? `${userProfile.first_name.charAt(0)}${userProfile.last_name.charAt(0)}` : 'JD'}
-            </Text>
-          </View>
-          <View>
-            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {userProfile?.display_picture ? (
+            <Image
+              source={{ uri: userProfile.display_picture as unknown as string }}
+              className="h-10 w-10 rounded-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center">
+              <Ionicons name="person" size={20} color="#6B7280" />
+            </View>
+          )}
+          <View className="flex-1 max-w-[220px]">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1} ellipsizeMode="tail">
               Welcome back, {formatTeacherName(teacherName)}
             </Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400">
+            <Text className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1} ellipsizeMode="tail">
               {userProfile?.email || 'Loading...'}
             </Text>
             {isSchoolDirector && userProfile?.current_academic_session && (

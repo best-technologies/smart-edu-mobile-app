@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DirectorDashboardScreen from './screens/dashboard/DirectorDashboardScreen';
 import TeachersScreen from './screens/teachers/TeachersScreen';
 import SubjectsScreen from './screens/subjects/SubjectsScreen';
@@ -18,6 +19,8 @@ function Screen({ label }: { label: string }) {
 const Tab = createBottomTabNavigator();
 
 export default function SchoolDirectorTabs() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -25,8 +28,8 @@ export default function SchoolDirectorTabs() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
-          height: 80,
-          paddingBottom: 16,
+          height: 80 + insets.bottom,
+          paddingBottom: 16 + insets.bottom,
           paddingTop: 8,
           paddingHorizontal: 16,
           backgroundColor: '#ffffff',
