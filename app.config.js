@@ -32,7 +32,7 @@ export default {
       "name": "SmartEdu",
       "slug": "smartedu",
       "version": "1.0.0",
-      "orientation": "portrait",
+      "orientation": "default",
       "icon": "./assets/icon.png",
       "userInterfaceStyle": "light",
       "newArchEnabled": true,
@@ -62,6 +62,10 @@ export default {
         "package": "com.besttechltd.smartedu",
         "runtimeVersion": {
           "policy": "appVersion"
+        },
+        "config": {
+          "largeScreens": true,
+          "screenOrientation": "default"
         }
       },
       "web": {
