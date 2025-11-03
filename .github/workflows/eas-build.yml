@@ -48,8 +48,10 @@ jobs:
 
       - name: Build for production
         if: github.ref == 'refs/heads/main'
-        run: eas build --platform all --profile production --non-interactive
+        run: eas build --platform android --profile production --non-interactive
+        # run: eas build --platform all --profile production --non-interactive
 
-      - name: Submit to stores (production only)
-        if: github.ref == 'refs/heads/main'
-        run: eas submit --platform all --profile production --non-interactive
+      # Temporarily disabled until Google Play API permissions are set up
+      # - name: Submit to stores (production only)
+      #   if: github.ref == 'refs/heads/main'
+      #   run: eas submit --platform android --profile production --non-interactive
