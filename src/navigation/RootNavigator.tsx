@@ -6,6 +6,7 @@ import EmailVerificationScreen from '@/auth/email-verification/EmailVerification
 import SchoolDirectorNavigator from '@/roles/school_director/SchoolDirectorNavigator';
 import TeacherTabs from '@/roles/teacher/TeacherTabs';
 import StudentNavigator from '@/roles/student/StudentNavigator';
+import ParentNavigator from '@/roles/parent/ParentNavigator';
 import DeveloperTabs from '@/roles/developer/DeveloperTabs';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 import { navigationRef } from './RootNavigation';
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   SchoolDirector: undefined;
   Teacher: undefined;
   Student: undefined;
+  Parent: undefined;
   Developer: undefined;
 };
 
@@ -68,6 +70,7 @@ export default function RootNavigator() {
         <Stack.Screen name="SchoolDirector" component={SchoolDirectorNavigator} />
         <Stack.Screen name="Teacher" component={TeacherTabs} />
         <Stack.Screen name="Student" component={StudentNavigator} />
+        <Stack.Screen name="Parent" component={ParentNavigator} />
         <Stack.Screen name="Developer" component={DeveloperTabs} />
       </Stack.Navigator>
     </NavigationContainer>

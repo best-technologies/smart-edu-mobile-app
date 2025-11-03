@@ -23,6 +23,9 @@ export default function RoleSelectScreen() {
       case 'student':
         navigation.navigate('Student');
         break;
+      case 'parent':
+        navigation.navigate('Parent');
+        break;
       case 'developer':
         navigation.navigate('Developer');
         break;
@@ -70,6 +73,13 @@ export default function RoleSelectScreen() {
           onPress={() => handleRoleSelect('student')}
         >
           <Text style={styles.roleText}>Student</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.roleButton}
+          onPress={() => handleRoleSelect('parent')}
+        >
+          <Text style={styles.roleText}>Parent</Text>
         </TouchableOpacity>
         
         <TouchableOpacity

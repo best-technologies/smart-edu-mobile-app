@@ -4,6 +4,7 @@ export const ROLE_ROUTE_MAP = {
   'director': 'SchoolDirector', // Handle both backend and frontend role names
   'teacher': 'Teacher',
   'student': 'Student',
+  'parent': 'Parent',
   'developer': 'Developer',
   'admin': 'SchoolDirector', // Admin can access director dashboard
 } as const;
@@ -28,6 +29,10 @@ export function getRouteForRole(role: string): RouteName | null {
   
   if (normalizedRole === 'student') {
     return 'Student';
+  }
+  
+  if (normalizedRole === 'parent') {
+    return 'Parent';
   }
   
   if (normalizedRole === 'developer') {
@@ -62,6 +67,8 @@ export function getRoleDisplayName(role: string): string {
       return 'Teacher';
     case 'student':
       return 'Student';
+    case 'parent':
+      return 'Parent';
     case 'developer':
       return 'Developer';
     case 'admin':
